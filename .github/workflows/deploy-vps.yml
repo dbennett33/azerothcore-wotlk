@@ -1,0 +1,115 @@
+name: deploy-vps
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: Git ref to build (empty = the branch selected in the UI)
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  ACORE_PREFIX: /home/acore/server
+  ACORE_STAGING: /home/acore/server-staging
+  CC: gcc
+  CXX: g++
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, acore-vps]
+    name: build-and-restart
+    steps:
+      - name: Checkout AzerothCore
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.git_ref != '' && inputs.git_ref || github.ref }}
+
+      - name: Resolve Playerbot module ref
+        id: playerbots
+        run: |
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          if [ "$branch" = "HEAD" ]; then
+            branch="${GITHUB_REF_NAME}"
+          fi
+          if [ "$branch" = "Playerbot" ]; then
+            echo "ref=master" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=test-staging" >> "$GITHUB_OUTPUT"
+          fi
+          echo "core_branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Playerbot module
+        uses: actions/checkout@v7
+        with:
+          repository: mod-playerbots/mod-playerbots
+          ref: ${{ steps.playerbots.outputs.ref }}
+          path: modules/mod-playerbots
+
+      - name: User systemd environment
+        run: |
+          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}/build" \
+            -DCMAKE_C_COMPILER="${CC}" \
+            -DCMAKE_CXX_COMPILER="${CXX}" \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
+            -DAPPS_BUILD=all \
+            -DTOOLS_BUILD=none \
+            -DSCRIPTS=static \
+            -DMODULES=static
+
+      - name: Build
+        run: cmake --build "${{ github.workspace }}/build" --config RelWithDebInfo -j "$(($(nproc) + 2))"
+
+      - name: Install to staging
+        run: |
+          rm -rf "${ACORE_STAGING}"
+          cmake --install "${{ github.workspace }}/build" --config RelWithDebInfo
+          test -x "${ACORE_STAGING}/bin/authserver"
+          test -x "${ACORE_STAGING}/bin/worldserver"
+
+      - name: Install deploy helpers on host
+        run: |
+          install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
+          install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
+          mkdir -p /home/acore/src/azerothcore/apps
+          rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
+          rsync -a apps/deploy/ /home/acore/src/azerothcore/apps/deploy/
+
+      - name: Stop live services
+        run: /home/acore/deploy/restart-acore.sh stop
+
+      - name: Swap bin directory
+        run: |
+          set -euo pipefail
+          mkdir -p "${ACORE_PREFIX}"
+          staging_bin="${ACORE_STAGING}/bin"
+          live_bin="${ACORE_PREFIX}/bin"
+          new_bin="${ACORE_PREFIX}/bin.new"
+          old_bin="${ACORE_PREFIX}/bin.old"
+          rm -rf "${new_bin}"
+          mkdir -p "${new_bin}"
+          rsync -a --delete "${staging_bin}/" "${new_bin}/"
+          if [ -d "${live_bin}" ]; then
+            rm -rf "${old_bin}"
+            mv "${live_bin}" "${old_bin}"
+          fi
+          mv "${new_bin}" "${live_bin}"
+          # Keep dist configs available; never overwrite live *.conf
+          if [ -d "${ACORE_STAGING}/etc" ]; then
+            mkdir -p "${ACORE_PREFIX}/etc"
+            rsync -a --ignore-existing "${ACORE_STAGING}/etc/" "${ACORE_PREFIX}/etc/"
+          fi
+
+      - name: Start live services
+        run: /home/acore/deploy/restart-acore.sh start
