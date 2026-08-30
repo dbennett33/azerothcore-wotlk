@@ -41,20 +41,25 @@ jobs:
           fi
 
           vm_online=false
-          api_err=""
-          online_labels=""
+          listing=""
           set +e
-          online_labels="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
-            --jq '.runners[] | select(.status == "online") | .labels[].name' 2>&1)"
+          listing="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
+            --jq '.runners[] | [.name, .status, .busy, ([.labels[].name] | join(","))] | @tsv' 2>&1)"
           api_status=$?
           set -e
 
+          echo "Looking for online runner with label: ${label}"
+          echo "Runners:"
+          echo "${listing}"
+
           if [[ $api_status -ne 0 ]]; then
-            api_err="${online_labels}"
-            echo "Runner list API failed (${api_err})" >&2
-            echo "Add repo secret ACORE_WORKFLOW_PAT (repo scope) or grant actions:read." >&2
+            echo "Runner list API failed (${listing})" >&2
+            echo "Add repo secret ACORE_WORKFLOW_PAT (repo scope) if GITHUB_TOKEN cannot list runners." >&2
             echo "Falling back to VPS compile." >&2
-          elif grep -qxF "$label" <<< "${online_labels}"; then
+          elif awk -F '\t' -v want="$label" '
+              $2 == "online" && ("," $4 ",") ~ ("," want ",") { found=1 }
+              END { exit found ? 0 : 1 }
+            ' <<< "${listing}"; then
             vm_online=true
           fi
 
@@ -62,7 +67,8 @@ jobs:
             echo "Build VM online (label ${label})"
             echo 'labels=["self-hosted","linux","'"${label}"'"]' >> "$GITHUB_OUTPUT"
           else
-            echo "Build VM offline or unavailable; compiling on VPS (acore-vps)"
+            echo "No online runner with label ${label}; compiling on VPS (acore-vps)"
+            echo "Add label ${label} to the Debian VM runner in GitHub → Settings → Actions → Runners."
             echo 'labels=["self-hosted","linux","acore-vps"]' >> "$GITHUB_OUTPUT"
           fi
 
