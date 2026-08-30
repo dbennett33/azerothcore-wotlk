@@ -7,6 +7,13 @@ set -euo pipefail
 : "${ACORE_STAGING:?set ACORE_STAGING}"
 : "${ACORE_PREFIX:?set ACORE_PREFIX}"
 
+if [[ ! -f "${GITHUB_WORKSPACE}/CMakeLists.txt" ]]; then
+  echo "No CMakeLists.txt in ${GITHUB_WORKSPACE}." >&2
+  echo "The VPS runner workdir was likely left in sparse-checkout mode by deploy-vps." >&2
+  ls -la "${GITHUB_WORKSPACE}" >&2
+  exit 1
+fi
+
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
 

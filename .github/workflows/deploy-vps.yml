@@ -56,6 +56,8 @@ jobs:
       - name: Checkout deploy scripts
         uses: actions/checkout@v7
         with:
+          # Separate path so sparse-checkout cannot taint the vps-build workdir.
+          path: deploy-src
           sparse-checkout: |
             apps/deploy
             apps/startup-scripts
@@ -65,6 +67,7 @@ jobs:
         run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
 
       - name: Verify staged binaries
+        working-directory: deploy-src
         env:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: |
@@ -83,6 +86,7 @@ jobs:
           bash apps/deploy/debian12/verify-vps-binary.sh "${ACORE_STAGING}/bin/worldserver"
 
       - name: Install deploy helpers on host
+        working-directory: deploy-src
         run: |
           install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
           install -D -m 755 apps/deploy/debian12/graceful-stop-world.sh /home/acore/deploy/graceful-stop-world.sh

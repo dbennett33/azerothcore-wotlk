@@ -90,6 +90,9 @@ jobs:
       - name: Checkout AzerothCore
         uses: actions/checkout@v7
 
+      - name: Ensure full source tree
+        run: bash apps/deploy/debian12/ensure-full-checkout.sh
+
       - name: Resolve mod-playerbots ref
         id: playerbots
         run: |
@@ -181,6 +184,9 @@ jobs:
 
       - name: Checkout AzerothCore
         uses: actions/checkout@v7
+
+      - name: Ensure full source tree
+        run: bash apps/deploy/debian12/ensure-full-checkout.sh
 
       - name: Resolve mod-playerbots ref
         id: playerbots
