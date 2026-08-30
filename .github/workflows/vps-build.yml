@@ -28,22 +28,41 @@ jobs:
       - name: Prefer build VM when online, else VPS
         id: pick
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          ACORE_WORKFLOW_PAT: ${{ secrets.ACORE_WORKFLOW_PAT }}
           VM_LABEL: ${{ vars.BUILD_VM_RUNNER_LABEL }}
         run: |
           set -euo pipefail
           label="${VM_LABEL:-acore-build-vm}"
-          vm_online="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
-            --jq --arg want "$label" '
-              any(.runners[];
-                .status == "online" and any(.labels[]; .name == $want)
-              )
-            ')"
-          if [[ "$vm_online" == "true" ]]; then
+          if [[ -n "${ACORE_WORKFLOW_PAT:-}" ]]; then
+            export GH_TOKEN="${ACORE_WORKFLOW_PAT}"
+          else
+            export GH_TOKEN="${GITHUB_TOKEN}"
+          fi
+
+          vm_online=false
+          api_err=""
+          online_labels=""
+          set +e
+          online_labels="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
+            --jq '.runners[] | select(.status == "online") | .labels[].name' 2>&1)"
+          api_status=$?
+          set -e
+
+          if [[ $api_status -ne 0 ]]; then
+            api_err="${online_labels}"
+            echo "Runner list API failed (${api_err})" >&2
+            echo "Add repo secret ACORE_WORKFLOW_PAT (repo scope) or grant actions:read." >&2
+            echo "Falling back to VPS compile." >&2
+          elif grep -qxF "$label" <<< "${online_labels}"; then
+            vm_online=true
+          fi
+
+          if [[ "$vm_online" == true ]]; then
             echo "Build VM online (label ${label})"
             echo 'labels=["self-hosted","linux","'"${label}"'"]' >> "$GITHUB_OUTPUT"
           else
-            echo "Build VM offline; compiling on VPS (acore-vps)"
+            echo "Build VM offline or unavailable; compiling on VPS (acore-vps)"
             echo 'labels=["self-hosted","linux","acore-vps"]' >> "$GITHUB_OUTPUT"
           fi
 

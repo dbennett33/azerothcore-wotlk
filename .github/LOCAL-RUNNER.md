@@ -18,6 +18,8 @@ Do **not** put `acore-build` on both machines. The workflow picks the target bef
 
 Optional repo **variable** `BUILD_VM_RUNNER_LABEL` if you use a different VM label (default `acore-build-vm`).
 
+Repo **secret** `ACORE_WORKFLOW_PAT` (classic PAT with `repo` scope, or fine-grained with Actions read on this repo) lets `pick-runner` list self-hosted runner status. Without it, `GITHUB_TOKEN` may be denied and the workflow always falls back to the VPS.
+
 ## Install build VM runner
 
 ```bash
