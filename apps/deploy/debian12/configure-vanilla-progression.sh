@@ -34,8 +34,8 @@ else
   world_db="${WORLD_DB:-acore_world}"
   character_db="${CHARACTER_DB:-acore_characters}"
   playerbots_db="${PLAYERBOTS_DB:-acore_playerbots}"
-  min_bots="${MIN_RANDOM_BOTS:-500}"
-  max_bots="${MAX_RANDOM_BOTS:-500}"
+  min_bots="${MIN_RANDOM_BOTS:-1000}"
+  max_bots="${MAX_RANDOM_BOTS:-1000}"
 fi
 
 db_info() {
@@ -99,8 +99,21 @@ if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.MaxRandomBots" "$max_bots"
   set_kv "$PB_CONF" "AiPlayerbot.RandomBotAccountPrefix" "RNDBOT"
   set_kv "$PB_CONF" "AiPlayerbot.RandomBotMaps" "0,1"
+  set_kv "$PB_CONF" "AiPlayerbot.RandomBotMinLevel" "1"
   set_kv "$PB_CONF" "AiPlayerbot.RandomBotMaxLevel" "60"
-  set_kv "$PB_CONF" "AiPlayerbot.RandombotStartingLevel" "60"
+  # 10% spawn at 60, 90% at 1 and level. DisableRandomLevels would force everyone to StartingLevel.
+  set_kv "$PB_CONF" "AiPlayerbot.DisableRandomLevels" "0"
+  set_kv "$PB_CONF" "AiPlayerbot.RandombotStartingLevel" "1"
+  set_kv "$PB_CONF" "AiPlayerbot.RandomBotMaxLevelChance" "0.1"
+  set_kv "$PB_CONF" "AiPlayerbot.RandomBotMinLevelChance" "0.9"
+  set_kv "$PB_CONF" "AiPlayerbot.RandomBotFixedLevel" "0"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.Enabled" "1"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.MaxLevel" "60"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.ResetToLevel" "1"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.ResetChance" "90"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.RestrictTimePlayed" "1"
+  set_kv "$PB_CONF" "AiPlayerbot.ResetBotLevel.MinTimePlayed" "86400"
+  set_kv "$PB_CONF" "AiPlayerbot.AutoDoQuests" "1"
   set_kv "$PB_CONF" "AiPlayerbot.DisableDeathKnightLogin" "1"
   set_kv "$PB_CONF" "AiPlayerbot.LimitEnchantExpansion" "1"
   set_kv "$PB_CONF" "AiPlayerbot.LimitGearExpansion" "1"

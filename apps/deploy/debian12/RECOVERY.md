@@ -12,7 +12,7 @@ If the VPS is lost, you can rebuild from **git + one offsite backup** + client d
 | Bootstrap / units / restart | `bootstrap.md`, `setup-systemd-units.sh`, `restart-acore.sh` |
 | Backup & restore scripts | `backup-acore.sh`, `restore-acore.sh` |
 
-After deploy, **vanilla locks** (expansion 0, cap 60, no DK, bot maps 0,1, IP module tuning, SOAP on localhost, 500 bots, etc.) are enforced from `configure-vanilla-progression.sh` — you do not need to remember every knob.
+After deploy, **vanilla locks** (expansion 0, cap 60, no DK, bot maps 0,1, IP module tuning, SOAP on localhost, 1000 live bots with ~10% at 60, etc.) are enforced from `configure-vanilla-progression.sh` — you do not need to remember every knob.
 
 ## What is **not** in git (must backup or redo once)
 
