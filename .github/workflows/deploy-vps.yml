@@ -1,10 +1,13 @@
 name: deploy-vps
 
+# Promote the last vps-build output from server-staging to the live server prefix.
+# Does not compile — run vps-build first (automatic on push to Playerbot).
+
 on:
   workflow_dispatch:
     inputs:
-      git_ref:
-        description: Git ref to build (empty = the branch selected in the UI)
+      git_sha:
+        description: Deploy binaries built for this commit (empty = whatever is in server-staging now)
         required: false
         default: ""
 
@@ -14,6 +17,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   ACORE_PREFIX: /home/acore/server
@@ -24,59 +28,47 @@ env:
 jobs:
   deploy:
     runs-on: [self-hosted, linux, acore-vps]
-    name: build-and-restart
+    name: promote-and-restart
     steps:
-      - name: Checkout AzerothCore
+      - name: Checkout deploy scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.git_ref != '' && inputs.git_ref || github.ref }}
-
-      - name: Resolve Playerbot module ref
-        id: playerbots
-        run: |
-          branch="$(git rev-parse --abbrev-ref HEAD)"
-          if [ "$branch" = "HEAD" ]; then
-            branch="${GITHUB_REF_NAME}"
-          fi
-          if [ "$branch" = "Playerbot" ]; then
-            echo "ref=master" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=test-staging" >> "$GITHUB_OUTPUT"
-          fi
-          echo "core_branch=$branch" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout Playerbot module
-        uses: actions/checkout@v7
-        with:
-          repository: mod-playerbots/mod-playerbots
-          ref: ${{ steps.playerbots.outputs.ref }}
-          path: modules/mod-playerbots
+          sparse-checkout: |
+            apps/deploy
+            apps/startup-scripts
+          sparse-checkout-cone-mode: false
 
       - name: User systemd environment
-        run: |
-          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+        run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
 
-      - name: Configure
+      - name: Restore staging from artifact
+        if: inputs.git_sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}/build" \
-            -DCMAKE_C_COMPILER="${CC}" \
-            -DCMAKE_CXX_COMPILER="${CXX}" \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
-            -DAPPS_BUILD=all \
-            -DTOOLS_BUILD=none \
-            -DSCRIPTS=static \
-            -DMODULES=static
-
-      - name: Build
-        run: cmake --build "${{ github.workspace }}/build" --config RelWithDebInfo -j "$(($(nproc) + 2))"
-
-      - name: Install to staging
-        run: |
+          set -euo pipefail
+          name="acore-staging-${{ inputs.git_sha }}"
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts" \
+            --paginate -q ".artifacts[] | select(.name==\"${name}\" and .expired==false) | .id" | head -1)"
+          if [ -z "$run_id" ]; then
+            echo "No artifact named ${name}. Wait for vps-build on that commit or leave git_sha empty."
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${run_id}/zip" > "${RUNNER_TEMP}/staging.zip"
           rm -rf "${ACORE_STAGING}"
-          cmake --install "${{ github.workspace }}/build" --config RelWithDebInfo
-          test -x "${ACORE_STAGING}/bin/authserver"
-          test -x "${ACORE_STAGING}/bin/worldserver"
+          mkdir -p "${ACORE_STAGING}"
+          unzip -q "${RUNNER_TEMP}/staging.zip" -d "${ACORE_STAGING}"
+
+      - name: Verify staged binaries
+        run: |
+          if [ ! -x "${ACORE_STAGING}/bin/worldserver" ] || [ ! -x "${ACORE_STAGING}/bin/authserver" ]; then
+            echo "Missing staged binaries under ${ACORE_STAGING}."
+            echo "Push/merge to Playerbot and wait for vps-build, or set git_sha to a built commit."
+            exit 1
+          fi
+          if [ -f "${ACORE_STAGING}/.build-info" ]; then
+            cat "${ACORE_STAGING}/.build-info"
+          fi
 
       - name: Install deploy helpers on host
         run: |
@@ -105,7 +97,6 @@ jobs:
             mv "${live_bin}" "${old_bin}"
           fi
           mv "${new_bin}" "${live_bin}"
-          # Keep dist configs available; never overwrite live *.conf
           if [ -d "${ACORE_STAGING}/etc" ]; then
             mkdir -p "${ACORE_PREFIX}/etc"
             rsync -a --ignore-existing "${ACORE_STAGING}/etc/" "${ACORE_PREFIX}/etc/"

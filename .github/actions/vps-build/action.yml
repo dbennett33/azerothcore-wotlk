@@ -1,0 +1,29 @@
+name: vps-build
+description: Configure, compile, and install AzerothCore to ACORE_STAGING on the VPS runner
+runs:
+  using: composite
+  steps:
+    - name: Configure
+      shell: bash
+      run: |
+        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" \
+          -DCMAKE_C_COMPILER="${CC}" \
+          -DCMAKE_CXX_COMPILER="${CXX}" \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
+          -DAPPS_BUILD=all \
+          -DTOOLS_BUILD=none \
+          -DSCRIPTS=static \
+          -DMODULES=static
+
+    - name: Build
+      shell: bash
+      run: cmake --build "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo -j "$(($(nproc) + 2))"
+
+    - name: Install to staging
+      shell: bash
+      run: |
+        rm -rf "${ACORE_STAGING}"
+        cmake --install "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo
+        test -x "${ACORE_STAGING}/bin/authserver"
+        test -x "${ACORE_STAGING}/bin/worldserver"

@@ -1,0 +1,65 @@
+name: vps-build
+
+# Compile on the VPS when Playerbot is updated. No pull_request trigger — fork PRs
+# never run on the self-hosted runner. Deploy to live is manual (deploy-vps).
+
+on:
+  push:
+    branches:
+      - Playerbot
+
+concurrency:
+  group: vps-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ACORE_STAGING: /home/acore/server-staging
+  CC: gcc
+  CXX: g++
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, acore-vps]
+    name: compile-and-stage
+    steps:
+      - name: Checkout AzerothCore
+        uses: actions/checkout@v7
+
+      - name: Resolve Playerbot module ref
+        id: playerbots
+        run: |
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          if [ "$branch" = "Playerbot" ]; then
+            echo "ref=master" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=test-staging" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout Playerbot module
+        uses: actions/checkout@v7
+        with:
+          repository: mod-playerbots/mod-playerbots
+          ref: ${{ steps.playerbots.outputs.ref }}
+          path: modules/mod-playerbots
+
+      - uses: ./.github/actions/vps-build
+
+      - name: Record build metadata on host
+        run: |
+          {
+            echo "sha=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF}"
+            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > "${ACORE_STAGING}/.build-info"
+
+      - name: Upload staging artifact
+        run: tar czf "${RUNNER_TEMP}/acore-staging.tar.gz" -C "${ACORE_STAGING}" bin etc .build-info
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acore-staging-${{ github.sha }}
+          path: ${{ runner.temp }}/acore-staging.tar.gz
+          retention-days: 30

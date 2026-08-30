@@ -4,6 +4,10 @@ One-time setup. Do **not** put MySQL install or package setup in GitHub Actions.
 The deploy workflow ([`.github/workflows/deploy-vps.yml`](../../../.github/workflows/deploy-vps.yml))
 only builds, swaps `bin/`, and restarts systemd user units.
 
+**Self-hosted runner security:** `vps-build` runs only on **push to `Playerbot`** (not on
+pull requests). `deploy-vps` is **`workflow_dispatch` only**. Fork PRs never touch the VPS runner.
+Use branch protection on `Playerbot` so only you merge deployable commits.
+
 Paths used below (keep in sync with the workflow `env:` block):
 
 - User: `acore`
