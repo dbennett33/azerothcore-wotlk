@@ -7,6 +7,10 @@ set -euo pipefail
 AUTH_UNIT="${ACORE_AUTH_UNIT:-auth.service}"
 WORLD_UNIT="${ACORE_WORLD_UNIT:-world.service}"
 WORLD_TEST_UNIT="${ACORE_WORLD_TEST_UNIT:-world-test.service}"
+LIVE_PREFIX="${LIVE_PREFIX:-/home/acore/server}"
+TEST_PREFIX="${TEST_PREFIX:-/home/acore/server-test}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GRACEFUL_STOP="${SCRIPT_DIR}/graceful-stop-world.sh"
 
 if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
   export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -26,6 +30,25 @@ stop_one() {
   fi
 }
 
+graceful_stop_prefix() {
+  local prefix="$1"
+  if [[ -x "$GRACEFUL_STOP" ]]; then
+    ACORE_PREFIX="$prefix" bash "$GRACEFUL_STOP" || true
+  fi
+}
+
+stop_world_unit() {
+  local unit="$1"
+  local prefix="$2"
+  graceful_stop_prefix "$prefix"
+  stop_one "$unit"
+  # Legacy units from older bootstrap (worldserver.service vs world.service).
+  case "$unit" in
+    world.service) stop_one "worldserver.service" ;;
+    world-test.service) stop_one "worldserver-test.service" ;;
+  esac
+}
+
 start_one() {
   local unit="$1"
   if unit_exists "$unit"; then
@@ -38,18 +61,18 @@ start_one() {
 }
 
 stop_live() {
-  stop_one "$WORLD_UNIT"
+  stop_world_unit "$WORLD_UNIT" "$LIVE_PREFIX"
   stop_one "$AUTH_UNIT"
+  stop_one "authserver.service"
 }
 
 stop_test() {
-  stop_one "$WORLD_TEST_UNIT"
+  stop_world_unit "$WORLD_TEST_UNIT" "$TEST_PREFIX"
 }
 
 stop_all() {
-  stop_one "$WORLD_TEST_UNIT"
-  stop_one "$WORLD_UNIT"
-  stop_one "$AUTH_UNIT"
+  stop_test
+  stop_live
 }
 
 start_live() {

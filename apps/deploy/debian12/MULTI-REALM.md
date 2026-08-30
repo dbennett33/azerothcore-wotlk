@@ -12,12 +12,17 @@ Players use the **same accounts** (`acore_auth`). Characters and world data are 
 ## CI flow
 
 ```
-push Playerbot  → vps-build  → /home/acore/server-staging
-push dev        → vps-build  → /home/acore/server-staging-test
+dev  → PR → Playerbot   (no direct push to Playerbot)
 
-manual deploy-vps (target=live)  → promote staging → /home/acore/server + restart auth + world
-manual deploy-vps (target=test)  → promote staging-test → /home/acore/server-test + restart world-test only
+push Playerbot  → vps-build  → server-staging        (no deploy)
+push dev        → vps-build  → server-staging-test → auto deploy test realm
+
+manual deploy-vps (target=live)  → promote staging → server + restart auth + world
 ```
+
+`vps-build` checks out your **mod-playerbots** fork (`master` on `Playerbot`, `dev` on `dev`).
+Override with repo variable `MOD_PLAYERBOTS_REPO` if the module lives under another owner.
+Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see `.github/BRANCHING.md`).
 
 Builds use isolated cmake trees: `/home/acore/build/live` and `/home/acore/build/test`.
 
@@ -88,7 +93,23 @@ bash /home/acore/deploy/setup-systemd-units.sh
 
 Realmlist at login shows **Live** and **Test** (same host IP, ports 8085 / 8086). ChromieCraft: set realmlist to server IP; pick realm at character screen.
 
-## Config policy
+## Deploy / restart
+
+`deploy-vps` and `restart-acore.sh` **gracefully stop worldserver** (SIGTERM to the
+`worldserver` process, wait up to 120s for saves) before `systemctl stop`. That avoids
+rollback from killing the bash/run-engine wrapper only.
+
+If you stop manually, use:
+
+```bash
+ACORE_PREFIX=/home/acore/server /home/acore/deploy/graceful-stop-world.sh
+# or for test:
+ACORE_PREFIX=/home/acore/server-test /home/acore/deploy/graceful-stop-world.sh
+```
+
+**Player saves:** default `PlayerSaveInterval = 900000` (15 minutes). Even with a clean
+shutdown you only lose progress since the last periodic save if shutdown fails. For less
+rollback on crashes, lower it in `worldserver.conf` (e.g. `300000` = 5 min).
 
 `configure-vanilla-progression.sh` runs on **both** deploys (same vanilla locks; override with test-specific keys later if needed).
 

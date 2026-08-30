@@ -1,31 +1,256 @@
 name: vps-build
 
-# Compile on the VPS when a deploy branch is updated. Output stays on the host at
-# ACORE_STAGING (no GitHub artifact upload). Deploy is manual (deploy-vps).
+# Debian 12 build VM when online (acore-build-vm); otherwise compile on VPS (acore-vps).
+# VM builds rsync staging to the VPS; deploy always runs on acore-vps.
 
 on:
   push:
     branches:
       - Playerbot
       - dev
-
-concurrency:
-  group: vps-build-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   CC: gcc
   CXX: g++
 
 jobs:
-  build:
-    runs-on: [self-hosted, linux, acore-vps]
-    name: compile-and-stage
+  pick-runner:
+    runs-on: ubuntu-latest
+    name: pick-build-runner
+    outputs:
+      labels: ${{ steps.pick.outputs.labels }}
     steps:
+      - name: Prefer build VM when online, else VPS
+        id: pick
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACORE_WORKFLOW_PAT: ${{ secrets.ACORE_WORKFLOW_PAT }}
+          VM_LABEL: ${{ vars.BUILD_VM_RUNNER_LABEL }}
+        run: |
+          set -euo pipefail
+          label="${VM_LABEL:-acore-build-vm}"
+          if [[ -n "${ACORE_WORKFLOW_PAT:-}" ]]; then
+            export GH_TOKEN="${ACORE_WORKFLOW_PAT}"
+          else
+            export GH_TOKEN="${GITHUB_TOKEN}"
+          fi
+
+          vm_online=false
+          listing=""
+          set +e
+          listing="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
+            --jq '.runners[] | [.name, .status, .busy, ([.labels[].name] | join(","))] | @tsv' 2>&1)"
+          api_status=$?
+          set -e
+
+          echo "Looking for online runner with label: ${label}"
+          echo "Runners:"
+          echo "${listing}"
+
+          if [[ $api_status -ne 0 ]]; then
+            echo "Runner list API failed (${listing})" >&2
+            echo "Add repo secret ACORE_WORKFLOW_PAT (repo scope) if GITHUB_TOKEN cannot list runners." >&2
+            echo "Falling back to VPS compile." >&2
+          elif awk -F '\t' -v want="$label" '
+              $2 == "online" && ("," $4 ",") ~ ("," want ",") { found=1 }
+              END { exit found ? 0 : 1 }
+            ' <<< "${listing}"; then
+            vm_online=true
+          fi
+
+          if [[ "$vm_online" == true ]]; then
+            echo "Build VM online (label ${label})"
+            echo 'labels=["self-hosted","linux","'"${label}"'"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "No online runner with label ${label}; compiling on VPS (acore-vps)"
+            echo "Add label ${label} to the Debian VM runner in GitHub → Settings → Actions → Runners."
+            echo 'labels=["self-hosted","linux","acore-vps"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.labels) }}
+    name: compile-and-stage
+    outputs:
+      is_vps: ${{ steps.runner.outputs.is_vps }}
+      remote_staged: ${{ steps.sync.outputs.remote_staged || 'false' }}
+    concurrency:
+      group: vps-build-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref == 'refs/heads/dev' }}
+    steps:
+      - name: Detect runner environment
+        id: runner
+        run: |
+          if [[ -d /home/acore/server && "$(id -un)" == "acore" ]]; then
+            echo "is_vps=true" >> "$GITHUB_OUTPUT"
+            echo "Runner: VPS (acore)"
+          else
+            echo "is_vps=false" >> "$GITHUB_OUTPUT"
+            echo "Runner: local build host ($(hostname))"
+          fi
+
       - name: Resolve paths for branch
+        id: paths
+        env:
+          IS_VPS: ${{ steps.runner.outputs.is_vps }}
+        run: |
+          branch="${GITHUB_REF#refs/heads/}"
+          if [[ "$IS_VPS" == "true" ]]; then
+            case "$branch" in
+              Playerbot)
+                echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                echo "build_dir=/home/acore/build/live" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                ;;
+              dev)
+                echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                echo "build_dir=/home/acore/build/test" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "Unsupported branch: $branch" >&2
+                exit 1
+                ;;
+            esac
+          else
+            # Keep local pool artifacts under ~/.cache (not $HOME root clutter).
+            local_root="${HOME}/.cache/azerothcore"
+            mkdir -p "${local_root}"
+            case "$branch" in
+              Playerbot)
+                echo "acore_prefix=${local_root}/prefix-live" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=${local_root}/staging" >> "$GITHUB_OUTPUT"
+                echo "build_dir=${local_root}/build/live" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                ;;
+              dev)
+                echo "acore_prefix=${local_root}/prefix-test" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=${local_root}/staging-test" >> "$GITHUB_OUTPUT"
+                echo "build_dir=${local_root}/build/test" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "Unsupported branch: $branch" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+      - name: Checkout AzerothCore
+        uses: actions/checkout@v7
+
+      - name: Ensure full source tree
+        run: bash apps/deploy/debian12/ensure-full-checkout.sh
+
+      - name: Resolve mod-playerbots ref
+        id: playerbots
+        run: |
+          branch="${GITHUB_REF#refs/heads/}"
+          if [ "$branch" = "Playerbot" ]; then
+            echo "ref=master" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve mod-playerbots repository
+        id: mod_repo
+        run: |
+          repo="${{ vars.MOD_PLAYERBOTS_REPO }}"
+          if [[ -z "$repo" ]]; then
+            repo="${GITHUB_REPOSITORY_OWNER}/mod-playerbots"
+          fi
+          echo "repository=${repo}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout mod-playerbots
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ steps.mod_repo.outputs.repository }}
+          ref: ${{ steps.playerbots.outputs.ref }}
+          path: modules/mod-playerbots
+          clean: false
+
+      - name: Checkout mod-individual-progression
+        uses: actions/checkout@v7
+        with:
+          repository: ZhengPeiRu21/mod-individual-progression
+          ref: master
+          path: modules/mod-individual-progression
+          clean: false
+
+      - name: Checkout extra modules (enchanter, services, dungeon-clear)
+        run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
+
+      - name: Ensure test prefix etc exists (dev builds on VPS)
+        if: steps.runner.outputs.is_vps == 'true' && steps.paths.outputs.acore_prefix == '/home/acore/server-test'
+        run: |
+          if [[ ! -d /home/acore/server-test/etc ]]; then
+            bash apps/deploy/debian12/init-test-prefix.sh
+          fi
+
+      - name: Configure, compile, and install
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+          BUILD_DIR: ${{ steps.paths.outputs.build_dir }}
+        run: bash apps/deploy/debian12/vps-compile-install.sh
+
+      - name: Record build metadata on host
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+        run: |
+          {
+            echo "sha=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF}"
+            echo "branch=${GITHUB_REF#refs/heads/}"
+            echo "playerbots_ref=${{ steps.playerbots.outputs.ref }}"
+            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "is_vps=${{ steps.runner.outputs.is_vps }}"
+          } > "${ACORE_STAGING}/.build-info"
+
+      - name: Sync deployable staging to VPS
+        id: sync
+        if: steps.runner.outputs.is_vps != 'true'
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+          REMOTE_STAGING: ${{ steps.paths.outputs.remote_staging }}
+          VPS_HOST: ${{ vars.VPS_SSH_HOST }}
+          VPS_SSH_HOST_SECRET: ${{ secrets.VPS_SSH_HOST }}
+          VPS_RUNNER_SSH_KEY: ${{ secrets.VPS_RUNNER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          echo "remote_staged=false" >> "$GITHUB_OUTPUT"
+          bash apps/deploy/debian12/verify-vps-binary.sh "${ACORE_STAGING}/bin/worldserver"
+          if [[ -z "${VPS_RUNNER_SSH_KEY:-}" ]]; then
+            echo "VPS_RUNNER_SSH_KEY secret required to rsync staging from build VM" >&2
+            exit 1
+          fi
+          KEY_FILE="${RUNNER_TEMP}/vps-rsync-key"
+          printf '%s\n' "$VPS_RUNNER_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          VPS_HOST="${VPS_HOST:-${VPS_SSH_HOST_SECRET:-}}"
+          if [[ -z "${VPS_HOST:-}" ]]; then
+            echo "Set VPS_SSH_HOST variable or secret" >&2
+            exit 1
+          fi
+          ACORE_STAGING="${ACORE_STAGING}" REMOTE_STAGING="${REMOTE_STAGING}" \
+            VPS_HOST="${VPS_HOST}" SSH_KEY_PATH="${KEY_FILE}" \
+            bash apps/deploy/debian12/rsync-staging-to-vps.sh
+          echo "remote_staged=true" >> "$GITHUB_OUTPUT"
+
+  vps-stage:
+    needs: build
+    if: needs.build.outputs.is_vps != 'true' && needs.build.outputs.remote_staged != 'true'
+    runs-on: [self-hosted, linux, acore-vps]
+    name: stage-on-vps
+    steps:
+      - name: Resolve VPS staging paths
         id: paths
         run: |
           branch="${GITHUB_REF#refs/heads/}"
@@ -49,44 +274,62 @@ jobs:
       - name: Checkout AzerothCore
         uses: actions/checkout@v7
 
-      - name: Resolve Playerbot module ref
+      - name: Ensure full source tree
+        run: bash apps/deploy/debian12/ensure-full-checkout.sh
+
+      - name: Resolve mod-playerbots ref
         id: playerbots
         run: |
           branch="${GITHUB_REF#refs/heads/}"
           if [ "$branch" = "Playerbot" ]; then
             echo "ref=master" >> "$GITHUB_OUTPUT"
           else
-            echo "ref=master" >> "$GITHUB_OUTPUT"
+            echo "ref=dev" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout Playerbot module
+      - name: Resolve mod-playerbots repository
+        id: mod_repo
+        run: |
+          repo="${{ vars.MOD_PLAYERBOTS_REPO }}"
+          if [[ -z "$repo" ]]; then
+            repo="${GITHUB_REPOSITORY_OWNER}/mod-playerbots"
+          fi
+          echo "repository=${repo}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout mod-playerbots
         uses: actions/checkout@v7
         with:
-          repository: mod-playerbots/mod-playerbots
+          repository: ${{ steps.mod_repo.outputs.repository }}
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
+          clean: false
 
-      - name: Checkout Individual Progression module
+      - name: Checkout mod-individual-progression
         uses: actions/checkout@v7
         with:
           repository: ZhengPeiRu21/mod-individual-progression
           ref: master
           path: modules/mod-individual-progression
+          clean: false
 
-      - name: Ensure test prefix etc exists (dev builds)
+      - name: Checkout extra modules (enchanter, services, dungeon-clear)
+        run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
+
+      - name: Ensure test prefix etc exists
         if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'
         run: |
           if [[ ! -d /home/acore/server-test/etc ]]; then
             bash apps/deploy/debian12/init-test-prefix.sh
           fi
 
-      - uses: ./.github/actions/vps-build
+      - name: Configure, compile, and install
         env:
           ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
           BUILD_DIR: ${{ steps.paths.outputs.build_dir }}
+        run: bash apps/deploy/debian12/vps-compile-install.sh
 
-      - name: Record build metadata on host
+      - name: Record build metadata on VPS staging
         env:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: |
@@ -94,5 +337,20 @@ jobs:
             echo "sha=${GITHUB_SHA}"
             echo "ref=${GITHUB_REF}"
             echo "branch=${GITHUB_REF#refs/heads/}"
+            echo "playerbots_ref=${{ steps.playerbots.outputs.ref }}"
             echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "is_vps=true"
+            echo "staged_after_local_compile=true"
           } > "${ACORE_STAGING}/.build-info"
+
+  deploy-test:
+    needs: [build, vps-stage]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/dev' &&
+      needs.build.result == 'success' &&
+      (needs.vps-stage.result == 'success' || needs.vps-stage.result == 'skipped')
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      target: test
+    secrets: inherit

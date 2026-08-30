@@ -1,6 +1,6 @@
 name: deploy-vps
 
-# Promote last vps-build output on this host to live or test. Does not compile.
+# Promote staged binaries on the VPS. Always runs on acore-vps (never local pool runners).
 
 on:
   workflow_dispatch:
@@ -12,6 +12,12 @@ on:
           - live
           - test
         default: live
+  workflow_call:
+    inputs:
+      target:
+        description: Deploy environment (live or test)
+        required: true
+        type: string
 
 concurrency:
   group: deploy-vps-${{ inputs.target }}
@@ -50,6 +56,8 @@ jobs:
       - name: Checkout deploy scripts
         uses: actions/checkout@v7
         with:
+          # Separate path so sparse-checkout cannot taint the vps-build workdir.
+          path: deploy-src
           sparse-checkout: |
             apps/deploy
             apps/startup-scripts
@@ -59,6 +67,7 @@ jobs:
         run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
 
       - name: Verify staged binaries
+        working-directory: deploy-src
         env:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: |
@@ -74,10 +83,15 @@ jobs:
           if [ -f "${ACORE_STAGING}/.build-info" ]; then
             cat "${ACORE_STAGING}/.build-info"
           fi
+          bash apps/deploy/debian12/verify-vps-binary.sh "${ACORE_STAGING}/bin/worldserver"
 
       - name: Install deploy helpers on host
+        working-directory: deploy-src
         run: |
           install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
+          install -D -m 755 apps/deploy/debian12/graceful-stop-world.sh /home/acore/deploy/graceful-stop-world.sh
+          install -D -m 755 apps/deploy/debian12/warn-before-world-stop.sh /home/acore/deploy/warn-before-world-stop.sh
+          install -D -m 755 apps/deploy/debian12/verify-vps-binary.sh /home/acore/deploy/verify-vps-binary.sh
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
           install -D -m 755 apps/deploy/debian12/configure-vanilla-progression.sh /home/acore/deploy/configure-vanilla-progression.sh
           install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
@@ -91,16 +105,25 @@ jobs:
           rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
           rsync -a apps/deploy/ /home/acore/src/azerothcore/apps/deploy/
 
+      - name: Sync extra module SQL sources
+        run: |
+          set -euo pipefail
+          mkdir -p /home/acore/src/azerothcore-wotlk/modules
+          bash deploy-src/apps/deploy/debian12/clone-extra-modules.sh \
+            /home/acore/src/azerothcore-wotlk/modules
+
       - name: Clone mod-individual-progression for optional SQL/DBC
         run: |
           set -euo pipefail
           dest=/home/acore/src/mod-individual-progression
+          repo=https://github.com/ZhengPeiRu21/mod-individual-progression.git
+          branch=master
           if [[ ! -d "$dest/.git" ]]; then
-            git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$dest"
+            git clone --depth 1 --branch "$branch" "$repo" "$dest"
           else
-            git -C "$dest" fetch --depth 1 origin master
-            git -C "$dest" checkout -f master
-            git -C "$dest" pull --ff-only origin master
+            git -C "$dest" fetch --depth 1 origin "$branch"
+            git -C "$dest" checkout -f "$branch"
+            git -C "$dest" reset --hard "origin/$branch"
           fi
 
       - name: Ensure test prefix layout
@@ -118,6 +141,15 @@ jobs:
           set -euo pipefail
           export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
           /home/acore/deploy/apply-vanilla-optional.sh || true
+
+      - name: Warn players before restart
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          DEPLOY_WARN_SECS: "60"
+          DEPLOY_WARN_MESSAGE: Server restart for deployment update
+          ACORE_SOAP_USER: ${{ secrets.ACORE_SOAP_USER }}
+          ACORE_SOAP_PASS: ${{ secrets.ACORE_SOAP_PASS }}
+        run: /home/acore/deploy/warn-before-world-stop.sh
 
       - name: Stop services
         run: /home/acore/deploy/restart-acore.sh stop "${{ inputs.target }}"
