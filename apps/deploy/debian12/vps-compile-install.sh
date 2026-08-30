@@ -34,6 +34,30 @@ fi
 
 echo "CONF_DIR=${CONF_DIR_VALUE} (install prefix=${ACORE_STAGING})"
 
+# On UNIX, cmake install(FILES ...) writes *.conf.dist into CONF_DIR. When the build VM
+# embeds the VPS etc path in binaries, that same path must still exist locally for install.
+ensure_conf_dir_for_install() {
+  local modules_dir="${CONF_DIR_VALUE}/modules"
+  if [[ -d "${modules_dir}" ]]; then
+    return 0
+  fi
+  echo "Creating CONF_DIR install tree at ${modules_dir}"
+  if mkdir -p "${modules_dir}"; then
+    return 0
+  fi
+  if sudo -n install -d -o "$(id -un)" -g "$(id -gn)" -m 755 "${modules_dir}" 2>/dev/null; then
+    return 0
+  fi
+  echo "ERROR: cannot create ${modules_dir} (cmake install needs a writable CONF_DIR)." >&2
+  echo "On build VM run:" >&2
+  echo "  sudo install -d -o $(id -un) -g $(id -gn) ${modules_dir}" >&2
+  exit 1
+}
+
+if [[ "${CONF_DIR_VALUE}" == /home/acore/* ]] && [[ ! -d /home/acore/server || "$(id -un)" != "acore" ]]; then
+  ensure_conf_dir_for_install
+fi
+
 cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
   -DCMAKE_C_COMPILER="${CC}" \
   -DCMAKE_CXX_COMPILER="${CXX}" \
