@@ -1,7 +1,7 @@
 name: vps-build
 
-# Compile on the VPS when Playerbot is updated. No pull_request trigger — fork PRs
-# never run on the self-hosted runner. Deploy to live is manual (deploy-vps).
+# Compile on the VPS when Playerbot is updated. Output stays on the host at
+# ACORE_STAGING (no GitHub artifact upload). Deploy to live is manual (deploy-vps).
 
 on:
   push:
@@ -16,6 +16,7 @@ permissions:
   contents: read
 
 env:
+  ACORE_PREFIX: /home/acore/server
   ACORE_STAGING: /home/acore/server-staging
   CC: gcc
   CXX: g++
@@ -45,6 +46,13 @@ jobs:
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
 
+      - name: Checkout Individual Progression module
+        uses: actions/checkout@v7
+        with:
+          repository: ZhengPeiRu21/mod-individual-progression
+          ref: master
+          path: modules/mod-individual-progression
+
       - uses: ./.github/actions/vps-build
 
       - name: Record build metadata on host
@@ -54,12 +62,3 @@ jobs:
             echo "ref=${GITHUB_REF}"
             echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > "${ACORE_STAGING}/.build-info"
-
-      - name: Upload staging artifact
-        run: tar czf "${RUNNER_TEMP}/acore-staging.tar.gz" -C "${ACORE_STAGING}" bin etc .build-info
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: acore-staging-${{ github.sha }}
-          path: ${{ runner.temp }}/acore-staging.tar.gz
-          retention-days: 30

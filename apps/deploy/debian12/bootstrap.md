@@ -64,10 +64,12 @@ Create empty databases and a dedicated user (change the password):
 CREATE DATABASE acore_auth DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE acore_characters DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE acore_world DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE acore_playerbots DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'acore'@'localhost' IDENTIFIED BY 'CHANGE_ME';
 GRANT ALL PRIVILEGES ON acore_auth.* TO 'acore'@'localhost';
 GRANT ALL PRIVILEGES ON acore_characters.* TO 'acore'@'localhost';
 GRANT ALL PRIVILEGES ON acore_world.* TO 'acore'@'localhost';
+GRANT ALL PRIVILEGES ON acore_playerbots.* TO 'acore'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -94,6 +96,12 @@ for dist in /home/acore/server/etc/*.conf.dist; do
     cp -v "$dist" "$conf"
   fi
 done
+for dist in /home/acore/server/etc/modules/*.conf.dist; do
+  conf="${dist%.dist}"
+  if [ ! -f "$conf" ]; then
+    cp -v "$dist" "$conf"
+  fi
+done
 ```
 
 Edit `/home/acore/server/etc/authserver.conf` and `worldserver.conf`:
@@ -102,6 +110,14 @@ Edit `/home/acore/server/etc/authserver.conf` and `worldserver.conf`:
   (`127.0.0.1;3306;acore;CHANGE_ME;acore_auth` and the matching DB names)
 - `DataDir = "/home/acore/server/data"`
 - `LogsDir = "/home/acore/server/logs"`
+
+**Playerbots** (this branch builds with `mod-playerbots`):
+
+- `PlayerbotsDatabaseInfo` lives in `/home/acore/server/etc/modules/playerbots.conf`
+  (copy from `playerbots.conf.dist`; defaults to `acore_playerbots`).
+- Binaries load module configs from the **live** `etc/` path (`CONF_DIR` is set at
+  compile time to `/home/acore/server/etc` in `vps-build`, not staging).
+- First world start populates `acore_playerbots` from SQL updates automatically.
 
 The deploy job rsyncs **`bin/` only**. It will not replace these files.
 
@@ -120,13 +136,16 @@ the installed `bin/` scripts:
 ```bash
 # Example using scripts from a git checkout:
 cd /path/to/azerothcore-wotlk
-./apps/startup-scripts/src/service-manager.sh create auth authserver \
+/home/acore/deploy/setup-systemd-units.sh
+
+# Or manually (type name, unit name — yields auth.service / world.service):
+./apps/startup-scripts/src/service-manager.sh create auth auth \
   --provider systemd --user --restart-policy on-failure \
   --bin-path /home/acore/server/bin \
   --server-config /home/acore/server/etc/authserver.conf \
   --no-start
 
-./apps/startup-scripts/src/service-manager.sh create world worldserver \
+./apps/startup-scripts/src/service-manager.sh create world world \
   --provider systemd --user --restart-policy on-failure \
   --bin-path /home/acore/server/bin \
   --server-config /home/acore/server/etc/worldserver.conf \
@@ -164,3 +183,42 @@ After the first deploy, as `acore`:
 
 The deploy workflow copies helpers to `/home/acore/deploy/` and startup-scripts to
 `/home/acore/src/azerothcore/` on each run.
+
+## 9. Vanilla progression (`mod-individual-progression`)
+
+The **Playerbot** branch also builds [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression)
+for classic-style world content (vanilla raids, attunements, NPC/quest restoration, per-player
+progression capped at end of vanilla).
+
+After deploy, `configure-vanilla-progression.sh` sets:
+
+- `Expansion = 0`, `MaxPlayerLevel = 60`, `EnablePlayerSettings = 1`, `DBC.EnforceItemAttributes = 0`
+- Module config: `ProgressionLimit = 7`, vanilla damage/healing tuning, no RDF, DK/BE locked until TBC
+
+**One-time optional patches** (phasing, vanilla crafting, server DBC) run via `apply-vanilla-optional.sh`
+during deploy (marker: `/home/acore/server/etc/.vanilla-optional-applied`). Requires `p7zip-full` and
+module clone at `/home/acore/src/mod-individual-progression`.
+
+**Client (ChromieCraft):** for vanilla spell mana costs, add `patch-V.mpq` from the module’s
+`optional/patch-V.7z` to your client `Data/` folder. Optional visuals: `patch-J.mpq` / `patch-U.mpq`
+from `optional/dbc.7z`. See `optional/patch-explanations.txt` in the module repo.
+
+**Note:** Module world SQL is **permanent** (restored vanilla quests/creatures). Take a DB backup
+before the first deploy that includes this module.
+
+## 10. Backups and disaster recovery
+
+Gameplay tuning is in git (`configure-vanilla-progression.sh`, deploy workflows). **Secrets,
+characters, and full `etc/`** are on the VPS — snapshot them regularly:
+
+```bash
+cp apps/deploy/debian12/.acore-backup.env.example /home/acore/.acore-backup.env
+# edit MYSQL_PASS, chmod 600
+bash /home/acore/deploy/backup-acore.sh
+# copy /home/acore/backups/acore-backup-*.tar.gz off the server
+```
+
+Full restore procedure: [`RECOVERY.md`](RECOVERY.md).
+
+`deploy-vps` installs `backup-acore.sh` and `restore-acore.sh` to `/home/acore/deploy/` alongside
+the other helpers.

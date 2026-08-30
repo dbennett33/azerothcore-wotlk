@@ -54,7 +54,7 @@ create_unit() {
     echo "skip: ${name}.service already exists"
     return 0
   fi
-  bash "$SM" create "$name" "${type}server" \
+  bash "$SM" create "$type" "$name" \
     --provider systemd --user --restart-policy on-failure \
     --bin-path "$BIN_PATH" \
     --server-config "$conf" \

@@ -1,15 +1,10 @@
 name: deploy-vps
 
-# Promote the last vps-build output from server-staging to the live server prefix.
+# Promote /home/acore/server-staging (last vps-build on this host) to live.
 # Does not compile — run vps-build first (automatic on push to Playerbot).
 
 on:
   workflow_dispatch:
-    inputs:
-      git_sha:
-        description: Deploy binaries built for this commit (empty = whatever is in server-staging now)
-        required: false
-        default: ""
 
 concurrency:
   group: deploy-vps
@@ -17,7 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
 
 env:
   ACORE_PREFIX: /home/acore/server
@@ -41,29 +35,11 @@ jobs:
       - name: User systemd environment
         run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
 
-      - name: Restore staging from artifact
-        if: inputs.git_sha != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          name="acore-staging-${{ inputs.git_sha }}"
-          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts" \
-            --paginate -q ".artifacts[] | select(.name==\"${name}\" and .expired==false) | .id" | head -1)"
-          if [ -z "$run_id" ]; then
-            echo "No artifact named ${name}. Wait for vps-build on that commit or leave git_sha empty."
-            exit 1
-          fi
-          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${run_id}/zip" > "${RUNNER_TEMP}/staging.zip"
-          rm -rf "${ACORE_STAGING}"
-          mkdir -p "${ACORE_STAGING}"
-          unzip -q "${RUNNER_TEMP}/staging.zip" -d "${ACORE_STAGING}"
-
       - name: Verify staged binaries
         run: |
           if [ ! -x "${ACORE_STAGING}/bin/worldserver" ] || [ ! -x "${ACORE_STAGING}/bin/authserver" ]; then
             echo "Missing staged binaries under ${ACORE_STAGING}."
-            echo "Push/merge to Playerbot and wait for vps-build, or set git_sha to a built commit."
+            echo "Push/merge to Playerbot and wait for vps-build to finish on this host."
             exit 1
           fi
           if [ -f "${ACORE_STAGING}/.build-info" ]; then
@@ -74,9 +50,33 @@ jobs:
         run: |
           install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
+          install -D -m 755 apps/deploy/debian12/configure-vanilla-progression.sh /home/acore/deploy/configure-vanilla-progression.sh
+          install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
+          install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
+          install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
+          install -D -m 644 apps/deploy/debian12/.acore-backup.env.example /home/acore/deploy/.acore-backup.env.example
           mkdir -p /home/acore/src/azerothcore/apps
           rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
           rsync -a apps/deploy/ /home/acore/src/azerothcore/apps/deploy/
+
+      - name: Clone mod-individual-progression for optional SQL/DBC
+        run: |
+          set -euo pipefail
+          dest=/home/acore/src/mod-individual-progression
+          if [[ ! -d "$dest/.git" ]]; then
+            git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$dest"
+          else
+            git -C "$dest" fetch --depth 1 origin master
+            git -C "$dest" checkout -f master
+            git -C "$dest" pull --ff-only origin master
+          fi
+
+      - name: Apply optional vanilla SQL and DBC (once)
+        run: |
+          set -euo pipefail
+          export ACORE_PREFIX="${ACORE_PREFIX}"
+          export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
+          /home/acore/deploy/apply-vanilla-optional.sh || true
 
       - name: Stop live services
         run: /home/acore/deploy/restart-acore.sh stop
@@ -101,6 +101,11 @@ jobs:
             mkdir -p "${ACORE_PREFIX}/etc"
             rsync -a --ignore-existing "${ACORE_STAGING}/etc/" "${ACORE_PREFIX}/etc/"
           fi
+
+      - name: Configure vanilla progression settings
+        run: |
+          export ACORE_PREFIX="${ACORE_PREFIX}"
+          /home/acore/deploy/configure-vanilla-progression.sh
 
       - name: Start live services
         run: /home/acore/deploy/restart-acore.sh start
