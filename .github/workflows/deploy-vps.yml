@@ -102,12 +102,14 @@ jobs:
         run: |
           set -euo pipefail
           dest=/home/acore/src/mod-individual-progression
+          repo=https://github.com/ZhengPeiRu21/mod-individual-progression.git
+          branch=master
           if [[ ! -d "$dest/.git" ]]; then
-            git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$dest"
+            git clone --depth 1 --branch "$branch" "$repo" "$dest"
           else
-            git -C "$dest" fetch --depth 1 origin master
-            git -C "$dest" checkout -f master
-            git -C "$dest" pull --ff-only origin master
+            git -C "$dest" fetch --depth 1 origin "$branch"
+            git -C "$dest" checkout -f "$branch"
+            git -C "$dest" reset --hard "origin/$branch"
           fi
 
       - name: Ensure test prefix layout
