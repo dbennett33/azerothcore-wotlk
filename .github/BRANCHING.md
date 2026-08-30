@@ -45,3 +45,16 @@ GitHub has no “source branch must be dev” setting; the workflow enforces `de
 See `mod-playerbots` `.github/BRANCHING.md`.
 
 Optional repo **variable** `MOD_PLAYERBOTS_REPO` if mod-playerbots is not `{owner}/mod-playerbots`.
+
+## Deploy player warning (optional)
+
+`deploy-vps` warns players **60 seconds** before stopping worldserver (chat announce + in-game shutdown timer).
+
+Set repo secrets (or `SOAP_USER` / `SOAP_PASS` in `/home/acore/.acore-backup.env` on the VPS):
+
+| Secret | Value |
+|--------|--------|
+| `ACORE_SOAP_USER` | In-game GM account name (Administrator / GM level 3) |
+| `ACORE_SOAP_PASS` | That account's password |
+
+Without SOAP credentials, deploy still waits 60 seconds before stopping.

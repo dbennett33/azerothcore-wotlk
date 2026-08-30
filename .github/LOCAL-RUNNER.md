@@ -1,10 +1,12 @@
 # Build runner pool (local PC + VPS)
 
-Both machines register with label **`acore-build`**. GitHub assigns `vps-build` jobs to any
-**online idle** runner with that label:
+Both machines register with label **`acore-build`**. GitHub assigns the compile job to any
+online idle runner with that label.
 
-- **Local PC on** → often builds here (faster), then **rsyncs staging to the VPS**
-- **Local off** → VPS builds in place (no rsync)
+- **Local PC** → fast compile check only (artifacts under `~/.cache/azerothcore/`)
+- **VPS** (`acore-vps` label) → stages **deployable** binaries after a local compile, or builds directly when the VPS takes the compile job
+
+Local PC binaries **cannot** be deployed to Debian 12 (glibc/Boost mismatch). Never rsync them.
 
 Deploy (`deploy-vps`, including auto test deploy) always runs on **`acore-vps`** only.
 
@@ -41,20 +43,20 @@ Repo **variable** or **secret** (required for local builds):
 
 ## When both runners are online
 
-GitHub picks whichever idle runner matches — not guaranteed to prefer local. If you always want local while your PC is on, stop the VPS build listener temporarily:
+GitHub may assign the **compile** job to either machine. If your PC compiles first, a
+**stage-on-vps** job still runs on the VPS to produce deployable binaries.
 
-```bash
-# on VPS as acore
-cd ~/actions-runner && ./svc.sh stop
-# start again when PC is off
-./svc.sh start
-```
+If you want **only VPS builds** (no duplicate compile), stop the local runner while developing,
+or stop the VPS `acore-build` listener while the PC is on for compile-only feedback.
 
 ## Local output paths
 
-| Branch | Staging on PC |
-|--------|----------------|
-| `Playerbot` | `~/azerothcore-staging/` |
-| `dev` | `~/azerothcore-staging-test/` |
+All under **`~/.cache/azerothcore/`**:
 
-Build trees: `~/azerothcore-build/live` and `~/azerothcore-build/test`.
+| Branch | Staging | Build tree | Prefix (CONF_DIR) |
+|--------|---------|------------|-------------------|
+| `Playerbot` | `staging/` | `build/live/` | `prefix-live/` |
+| `dev` | `staging-test/` | `build/test/` | `prefix-test/` |
+
+Safe to delete old leftovers in `$HOME` if you still have
+`azerothcore-staging*`, `azerothcore-build/`, or `azerothcore-prefix-*`.

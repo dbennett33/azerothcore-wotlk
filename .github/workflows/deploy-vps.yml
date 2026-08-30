@@ -80,11 +80,14 @@ jobs:
           if [ -f "${ACORE_STAGING}/.build-info" ]; then
             cat "${ACORE_STAGING}/.build-info"
           fi
+          bash apps/deploy/debian12/verify-vps-binary.sh "${ACORE_STAGING}/bin/worldserver"
 
       - name: Install deploy helpers on host
         run: |
           install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
           install -D -m 755 apps/deploy/debian12/graceful-stop-world.sh /home/acore/deploy/graceful-stop-world.sh
+          install -D -m 755 apps/deploy/debian12/warn-before-world-stop.sh /home/acore/deploy/warn-before-world-stop.sh
+          install -D -m 755 apps/deploy/debian12/verify-vps-binary.sh /home/acore/deploy/verify-vps-binary.sh
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
           install -D -m 755 apps/deploy/debian12/configure-vanilla-progression.sh /home/acore/deploy/configure-vanilla-progression.sh
           install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
@@ -127,6 +130,15 @@ jobs:
           set -euo pipefail
           export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
           /home/acore/deploy/apply-vanilla-optional.sh || true
+
+      - name: Warn players before restart
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          DEPLOY_WARN_SECS: "60"
+          DEPLOY_WARN_MESSAGE: Server restart for deployment update
+          ACORE_SOAP_USER: ${{ secrets.ACORE_SOAP_USER }}
+          ACORE_SOAP_PASS: ${{ secrets.ACORE_SOAP_PASS }}
+        run: /home/acore/deploy/warn-before-world-stop.sh
 
       - name: Stop services
         run: /home/acore/deploy/restart-acore.sh stop "${{ inputs.target }}"
