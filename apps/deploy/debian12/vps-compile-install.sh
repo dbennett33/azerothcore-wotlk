@@ -16,62 +16,74 @@ fi
 
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
+JOBS="$(($(nproc) + 2))"
 
 # CONF_DIR is compiled into the binary (module configs). For builds that will be
 # promoted on the VPS, always use the remote prefix etc path — never the local
 # ~/.cache/... path.
 if [[ -n "${REMOTE_CONF_DIR:-}" ]]; then
-  CONF_DIR_VALUE="${REMOTE_CONF_DIR}"
+  RUNTIME_CONF_DIR="${REMOTE_CONF_DIR}"
 elif [[ "${ACORE_PREFIX}" == /home/acore/* ]]; then
-  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
+  RUNTIME_CONF_DIR="${ACORE_PREFIX}/etc"
 elif [[ "${ACORE_PREFIX}" == *prefix-test ]]; then
-  CONF_DIR_VALUE="/home/acore/server-test/etc"
+  RUNTIME_CONF_DIR="/home/acore/server-test/etc"
 elif [[ "${ACORE_PREFIX}" == *prefix-live ]]; then
-  CONF_DIR_VALUE="/home/acore/server/etc"
+  RUNTIME_CONF_DIR="/home/acore/server/etc"
 else
-  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
+  RUNTIME_CONF_DIR="${ACORE_PREFIX}/etc"
 fi
 
-echo "CONF_DIR=${CONF_DIR_VALUE} (install prefix=${ACORE_STAGING})"
+# cmake install(FILES ...) writes *.conf.dist into CONF_DIR on UNIX. On the build VM
+# that path is the VPS etc tree, which does not exist locally — install to staging instead.
+if [[ "${RUNTIME_CONF_DIR}" == /home/acore/* ]] && [[ ! -d /home/acore/server || "$(id -un)" != "acore" ]]; then
+  INSTALL_CONF_DIR="${ACORE_STAGING}/etc"
+else
+  INSTALL_CONF_DIR="${RUNTIME_CONF_DIR}"
+fi
 
-# On UNIX, cmake install(FILES ...) writes *.conf.dist into CONF_DIR. When the build VM
-# embeds the VPS etc path in binaries, that same path must still exist locally for install.
-ensure_conf_dir_for_install() {
-  local modules_dir="${CONF_DIR_VALUE}/modules"
-  if [[ -d "${modules_dir}" ]]; then
-    return 0
-  fi
-  echo "Creating CONF_DIR install tree at ${modules_dir}"
-  if mkdir -p "${modules_dir}"; then
-    return 0
-  fi
-  if sudo -n install -d -o "$(id -un)" -g "$(id -gn)" -m 755 "${modules_dir}" 2>/dev/null; then
-    return 0
-  fi
-  echo "ERROR: cannot create ${modules_dir} (cmake install needs a writable CONF_DIR)." >&2
-  echo "On build VM run:" >&2
-  echo "  sudo install -d -o $(id -un) -g $(id -gn) ${modules_dir}" >&2
-  exit 1
+echo "CONF_DIR runtime=${RUNTIME_CONF_DIR} install=${INSTALL_CONF_DIR} (prefix=${ACORE_STAGING})"
+
+run_cmake_configure() {
+  local conf_dir="$1"
+  cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
+    -DCMAKE_C_COMPILER="${CC}" \
+    -DCMAKE_CXX_COMPILER="${CXX}" \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
+    -DCONF_DIR="${conf_dir}" \
+    -DAPPS_BUILD=all \
+    -DTOOLS_BUILD=none \
+    -DSCRIPTS=static \
+    -DMODULES=static
 }
 
-if [[ "${CONF_DIR_VALUE}" == /home/acore/* ]] && [[ ! -d /home/acore/server || "$(id -un)" != "acore" ]]; then
-  ensure_conf_dir_for_install
+overlay_app_binaries() {
+  local src="${BUILD_DIR}/bin"
+  if [[ ! -x "${src}/worldserver" && -x "${BUILD_DIR}/bin/RelWithDebInfo/worldserver" ]]; then
+    src="${BUILD_DIR}/bin/RelWithDebInfo"
+  fi
+  install -D "${src}/authserver" "${ACORE_STAGING}/bin/authserver"
+  install -D "${src}/worldserver" "${ACORE_STAGING}/bin/worldserver"
+}
+
+if [[ "${INSTALL_CONF_DIR}" != "${RUNTIME_CONF_DIR}" ]]; then
+  echo "Build host: full compile with install CONF_DIR, then relink apps with VPS CONF_DIR"
+  run_cmake_configure "${INSTALL_CONF_DIR}"
+  cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "${JOBS}"
+
+  rm -rf "${ACORE_STAGING}"
+  cmake --install "${BUILD_DIR}" --config RelWithDebInfo
+
+  run_cmake_configure "${RUNTIME_CONF_DIR}"
+  cmake --build "${BUILD_DIR}" --config RelWithDebInfo --target common authserver worldserver -j "${JOBS}"
+  overlay_app_binaries
+else
+  run_cmake_configure "${RUNTIME_CONF_DIR}"
+  cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "${JOBS}"
+
+  rm -rf "${ACORE_STAGING}"
+  cmake --install "${BUILD_DIR}" --config RelWithDebInfo
 fi
 
-cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
-  -DCMAKE_C_COMPILER="${CC}" \
-  -DCMAKE_CXX_COMPILER="${CXX}" \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
-  -DCONF_DIR="${CONF_DIR_VALUE}" \
-  -DAPPS_BUILD=all \
-  -DTOOLS_BUILD=none \
-  -DSCRIPTS=static \
-  -DMODULES=static
-
-cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "$(($(nproc) + 2))"
-
-rm -rf "${ACORE_STAGING}"
-cmake --install "${BUILD_DIR}" --config RelWithDebInfo
 test -x "${ACORE_STAGING}/bin/authserver"
 test -x "${ACORE_STAGING}/bin/worldserver"

@@ -35,11 +35,6 @@ for d in build/live build/test staging staging-test prefix-live prefix-test; do
 done
 install -d -o dan -g dan /home/dan/actions-runner
 
-echo "==> VPS etc paths for cmake install (CONF_DIR embedded in binaries)"
-for etc in /home/acore/server/etc/modules /home/acore/server-test/etc/modules; do
-  install -d -o dan -g dan -m 755 "$etc"
-done
-
 echo "==> Verify toolchain"
 g++ --version | head -1
 dpkg -l | grep -E 'libboost-filesystem|libmysqlclient-dev' | awk '{print $2, $3}'
