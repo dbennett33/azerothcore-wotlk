@@ -4,7 +4,7 @@ set -euo pipefail
 
 ACORE_STAGING="${ACORE_STAGING:?set ACORE_STAGING}"
 REMOTE_STAGING="${REMOTE_STAGING:?set REMOTE_STAGING (e.g. /home/acore/server-staging-test)}"
-VPS_HOST="${VPS_HOST:-debian@57.128.183.99}"
+VPS_HOST="${VPS_HOST:?set VPS_HOST (ssh target, e.g. user@host)}"
 SSH_KEY_PATH="${SSH_KEY_PATH:-}"
 
 if [[ ! -d "${ACORE_STAGING}/bin" ]]; then

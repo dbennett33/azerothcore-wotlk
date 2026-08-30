@@ -95,10 +95,19 @@ jobs:
             echo "ref=dev" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve mod-playerbots repository
+        id: mod_repo
+        run: |
+          repo="${{ vars.MOD_PLAYERBOTS_REPO }}"
+          if [[ -z "$repo" ]]; then
+            repo="${GITHUB_REPOSITORY_OWNER}/mod-playerbots"
+          fi
+          echo "repository=${repo}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout mod-playerbots
         uses: actions/checkout@v7
         with:
-          repository: dbennett33/mod-playerbots
+          repository: ${{ steps.mod_repo.outputs.repository }}
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
 
@@ -132,7 +141,6 @@ jobs:
             echo "branch=${GITHUB_REF#refs/heads/}"
             echo "playerbots_ref=${{ steps.playerbots.outputs.ref }}"
             echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "runner_host=$(hostname)"
             echo "is_vps=${{ steps.runner.outputs.is_vps }}"
           } > "${ACORE_STAGING}/.build-info"
 
@@ -142,6 +150,7 @@ jobs:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
           REMOTE_STAGING: ${{ steps.paths.outputs.remote_staging }}
           VPS_HOST: ${{ vars.VPS_SSH_HOST }}
+          VPS_SSH_HOST_SECRET: ${{ secrets.VPS_SSH_HOST }}
           VPS_RUNNER_SSH_KEY: ${{ secrets.VPS_RUNNER_SSH_KEY }}
         run: |
           set -euo pipefail
@@ -152,7 +161,11 @@ jobs:
           fi
           printf '%s\n' "$VPS_RUNNER_SSH_KEY" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
-          VPS_HOST="${VPS_HOST:-debian@57.128.183.99}"
+          VPS_HOST="${VPS_HOST:-${VPS_SSH_HOST_SECRET:-}}"
+          if [[ -z "${VPS_HOST:-}" ]]; then
+            echo "Set VPS_SSH_HOST as a repository variable or secret" >&2
+            exit 1
+          fi
           ACORE_STAGING="${ACORE_STAGING}" REMOTE_STAGING="${REMOTE_STAGING}" \
             VPS_HOST="${VPS_HOST}" SSH_KEY_PATH="${KEY_FILE}" \
             bash apps/deploy/debian12/rsync-staging-to-vps.sh

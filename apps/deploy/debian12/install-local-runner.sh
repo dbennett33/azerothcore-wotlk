@@ -3,9 +3,37 @@
 # Uses label acore-local so VPS jobs (acore-vps) never run here.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/dbennett33/azerothcore-wotlk}"
+AC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)"
 RUNNER_ROOT="${RUNNER_ROOT:-${HOME}/actions-runner}"
-RUNNER_NAME="${RUNNER_NAME:-$(hostname -s)-local}"
+RUNNER_NAME="${RUNNER_NAME:-acore-build-local}"
+GITHUB_REPO="${GITHUB_REPO:-}"
+
+if [[ -z "${REPO_URL:-}" ]]; then
+  origin="$(git -C "$AC_ROOT" remote get-url origin 2>/dev/null || true)"
+  case "$origin" in
+    https://github.com/*)
+      GITHUB_REPO="${origin#https://github.com/}"
+      GITHUB_REPO="${GITHUB_REPO%.git}"
+      ;;
+    git@github.com:*)
+      GITHUB_REPO="${origin#git@github.com:}"
+      GITHUB_REPO="${GITHUB_REPO%.git}"
+      ;;
+  esac
+  if [[ -n "$GITHUB_REPO" ]]; then
+    REPO_URL="https://github.com/${GITHUB_REPO}"
+  fi
+fi
+
+if [[ -z "${REPO_URL:-}" ]]; then
+  read -rp "GitHub repo (owner/name): " GITHUB_REPO
+  REPO_URL="https://github.com/${GITHUB_REPO}"
+fi
+
+if [[ -n "${REPO_URL:-}" && -z "${GITHUB_REPO}" ]]; then
+  GITHUB_REPO="${REPO_URL#https://github.com/}"
+  GITHUB_REPO="${GITHUB_REPO%.git}"
+fi
 
 echo "Repo:    ${REPO_URL}"
 echo "Install: ${RUNNER_ROOT}"
@@ -16,7 +44,7 @@ echo ""
 if [[ -z "${RUNNER_TOKEN:-}" ]]; then
   echo "Get a registration token:"
   echo "  GitHub → ${REPO_URL} → Settings → Actions → Runners → New self-hosted runner"
-  echo "  Or: gh auth login && gh api repos/dbennett33/azerothcore-wotlk/actions/runners/registration-token -X POST -q .token"
+  echo "  Or: gh api repos/${GITHUB_REPO}/actions/runners/registration-token -X POST -q .token"
   echo ""
   read -rsp "Paste registration token: " RUNNER_TOKEN
   echo ""

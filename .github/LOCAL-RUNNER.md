@@ -31,9 +31,13 @@ Repo **Settings → Secrets → Actions**:
 
 | Secret | Value |
 |--------|--------|
-| `VPS_RUNNER_SSH_KEY` | Private key that can `ssh debian@57.128.183.99` (e.g. `~/.ssh/id_ed25519_vps`) |
+| `VPS_RUNNER_SSH_KEY` | Private SSH key for VPS rsync (dedicated key recommended) |
 
-Optional repo **variable** `VPS_SSH_HOST` (default `debian@57.128.183.99`).
+Repo **variable** or **secret** (required for local builds):
+
+| Name | Value |
+|------|--------|
+| `VPS_SSH_HOST` | SSH target (`user@host`) |
 
 ## When both runners are online
 

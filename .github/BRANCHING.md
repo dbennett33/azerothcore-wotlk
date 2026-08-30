@@ -1,4 +1,4 @@
-# Branching and CI (dbennett33/azerothcore-wotlk)
+# Branching and CI
 
 ## Branches
 
@@ -43,3 +43,5 @@ GitHub has no “source branch must be dev” setting; the workflow enforces `de
 - `ACORE_WORKFLOW_PAT` — fine-scoped PAT with `workflow` scope on this repo
 
 See `mod-playerbots` `.github/BRANCHING.md`.
+
+Optional repo **variable** `MOD_PLAYERBOTS_REPO` if mod-playerbots is not `{owner}/mod-playerbots`.

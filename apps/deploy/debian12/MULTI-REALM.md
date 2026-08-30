@@ -20,7 +20,8 @@ push dev        → vps-build  → server-staging-test → auto deploy test real
 manual deploy-vps (target=live)  → promote staging → server + restart auth + world
 ```
 
-`vps-build` checks out `dbennett33/mod-playerbots`: `master` on `Playerbot`, `dev` on `dev`.
+`vps-build` checks out your **mod-playerbots** fork (`master` on `Playerbot`, `dev` on `dev`).
+Override with repo variable `MOD_PLAYERBOTS_REPO` if the module lives under another owner.
 Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see `.github/BRANCHING.md`).
 
 Builds use isolated cmake trees: `/home/acore/build/live` and `/home/acore/build/test`.
