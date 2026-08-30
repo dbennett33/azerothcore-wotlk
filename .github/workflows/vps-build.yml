@@ -115,6 +115,7 @@ jobs:
           repository: ${{ steps.mod_repo.outputs.repository }}
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
+          clean: false
 
       - name: Checkout mod-individual-progression
         uses: actions/checkout@v7
@@ -122,6 +123,7 @@ jobs:
           repository: ZhengPeiRu21/mod-individual-progression
           ref: master
           path: modules/mod-individual-progression
+          clean: false
 
       - name: Ensure test prefix etc exists (dev builds on VPS)
         if: steps.runner.outputs.is_vps == 'true' && steps.paths.outputs.acore_prefix == '/home/acore/server-test'
@@ -130,11 +132,12 @@ jobs:
             bash apps/deploy/debian12/init-test-prefix.sh
           fi
 
-      - uses: ./.github/actions/vps-build
+      - name: Configure, compile, and install
         env:
           ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
           BUILD_DIR: ${{ steps.paths.outputs.build_dir }}
+        run: bash apps/deploy/debian12/vps-compile-install.sh
 
       - name: Record build metadata on host
         env:
@@ -204,6 +207,7 @@ jobs:
           repository: ${{ steps.mod_repo.outputs.repository }}
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
+          clean: false
 
       - name: Checkout mod-individual-progression
         uses: actions/checkout@v7
@@ -211,6 +215,7 @@ jobs:
           repository: ZhengPeiRu21/mod-individual-progression
           ref: master
           path: modules/mod-individual-progression
+          clean: false
 
       - name: Ensure test prefix etc exists
         if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'
@@ -219,11 +224,12 @@ jobs:
             bash apps/deploy/debian12/init-test-prefix.sh
           fi
 
-      - uses: ./.github/actions/vps-build
+      - name: Configure, compile, and install
         env:
           ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
           BUILD_DIR: ${{ steps.paths.outputs.build_dir }}
+        run: bash apps/deploy/debian12/vps-compile-install.sh
 
       - name: Record build metadata on VPS staging
         env:
