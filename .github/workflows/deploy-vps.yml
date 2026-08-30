@@ -34,3 +34,111 @@ jobs:
   deploy:
     runs-on: [self-hosted, linux, acore-vps]
     name: promote-${{ inputs.target }}
+    steps:
+      - name: Resolve deploy paths
+        id: paths
+        run: |
+          case "${{ inputs.target }}" in
+            live)
+              echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+              ;;
+            test)
+              echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown target" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout deploy scripts
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            apps/deploy
+            apps/startup-scripts
+          sparse-checkout-cone-mode: false
+
+      - name: User systemd environment
+        run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+
+      - name: Verify staged binaries
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+        run: |
+          if [ ! -x "${ACORE_STAGING}/bin/worldserver" ]; then
+            echo "Missing staged worldserver under ${ACORE_STAGING}."
+            echo "Push to the matching branch and wait for vps-build."
+            exit 1
+          fi
+          if [ "${{ inputs.target }}" = "live" ] && [ ! -x "${ACORE_STAGING}/bin/authserver" ]; then
+            echo "Missing staged authserver under ${ACORE_STAGING}."
+            exit 1
+          fi
+          if [ -f "${ACORE_STAGING}/.build-info" ]; then
+            cat "${ACORE_STAGING}/.build-info"
+          fi
+
+      - name: Install deploy helpers on host
+        run: |
+          install -D -m 755 apps/deploy/debian12/restart-acore.sh /home/acore/deploy/restart-acore.sh
+          install -D -m 755 apps/deploy/debian12/graceful-stop-world.sh /home/acore/deploy/graceful-stop-world.sh
+          install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
+          install -D -m 755 apps/deploy/debian12/configure-vanilla-progression.sh /home/acore/deploy/configure-vanilla-progression.sh
+          install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
+          install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
+          install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
+          install -D -m 755 apps/deploy/debian12/promote-staging.sh /home/acore/deploy/promote-staging.sh
+          install -D -m 755 apps/deploy/debian12/ensure-realmlist.sh /home/acore/deploy/ensure-realmlist.sh
+          install -D -m 755 apps/deploy/debian12/init-test-prefix.sh /home/acore/deploy/init-test-prefix.sh
+          install -D -m 644 apps/deploy/debian12/.acore-backup.env.example /home/acore/deploy/.acore-backup.env.example
+          mkdir -p /home/acore/src/azerothcore/apps
+          rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
+          rsync -a apps/deploy/ /home/acore/src/azerothcore/apps/deploy/
+
+      - name: Clone mod-individual-progression for optional SQL/DBC
+        run: |
+          set -euo pipefail
+          dest=/home/acore/src/mod-individual-progression
+          if [[ ! -d "$dest/.git" ]]; then
+            git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$dest"
+          else
+            git -C "$dest" fetch --depth 1 origin master
+            git -C "$dest" checkout -f master
+            git -C "$dest" pull --ff-only origin master
+          fi
+
+      - name: Ensure test prefix layout
+        if: inputs.target == 'test'
+        run: /home/acore/deploy/init-test-prefix.sh
+
+      - name: Ensure auth realmlist entries
+        run: /home/acore/deploy/ensure-realmlist.sh
+
+      - name: Apply optional vanilla SQL and DBC (once per prefix)
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          WORLD_DB: ${{ inputs.target == 'test' && 'acore_world_test' || 'acore_world' }}
+        run: |
+          set -euo pipefail
+          export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
+          /home/acore/deploy/apply-vanilla-optional.sh || true
+
+      - name: Stop services
+        run: /home/acore/deploy/restart-acore.sh stop "${{ inputs.target }}"
+
+      - name: Promote staging to prefix
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+        run: /home/acore/deploy/promote-staging.sh
+
+      - name: Configure vanilla progression settings
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+        run: /home/acore/deploy/configure-vanilla-progression.sh
+
+      - name: Start services
+        run: /home/acore/deploy/restart-acore.sh start "${{ inputs.target }}"
