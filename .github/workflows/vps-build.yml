@@ -1,17 +1,14 @@
 name: vps-build
 
-# Compile on the VPS when a deploy branch is updated. Output stays on the host at
-# ACORE_STAGING (no GitHub artifact upload). Deploy is manual (deploy-vps).
+# Build pool: self-hosted runners with label acore-build (local PC or VPS).
+# Local builds rsync staging to the VPS; deploy always runs on acore-vps.
 
 on:
   push:
     branches:
       - Playerbot
       - dev
-
-concurrency:
-  group: vps-build-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,59 +19,98 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, linux, acore-vps]
+    runs-on: [self-hosted, linux, acore-build]
     name: compile-and-stage
+    concurrency:
+      group: vps-build-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref == 'refs/heads/dev' }}
     steps:
+      - name: Detect runner environment
+        id: runner
+        run: |
+          if [[ -d /home/acore/server && "$(id -un)" == "acore" ]]; then
+            echo "is_vps=true" >> "$GITHUB_OUTPUT"
+            echo "Runner: VPS (acore)"
+          else
+            echo "is_vps=false" >> "$GITHUB_OUTPUT"
+            echo "Runner: local build host ($(hostname))"
+          fi
+
       - name: Resolve paths for branch
         id: paths
+        env:
+          IS_VPS: ${{ steps.runner.outputs.is_vps }}
         run: |
           branch="${GITHUB_REF#refs/heads/}"
-          case "$branch" in
-            Playerbot)
-              echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
-              echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
-              echo "build_dir=/home/acore/build/live" >> "$GITHUB_OUTPUT"
-              ;;
-            dev)
-              echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
-              echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
-              echo "build_dir=/home/acore/build/test" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "Unsupported branch: $branch" >&2
-              exit 1
-              ;;
-          esac
+          if [[ "$IS_VPS" == "true" ]]; then
+            case "$branch" in
+              Playerbot)
+                echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                echo "build_dir=/home/acore/build/live" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                ;;
+              dev)
+                echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                echo "build_dir=/home/acore/build/test" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "Unsupported branch: $branch" >&2
+                exit 1
+                ;;
+            esac
+          else
+            case "$branch" in
+              Playerbot)
+                echo "acore_prefix=${HOME}/azerothcore-prefix-live" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=${HOME}/azerothcore-staging" >> "$GITHUB_OUTPUT"
+                echo "build_dir=${HOME}/azerothcore-build/live" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+                ;;
+              dev)
+                echo "acore_prefix=${HOME}/azerothcore-prefix-test" >> "$GITHUB_OUTPUT"
+                echo "acore_staging=${HOME}/azerothcore-staging-test" >> "$GITHUB_OUTPUT"
+                echo "build_dir=${HOME}/azerothcore-build/test" >> "$GITHUB_OUTPUT"
+                echo "remote_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "Unsupported branch: $branch" >&2
+                exit 1
+                ;;
+            esac
+          fi
 
       - name: Checkout AzerothCore
         uses: actions/checkout@v7
 
-      - name: Resolve Playerbot module ref
+      - name: Resolve mod-playerbots ref
         id: playerbots
         run: |
           branch="${GITHUB_REF#refs/heads/}"
           if [ "$branch" = "Playerbot" ]; then
             echo "ref=master" >> "$GITHUB_OUTPUT"
           else
-            echo "ref=master" >> "$GITHUB_OUTPUT"
+            echo "ref=dev" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout Playerbot module
+      - name: Checkout mod-playerbots
         uses: actions/checkout@v7
         with:
-          repository: mod-playerbots/mod-playerbots
+          repository: dbennett33/mod-playerbots
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
 
-      - name: Checkout Individual Progression module
+      - name: Checkout mod-individual-progression
         uses: actions/checkout@v7
         with:
           repository: ZhengPeiRu21/mod-individual-progression
           ref: master
           path: modules/mod-individual-progression
 
-      - name: Ensure test prefix etc exists (dev builds)
-        if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'
+      - name: Ensure test prefix etc exists (dev builds on VPS)
+        if: steps.runner.outputs.is_vps == 'true' && steps.paths.outputs.acore_prefix == '/home/acore/server-test'
         run: |
           if [[ ! -d /home/acore/server-test/etc ]]; then
             bash apps/deploy/debian12/init-test-prefix.sh
@@ -94,5 +130,37 @@ jobs:
             echo "sha=${GITHUB_SHA}"
             echo "ref=${GITHUB_REF}"
             echo "branch=${GITHUB_REF#refs/heads/}"
+            echo "playerbots_ref=${{ steps.playerbots.outputs.ref }}"
             echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "runner_host=$(hostname)"
+            echo "is_vps=${{ steps.runner.outputs.is_vps }}"
           } > "${ACORE_STAGING}/.build-info"
+
+      - name: Sync staging to VPS
+        if: steps.runner.outputs.is_vps != 'true'
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+          REMOTE_STAGING: ${{ steps.paths.outputs.remote_staging }}
+          VPS_HOST: ${{ vars.VPS_SSH_HOST }}
+          VPS_RUNNER_SSH_KEY: ${{ secrets.VPS_RUNNER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          KEY_FILE="${RUNNER_TEMP}/vps-rsync-key"
+          if [[ -z "${VPS_RUNNER_SSH_KEY:-}" ]]; then
+            echo "VPS_RUNNER_SSH_KEY secret is required for local pool builds" >&2
+            exit 1
+          fi
+          printf '%s\n' "$VPS_RUNNER_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          VPS_HOST="${VPS_HOST:-debian@57.128.183.99}"
+          ACORE_STAGING="${ACORE_STAGING}" REMOTE_STAGING="${REMOTE_STAGING}" \
+            VPS_HOST="${VPS_HOST}" SSH_KEY_PATH="${KEY_FILE}" \
+            bash apps/deploy/debian12/rsync-staging-to-vps.sh
+
+  deploy-test:
+    needs: build
+    if: github.ref == 'refs/heads/dev'
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      target: test
+    secrets: inherit
