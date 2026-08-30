@@ -23,6 +23,7 @@ jobs:
     name: compile-and-stage
     outputs:
       is_vps: ${{ steps.runner.outputs.is_vps }}
+      remote_staged: ${{ steps.sync.outputs.remote_staged || 'false' }}
     concurrency:
       group: vps-build-${{ github.ref }}
       cancel-in-progress: ${{ github.ref == 'refs/heads/dev' }}
@@ -155,9 +156,39 @@ jobs:
             echo "is_vps=${{ steps.runner.outputs.is_vps }}"
           } > "${ACORE_STAGING}/.build-info"
 
+      - name: Sync deployable staging to VPS
+        id: sync
+        if: steps.runner.outputs.is_vps != 'true'
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+          REMOTE_STAGING: ${{ steps.paths.outputs.remote_staging }}
+          VPS_HOST: ${{ vars.VPS_SSH_HOST }}
+          VPS_SSH_HOST_SECRET: ${{ secrets.VPS_SSH_HOST }}
+          VPS_RUNNER_SSH_KEY: ${{ secrets.VPS_RUNNER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          echo "remote_staged=false" >> "$GITHUB_OUTPUT"
+          bash apps/deploy/debian12/verify-vps-binary.sh "${ACORE_STAGING}/bin/worldserver"
+          if [[ -z "${VPS_RUNNER_SSH_KEY:-}" ]]; then
+            echo "VPS_RUNNER_SSH_KEY secret required to rsync staging from build VM" >&2
+            exit 1
+          fi
+          KEY_FILE="${RUNNER_TEMP}/vps-rsync-key"
+          printf '%s\n' "$VPS_RUNNER_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          VPS_HOST="${VPS_HOST:-${VPS_SSH_HOST_SECRET:-}}"
+          if [[ -z "${VPS_HOST:-}" ]]; then
+            echo "Set VPS_SSH_HOST variable or secret" >&2
+            exit 1
+          fi
+          ACORE_STAGING="${ACORE_STAGING}" REMOTE_STAGING="${REMOTE_STAGING}" \
+            VPS_HOST="${VPS_HOST}" SSH_KEY_PATH="${KEY_FILE}" \
+            bash apps/deploy/debian12/rsync-staging-to-vps.sh
+          echo "remote_staged=true" >> "$GITHUB_OUTPUT"
+
   vps-stage:
     needs: build
-    if: needs.build.outputs.is_vps != 'true'
+    if: needs.build.outputs.is_vps != 'true' && needs.build.outputs.remote_staged != 'true'
     runs-on: [self-hosted, linux, acore-vps]
     name: stage-on-vps
     steps:
