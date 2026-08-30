@@ -1,7 +1,7 @@
 name: vps-build
 
-# Build pool: local PC compiles for speed; VPS stages deployable binaries (Debian 12).
-# Local binaries are never rsynced — they cannot run on the VPS (glibc/Boost mismatch).
+# Debian 12 build VM when online (acore-build-vm); otherwise compile on VPS (acore-vps).
+# VM builds rsync staging to the VPS; deploy always runs on acore-vps.
 
 on:
   push:
@@ -12,14 +12,44 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   CC: gcc
   CXX: g++
 
 jobs:
+  pick-runner:
+    runs-on: ubuntu-latest
+    name: pick-build-runner
+    outputs:
+      labels: ${{ steps.pick.outputs.labels }}
+    steps:
+      - name: Prefer build VM when online, else VPS
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VM_LABEL: ${{ vars.BUILD_VM_RUNNER_LABEL }}
+        run: |
+          set -euo pipefail
+          label="${VM_LABEL:-acore-build-vm}"
+          vm_online="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
+            --jq --arg want "$label" '
+              any(.runners[];
+                .status == "online" and any(.labels[]; .name == $want)
+              )
+            ')"
+          if [[ "$vm_online" == "true" ]]; then
+            echo "Build VM online (label ${label})"
+            echo 'labels=["self-hosted","linux","'"${label}"'"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "Build VM offline; compiling on VPS (acore-vps)"
+            echo 'labels=["self-hosted","linux","acore-vps"]' >> "$GITHUB_OUTPUT"
+          fi
+
   build:
-    runs-on: [self-hosted, linux, acore-build]
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.labels) }}
     name: compile-and-stage
     outputs:
       is_vps: ${{ steps.runner.outputs.is_vps }}

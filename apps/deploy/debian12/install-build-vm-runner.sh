@@ -41,7 +41,7 @@ sudo ./bin/installdependencies.sh
   --url "${REPO_URL}" \
   --token "${RUNNER_TOKEN}" \
   --name "${RUNNER_NAME}" \
-  --labels "self-hosted,linux,X64,acore-build" \
+  --labels "self-hosted,linux,X64,acore-build-vm" \
   --replace \
   --unattended
 

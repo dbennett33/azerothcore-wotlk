@@ -1,62 +1,55 @@
-# Build runner pool (local PC + VPS)
+# Build runners (Debian 12 VM + VPS)
 
-Both machines register with label **`acore-build`**. GitHub assigns the compile job to any
-online idle runner with that label.
-
-- **Local PC** → fast compile check only (artifacts under `~/.cache/azerothcore/`)
-- **VPS** (`acore-vps` label) → stages **deployable** binaries after a local compile, or builds directly when the VPS takes the compile job
-
-Local PC binaries **cannot** be deployed to Debian 12 (glibc/Boost mismatch). Never rsync them.
-
-Deploy (`deploy-vps`, including auto test deploy) always runs on **`acore-vps`** only.
+Compiles run on your **Debian 12 build VM** when it is online; otherwise on the **VPS**.
+Deploy always runs on the VPS (`acore-vps`).
 
 ## Labels
 
-| Runner | Required labels | Role |
-|--------|-----------------|------|
-| Local PC | `self-hosted`, `linux`, `X64`, `acore-build` | compile pool |
-| VPS | `self-hosted`, `linux`, `acore-vps`, **`acore-build`** | compile pool + deploy |
+| Runner | Labels | Role |
+|--------|--------|------|
+| Debian build VM | `self-hosted`, `linux`, `X64`, **`acore-build-vm`** | fast compile when VM is on |
+| VPS | `self-hosted`, `linux`, **`acore-vps`** | compile fallback + deploy |
 
-Add `acore-build` to the existing VPS runner: **Settings → Actions → Runners → your VPS runner → Add label `acore-build`**.
+Do **not** put `acore-build` on both machines. The workflow picks the target before compile:
 
-## Install local runner
+1. `pick-runner` (GitHub-hosted) checks the API for an **online** runner with `acore-build-vm`
+2. If yes → `compile-and-stage` runs on the VM, then rsyncs staging to the VPS
+3. If no → `compile-and-stage` runs on the VPS (`acore-vps`)
+
+Optional repo **variable** `BUILD_VM_RUNNER_LABEL` if you use a different VM label (default `acore-build-vm`).
+
+## Install build VM runner
 
 ```bash
-export RUNNER_TOKEN='...'   # registration token from GitHub
-bash apps/deploy/debian12/install-local-runner.sh
-cd ~/actions-runner && ./svc.sh install && ./svc.sh start
+export RUNNER_TOKEN='...'
+bash apps/deploy/debian12/install-build-vm-runner.sh
+cd ~/actions-runner && sudo ./svc.sh install dan && sudo ./svc.sh start
 ```
 
-## GitHub secret (required for local builds)
+Or add label **`acore-build-vm`** to an existing runner in GitHub → Settings → Actions → Runners.
 
-Repo **Settings → Secrets → Actions**:
+## VPS runner
 
-| Secret | Value |
-|--------|--------|
-| `VPS_RUNNER_SSH_KEY` | Private SSH key for VPS rsync (dedicated key recommended) |
+Keep **`acore-vps`** only (remove `acore-build` if still present). The workflow routes compile here when the VM is offline.
 
-Repo **variable** or **secret** (required for local builds):
+## Bootstrap Debian 12 VM
 
-| Name | Value |
-|------|--------|
-| `VPS_SSH_HOST` | SSH target (`user@host`) |
+```bash
+sudo bash apps/deploy/debian12/bootstrap-build-vm.sh
+```
 
-## When both runners are online
+## Secrets (rsync from VM to VPS)
 
-GitHub may assign the **compile** job to either machine. If your PC compiles first, a
-**stage-on-vps** job still runs on the VPS to produce deployable binaries.
+| Name | Purpose |
+|------|---------|
+| `VPS_RUNNER_SSH_KEY` | SSH key for rsync staging to VPS |
+| `VPS_SSH_HOST` | SSH target (variable or secret) |
 
-If you want **only VPS builds** (no duplicate compile), stop the local runner while developing,
-or stop the VPS `acore-build` listener while the PC is on for compile-only feedback.
+## Local output paths (build VM)
 
-## Local output paths
+Under **`~/.cache/azerothcore/`**:
 
-All under **`~/.cache/azerothcore/`**:
-
-| Branch | Staging | Build tree | Prefix (CONF_DIR) |
-|--------|---------|------------|-------------------|
-| `Playerbot` | `staging/` | `build/live/` | `prefix-live/` |
-| `dev` | `staging-test/` | `build/test/` | `prefix-test/` |
-
-Safe to delete old leftovers in `$HOME` if you still have
-`azerothcore-staging*`, `azerothcore-build/`, or `azerothcore-prefix-*`.
+| Branch | Staging | Build tree |
+|--------|---------|------------|
+| `Playerbot` | `staging/` | `build/live/` |
+| `dev` | `staging-test/` | `build/test/` |
