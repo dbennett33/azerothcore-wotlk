@@ -57,6 +57,9 @@ else
 fi
 set_kv "$WS_CONF" "WorldDatabaseInfo" "\"$(db_info "$world_db")\""
 set_kv "$WS_CONF" "CharacterDatabaseInfo" "\"$(db_info "$character_db")\""
+set_kv "$WS_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
+set_kv "$WS_CONF" "PlayerbotsDatabaseInfo" "\"$(db_info "$playerbots_db")\""
+set_kv "$WS_CONF" "Playerbots.Updates.EnableDatabases" "1"
 
 if [[ -f "$IP_DIST" && ! -f "$IP_CONF" ]]; then
   cp "$IP_DIST" "$IP_CONF"

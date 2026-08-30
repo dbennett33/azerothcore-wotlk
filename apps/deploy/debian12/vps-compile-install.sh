@@ -17,12 +17,29 @@ fi
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
 
+# CONF_DIR is compiled into the binary (module configs). For builds that will be
+# promoted on the VPS, always use the remote prefix etc path — never the local
+# ~/.cache/... path.
+if [[ -n "${REMOTE_CONF_DIR:-}" ]]; then
+  CONF_DIR_VALUE="${REMOTE_CONF_DIR}"
+elif [[ "${ACORE_PREFIX}" == /home/acore/* ]]; then
+  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
+elif [[ "${ACORE_PREFIX}" == *prefix-test ]]; then
+  CONF_DIR_VALUE="/home/acore/server-test/etc"
+elif [[ "${ACORE_PREFIX}" == *prefix-live ]]; then
+  CONF_DIR_VALUE="/home/acore/server/etc"
+else
+  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
+fi
+
+echo "CONF_DIR=${CONF_DIR_VALUE} (install prefix=${ACORE_STAGING})"
+
 cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
   -DCMAKE_C_COMPILER="${CC}" \
   -DCMAKE_CXX_COMPILER="${CXX}" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
-  -DCONF_DIR="${ACORE_PREFIX}/etc" \
+  -DCONF_DIR="${CONF_DIR_VALUE}" \
   -DAPPS_BUILD=all \
   -DTOOLS_BUILD=none \
   -DSCRIPTS=static \
