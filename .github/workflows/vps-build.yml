@@ -184,6 +184,9 @@ jobs:
           path: modules/mod-individual-progression
           clean: false
 
+      - name: Checkout extra modules (enchanter, services)
+        run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
+
       - name: Ensure test prefix etc exists (dev builds on VPS)
         if: steps.runner.outputs.is_vps == 'true' && steps.paths.outputs.acore_prefix == '/home/acore/server-test'
         run: |
@@ -308,6 +311,9 @@ jobs:
           ref: master
           path: modules/mod-individual-progression
           clean: false
+
+      - name: Checkout extra modules (enchanter, services)
+        run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
 
       - name: Ensure test prefix etc exists
         if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'

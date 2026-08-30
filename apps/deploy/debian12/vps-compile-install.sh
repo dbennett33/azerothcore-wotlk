@@ -16,72 +16,66 @@ fi
 
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
-JOBS="$(($(nproc) + 2))"
 
 # CONF_DIR is compiled into the binary (module configs). For builds that will be
 # promoted on the VPS, always use the remote prefix etc path — never the local
 # ~/.cache/... path.
 if [[ -n "${REMOTE_CONF_DIR:-}" ]]; then
-  RUNTIME_CONF_DIR="${REMOTE_CONF_DIR}"
+  CONF_DIR_VALUE="${REMOTE_CONF_DIR}"
 elif [[ "${ACORE_PREFIX}" == /home/acore/* ]]; then
-  RUNTIME_CONF_DIR="${ACORE_PREFIX}/etc"
+  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
 elif [[ "${ACORE_PREFIX}" == *prefix-test ]]; then
-  RUNTIME_CONF_DIR="/home/acore/server-test/etc"
+  CONF_DIR_VALUE="/home/acore/server-test/etc"
 elif [[ "${ACORE_PREFIX}" == *prefix-live ]]; then
-  RUNTIME_CONF_DIR="/home/acore/server/etc"
+  CONF_DIR_VALUE="/home/acore/server/etc"
 else
-  RUNTIME_CONF_DIR="${ACORE_PREFIX}/etc"
+  CONF_DIR_VALUE="${ACORE_PREFIX}/etc"
 fi
 
-# cmake install(FILES ...) writes *.conf.dist into CONF_DIR on UNIX. On the build VM
-# that path is the VPS etc tree, which does not exist locally — install to staging instead.
-if [[ "${RUNTIME_CONF_DIR}" == /home/acore/* ]] && [[ ! -d /home/acore/server || "$(id -un)" != "acore" ]]; then
-  INSTALL_CONF_DIR="${ACORE_STAGING}/etc"
-else
-  INSTALL_CONF_DIR="${RUNTIME_CONF_DIR}"
+echo "CONF_DIR=${CONF_DIR_VALUE} (install prefix=${ACORE_STAGING})"
+
+cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
+  -DCMAKE_C_COMPILER="${CC}" \
+  -DCMAKE_CXX_COMPILER="${CXX}" \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
+  -DCONF_DIR="${CONF_DIR_VALUE}" \
+  -DAPPS_BUILD=all \
+  -DTOOLS_BUILD=none \
+  -DSCRIPTS=static \
+  -DMODULES=static
+
+cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "$(($(nproc) + 2))"
+
+rm -rf "${ACORE_STAGING}"
+
+# cmake install(FILES ...) writes *.conf.dist to CONF_DIR (absolute). On the build VM
+# that path does not exist; DESTDIR remaps it so we can copy configs into staging.
+on_build_vm=false
+if [[ "${CONF_DIR_VALUE}" == /home/acore/* ]] && [[ ! -d /home/acore/server || "$(id -un)" != "acore" ]]; then
+  on_build_vm=true
 fi
 
-echo "CONF_DIR runtime=${RUNTIME_CONF_DIR} install=${INSTALL_CONF_DIR} (prefix=${ACORE_STAGING})"
+if [[ "${on_build_vm}" == true ]]; then
+  destdir="${BUILD_DIR}/.install-destdir"
+  rm -rf "${destdir}"
+  echo "Build VM install via DESTDIR=${destdir}"
+  DESTDIR="${destdir}" cmake --install "${BUILD_DIR}" --config RelWithDebInfo
 
-run_cmake_configure() {
-  local conf_dir="$1"
-  cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
-    -DCMAKE_C_COMPILER="${CC}" \
-    -DCMAKE_CXX_COMPILER="${CXX}" \
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_INSTALL_PREFIX="${ACORE_STAGING}" \
-    -DCONF_DIR="${conf_dir}" \
-    -DAPPS_BUILD=all \
-    -DTOOLS_BUILD=none \
-    -DSCRIPTS=static \
-    -DMODULES=static
-}
-
-overlay_app_binaries() {
-  local src="${BUILD_DIR}/bin"
-  if [[ ! -x "${src}/worldserver" && -x "${BUILD_DIR}/bin/RelWithDebInfo/worldserver" ]]; then
-    src="${BUILD_DIR}/bin/RelWithDebInfo"
+  staged_prefix="${destdir}${ACORE_STAGING}"
+  staged_conf="${destdir}${CONF_DIR_VALUE}"
+  if [[ ! -x "${staged_prefix}/bin/worldserver" ]]; then
+    echo "DESTDIR install missing ${staged_prefix}/bin/worldserver" >&2
+    exit 1
   fi
-  install -D "${src}/authserver" "${ACORE_STAGING}/bin/authserver"
-  install -D "${src}/worldserver" "${ACORE_STAGING}/bin/worldserver"
-}
-
-if [[ "${INSTALL_CONF_DIR}" != "${RUNTIME_CONF_DIR}" ]]; then
-  echo "Build host: full compile with install CONF_DIR, then relink apps with VPS CONF_DIR"
-  run_cmake_configure "${INSTALL_CONF_DIR}"
-  cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "${JOBS}"
-
-  rm -rf "${ACORE_STAGING}"
-  cmake --install "${BUILD_DIR}" --config RelWithDebInfo
-
-  run_cmake_configure "${RUNTIME_CONF_DIR}"
-  cmake --build "${BUILD_DIR}" --config RelWithDebInfo --target common authserver worldserver -j "${JOBS}"
-  overlay_app_binaries
+  mkdir -p "${ACORE_STAGING}"
+  rsync -a "${staged_prefix}/" "${ACORE_STAGING}/"
+  if [[ -d "${staged_conf}" ]]; then
+    mkdir -p "${ACORE_STAGING}/etc"
+    rsync -a "${staged_conf}/" "${ACORE_STAGING}/etc/"
+  fi
+  rm -rf "${destdir}"
 else
-  run_cmake_configure "${RUNTIME_CONF_DIR}"
-  cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "${JOBS}"
-
-  rm -rf "${ACORE_STAGING}"
   cmake --install "${BUILD_DIR}" --config RelWithDebInfo
 fi
 

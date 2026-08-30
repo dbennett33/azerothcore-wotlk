@@ -105,6 +105,13 @@ jobs:
           rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
           rsync -a apps/deploy/ /home/acore/src/azerothcore/apps/deploy/
 
+      - name: Sync extra module SQL sources
+        run: |
+          set -euo pipefail
+          mkdir -p /home/acore/src/azerothcore-wotlk/modules
+          bash deploy-src/apps/deploy/debian12/clone-extra-modules.sh \
+            /home/acore/src/azerothcore-wotlk/modules
+
       - name: Clone mod-individual-progression for optional SQL/DBC
         run: |
           set -euo pipefail

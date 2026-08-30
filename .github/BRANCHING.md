@@ -46,6 +46,17 @@ See `mod-playerbots` `.github/BRANCHING.md`.
 
 Optional repo **variable** `MOD_PLAYERBOTS_REPO` if mod-playerbots is not `{owner}/mod-playerbots`.
 
+## Extra modules (compiled on every vps-build)
+
+Checked out by `apps/deploy/debian12/clone-extra-modules.sh`:
+
+| Module | Repo | Notes |
+|--------|------|--------|
+| `mod-npc-enchanter` | azerothcore/mod-npc-enchanter | Template only; spawn with `.npc add 601015` |
+| `mod-npc-services` | azerothcore/mod-npc-services | Template only; spawn with `.npc add 55002` |
+
+World SQL for the NPC modules is applied on worldserver start from `SourceDirectory/modules/` (synced on deploy).
+
 ## Deploy player warning (optional)
 
 `deploy-vps` warns players **60 seconds** before stopping worldserver (chat announce + in-game shutdown timer).
