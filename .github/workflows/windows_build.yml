@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   windows-build:
+    if: github.repository == 'mod-playerbots/azerothcore-wotlk'
     strategy:
       fail-fast: false
       matrix:
