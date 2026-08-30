@@ -12,7 +12,7 @@ IP_CONF="${ACORE_PREFIX}/etc/modules/individualProgression.conf"
 set_kv() {
   local file="$1" key="$2" value="$3"
   if grep -q "^${key} =" "$file"; then
-    sed -i "s/^${key} = .*/${key} = ${value}/" "$file"
+    sed -i "s|^${key} = .*|${key} = ${value}|" "$file"
   else
     echo "${key} = ${value}" >>"$file"
   fi

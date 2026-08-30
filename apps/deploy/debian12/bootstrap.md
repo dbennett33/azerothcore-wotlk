@@ -13,7 +13,7 @@ Paths used below (keep in sync with the workflows):
 - User: `acore`
 - **Live** (`Playerbot`): prefix `/home/acore/server`, staging `/home/acore/server-staging`, build `/home/acore/build/live`
 - **Test** (`dev`): prefix `/home/acore/server-test`, staging `/home/acore/server-staging-test`, build `/home/acore/build/test`
-- Shared client data: `/home/acore/server/data` (test symlinks here)
+- Client data: separate `server/data` and `server-test/data` (test copies from live on first init)
 - systemd user units: `auth.service`, `world.service`, `world-test.service`
 
 For live + test on one VPS (shared auth, separate world DBs), see [`MULTI-REALM.md`](MULTI-REALM.md).

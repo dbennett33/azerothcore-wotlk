@@ -26,12 +26,12 @@ PUBLIC_ADDRESS="${PUBLIC_ADDRESS:-127.0.0.1}"
 
 mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" acore_auth <<SQL
 INSERT INTO realmlist (id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild)
-VALUES (1, 'Live', '${PUBLIC_ADDRESS}', '127.0.0.1', '255.255.255.0', 8085, 0, 2, 1, 0, 12340)
+VALUES (1, 'Live', '${PUBLIC_ADDRESS}', '127.0.0.1', '255.255.255.0', 8085, 0, 2, 1, 0, 0, 12340)
 ON DUPLICATE KEY UPDATE
   name='Live', address='${PUBLIC_ADDRESS}', port=8085;
 
 INSERT INTO realmlist (id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild)
-VALUES (2, 'Test', '${PUBLIC_ADDRESS}', '127.0.0.1', '255.255.255.0', 8086, 0, 2, 1, 0, 12340)
+VALUES (2, 'Test', '${PUBLIC_ADDRESS}', '127.0.0.1', '255.255.255.0', 8086, 0, 2, 1, 0, 0, 12340)
 ON DUPLICATE KEY UPDATE
   name='Test', address='${PUBLIC_ADDRESS}', port=8086;
 SQL

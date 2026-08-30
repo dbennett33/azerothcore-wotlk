@@ -54,11 +54,15 @@ First start of each worldserver applies SQL updates to its DBs automatically.
 ## Host layout
 
 ```text
-/home/acore/server/           live bin, etc, logs (auth + world live)
-/home/acore/server-test/      test bin, etc, logs (world only)
-/home/acore/server/data/      shared maps/dbc/vmaps (test symlinks here)
+/home/acore/server/           live bin, etc, logs, data (auth + world live)
+/home/acore/server-test/      test bin, etc, logs, data (world only)
 /home/acore/build/live|test/  persistent cmake build dirs
 ```
+
+`init-test-prefix.sh` creates **separate** `server-test/data/` (not a symlink). On first run it
+`rsync`s from live so test starts with the same maps/dbc/vmaps; after that each prefix owns its
+own files. Optional DBC patches (`apply-vanilla-optional.sh`) apply per prefix into that realm's
+`data/dbc/`. Re-copy live data into test: `FORCE_DATA_SYNC=1 bash init-test-prefix.sh`.
 
 Run once after live exists:
 

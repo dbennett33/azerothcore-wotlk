@@ -9,7 +9,7 @@ TEST_PREFIX="${TEST_PREFIX:-/home/${ACORE_USER}/server-test}"
 set_kv() {
   local file="$1" key="$2" value="$3"
   if grep -q "^${key} =" "$file"; then
-    sed -i "s/^${key} = .*/${key} = ${value}/" "$file"
+    sed -i "s|^${key} = .*|${key} = ${value}|" "$file"
   else
     echo "${key} = ${value}" >>"$file"
   fi
@@ -27,9 +27,40 @@ fi
 
 mkdir -p "${TEST_PREFIX}/bin" "${TEST_PREFIX}/etc/modules" "${TEST_PREFIX}/logs"
 
-if [[ ! -e "${TEST_PREFIX}/data" ]]; then
-  ln -sfn "${LIVE_PREFIX}/data" "${TEST_PREFIX}/data"
-  echo "Linked ${TEST_PREFIX}/data -> ${LIVE_PREFIX}/data"
+LIVE_DATA="${LIVE_PREFIX}/data"
+TEST_DATA="${TEST_PREFIX}/data"
+DATA_MARKER="${TEST_PREFIX}/etc/.data-copied-from-live"
+
+if [[ -L "${TEST_DATA}" ]]; then
+  echo "Removing data symlink (${TEST_DATA} -> $(readlink "${TEST_DATA}"))"
+  rm "${TEST_DATA}"
+fi
+
+mkdir -p "${TEST_DATA}"
+
+copy_live_data() {
+  if [[ ! -d "${LIVE_DATA}/dbc" ]]; then
+    echo "Live data missing under ${LIVE_DATA}/dbc; copy maps/dbc/vmaps into ${TEST_DATA} manually."
+    return 1
+  fi
+  echo "Copying client data live -> test (rsync; one-time unless FORCE_DATA_SYNC=1)..."
+  rsync -a "${LIVE_DATA}/" "${TEST_DATA}/"
+  date -u +%Y-%m-%dT%H:%M:%SZ >"${DATA_MARKER}"
+  echo "Test data at ${TEST_DATA} (copied from live)."
+}
+
+if [[ "${SKIP_DATA_COPY:-0}" == "1" ]]; then
+  echo "SKIP_DATA_COPY=1: using existing or empty ${TEST_DATA}"
+elif [[ "${FORCE_DATA_SYNC:-0}" == "1" ]]; then
+  copy_live_data
+elif [[ ! -f "${LIVE_DATA}/dbc/Map.dbc" && ! -f "${TEST_DATA}/dbc/Map.dbc" ]]; then
+  copy_live_data || true
+elif [[ ! -f "${TEST_DATA}/dbc/Map.dbc" && -f "${LIVE_DATA}/dbc/Map.dbc" ]]; then
+  copy_live_data
+elif [[ -f "${DATA_MARKER}" ]]; then
+  echo "Test data already initialized ($(cat "${DATA_MARKER}"))"
+else
+  echo "Test data present at ${TEST_DATA} (not managed by ${DATA_MARKER})"
 fi
 
 for f in authserver.conf worldserver.conf; do
@@ -71,4 +102,5 @@ if [[ -f "$PB" ]]; then
 fi
 
 echo "Test prefix ready at ${TEST_PREFIX} (RealmID=2, port 8086)."
+echo "Test data is separate from live. Re-copy from live: FORCE_DATA_SYNC=1 $0"
 echo "Create test MySQL DBs if needed (see MULTI-REALM.md), then deploy-vps with target=test."
