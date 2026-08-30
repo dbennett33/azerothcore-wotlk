@@ -340,6 +340,7 @@ jobs:
   deploy-test:
     needs: [build, vps-stage]
     if: |
+      always() &&
       github.ref == 'refs/heads/dev' &&
       needs.build.result == 'success' &&
       (needs.vps-stage.result == 'success' || needs.vps-stage.result == 'skipped')
