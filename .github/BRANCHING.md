@@ -54,6 +54,7 @@ Checked out by `apps/deploy/debian12/clone-extra-modules.sh`:
 |--------|------|--------|
 | `mod-npc-enchanter` | azerothcore/mod-npc-enchanter | Template only; spawn with `.npc add 601015` |
 | `mod-npc-services` | azerothcore/mod-npc-services | Template only; spawn with `.npc add 55002` |
+| `mod-dungeon-clear` | kadeshar/mod-dungeon-clear | Playerbots tank AI for dungeon clears. Needs a **bot tank** in the group. In-dungeon: `.dc on` / party chat `dc on`. Optional client addon: [mod-dungeon-clear-addon](https://github.com/kadeshar/mod-dungeon-clear-addon) |
 
 World SQL for the NPC modules is applied on worldserver start from `SourceDirectory/modules/` (synced on deploy).
 

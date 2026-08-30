@@ -184,7 +184,7 @@ jobs:
           path: modules/mod-individual-progression
           clean: false
 
-      - name: Checkout extra modules (enchanter, services)
+      - name: Checkout extra modules (enchanter, services, dungeon-clear)
         run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
 
       - name: Ensure test prefix etc exists (dev builds on VPS)
@@ -312,7 +312,7 @@ jobs:
           path: modules/mod-individual-progression
           clean: false
 
-      - name: Checkout extra modules (enchanter, services)
+      - name: Checkout extra modules (enchanter, services, dungeon-clear)
         run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
 
       - name: Ensure test prefix etc exists
