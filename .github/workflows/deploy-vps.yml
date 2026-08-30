@@ -1,29 +1,52 @@
 name: deploy-vps
 
-# Promote /home/acore/server-staging (last vps-build on this host) to live.
-# Does not compile — run vps-build first (automatic on push to Playerbot).
+# Promote last vps-build output on this host to live or test. Does not compile.
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy environment
+        type: choice
+        options:
+          - live
+          - test
+        default: live
 
 concurrency:
-  group: deploy-vps
+  group: deploy-vps-${{ inputs.target }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
-  ACORE_PREFIX: /home/acore/server
-  ACORE_STAGING: /home/acore/server-staging
   CC: gcc
   CXX: g++
 
 jobs:
   deploy:
     runs-on: [self-hosted, linux, acore-vps]
-    name: promote-and-restart
+    name: promote-${{ inputs.target }}
     steps:
+      - name: Resolve deploy paths
+        id: paths
+        run: |
+          case "${{ inputs.target }}" in
+            live)
+              echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+              ;;
+            test)
+              echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown target" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Checkout deploy scripts
         uses: actions/checkout@v7
         with:
@@ -36,10 +59,16 @@ jobs:
         run: echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
 
       - name: Verify staged binaries
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: |
-          if [ ! -x "${ACORE_STAGING}/bin/worldserver" ] || [ ! -x "${ACORE_STAGING}/bin/authserver" ]; then
-            echo "Missing staged binaries under ${ACORE_STAGING}."
-            echo "Push/merge to Playerbot and wait for vps-build to finish on this host."
+          if [ ! -x "${ACORE_STAGING}/bin/worldserver" ]; then
+            echo "Missing staged worldserver under ${ACORE_STAGING}."
+            echo "Push to the matching branch and wait for vps-build."
+            exit 1
+          fi
+          if [ "${{ inputs.target }}" = "live" ] && [ ! -x "${ACORE_STAGING}/bin/authserver" ]; then
+            echo "Missing staged authserver under ${ACORE_STAGING}."
             exit 1
           fi
           if [ -f "${ACORE_STAGING}/.build-info" ]; then
@@ -54,6 +83,9 @@ jobs:
           install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
           install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
           install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
+          install -D -m 755 apps/deploy/debian12/promote-staging.sh /home/acore/deploy/promote-staging.sh
+          install -D -m 755 apps/deploy/debian12/ensure-realmlist.sh /home/acore/deploy/ensure-realmlist.sh
+          install -D -m 755 apps/deploy/debian12/init-test-prefix.sh /home/acore/deploy/init-test-prefix.sh
           install -D -m 644 apps/deploy/debian12/.acore-backup.env.example /home/acore/deploy/.acore-backup.env.example
           mkdir -p /home/acore/src/azerothcore/apps
           rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/
@@ -71,41 +103,35 @@ jobs:
             git -C "$dest" pull --ff-only origin master
           fi
 
-      - name: Apply optional vanilla SQL and DBC (once)
+      - name: Ensure test prefix layout
+        if: inputs.target == 'test'
+        run: /home/acore/deploy/init-test-prefix.sh
+
+      - name: Ensure auth realmlist entries
+        run: /home/acore/deploy/ensure-realmlist.sh
+
+      - name: Apply optional vanilla SQL and DBC (once per prefix)
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          WORLD_DB: ${{ inputs.target == 'test' && 'acore_world_test' || 'acore_world' }}
         run: |
           set -euo pipefail
-          export ACORE_PREFIX="${ACORE_PREFIX}"
           export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
           /home/acore/deploy/apply-vanilla-optional.sh || true
 
-      - name: Stop live services
-        run: /home/acore/deploy/restart-acore.sh stop
+      - name: Stop services
+        run: /home/acore/deploy/restart-acore.sh stop "${{ inputs.target }}"
 
-      - name: Swap bin directory
-        run: |
-          set -euo pipefail
-          mkdir -p "${ACORE_PREFIX}"
-          staging_bin="${ACORE_STAGING}/bin"
-          live_bin="${ACORE_PREFIX}/bin"
-          new_bin="${ACORE_PREFIX}/bin.new"
-          old_bin="${ACORE_PREFIX}/bin.old"
-          rm -rf "${new_bin}"
-          mkdir -p "${new_bin}"
-          rsync -a --delete "${staging_bin}/" "${new_bin}/"
-          if [ -d "${live_bin}" ]; then
-            rm -rf "${old_bin}"
-            mv "${live_bin}" "${old_bin}"
-          fi
-          mv "${new_bin}" "${live_bin}"
-          if [ -d "${ACORE_STAGING}/etc" ]; then
-            mkdir -p "${ACORE_PREFIX}/etc"
-            rsync -a --ignore-existing "${ACORE_STAGING}/etc/" "${ACORE_PREFIX}/etc/"
-          fi
+      - name: Promote staging to prefix
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+        run: /home/acore/deploy/promote-staging.sh
 
       - name: Configure vanilla progression settings
-        run: |
-          export ACORE_PREFIX="${ACORE_PREFIX}"
-          /home/acore/deploy/configure-vanilla-progression.sh
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+        run: /home/acore/deploy/configure-vanilla-progression.sh
 
-      - name: Start live services
-        run: /home/acore/deploy/restart-acore.sh start
+      - name: Start services
+        run: /home/acore/deploy/restart-acore.sh start "${{ inputs.target }}"

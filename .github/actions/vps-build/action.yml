@@ -6,7 +6,7 @@ runs:
     - name: Configure
       shell: bash
       run: |
-        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" \
+        cmake -S "${GITHUB_WORKSPACE}" -B "${BUILD_DIR}" \
           -DCMAKE_C_COMPILER="${CC}" \
           -DCMAKE_CXX_COMPILER="${CXX}" \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -19,12 +19,12 @@ runs:
 
     - name: Build
       shell: bash
-      run: cmake --build "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo -j "$(($(nproc) + 2))"
+      run: cmake --build "${BUILD_DIR}" --config RelWithDebInfo -j "$(($(nproc) + 2))"
 
     - name: Install to staging
       shell: bash
       run: |
         rm -rf "${ACORE_STAGING}"
-        cmake --install "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo
+        cmake --install "${BUILD_DIR}" --config RelWithDebInfo
         test -x "${ACORE_STAGING}/bin/authserver"
         test -x "${ACORE_STAGING}/bin/worldserver"

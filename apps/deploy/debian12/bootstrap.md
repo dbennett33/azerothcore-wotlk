@@ -4,16 +4,19 @@ One-time setup. Do **not** put MySQL install or package setup in GitHub Actions.
 The deploy workflow ([`.github/workflows/deploy-vps.yml`](../../../.github/workflows/deploy-vps.yml))
 only builds, swaps `bin/`, and restarts systemd user units.
 
-**Self-hosted runner security:** `vps-build` runs only on **push to `Playerbot`** (not on
-pull requests). `deploy-vps` is **`workflow_dispatch` only**. Fork PRs never touch the VPS runner.
-Use branch protection on `Playerbot` so only you merge deployable commits.
+**Self-hosted runner security:** `vps-build` runs on **push to `Playerbot` or `dev`** (not on
+pull requests). `deploy-vps` is **`workflow_dispatch`** with target **live** or **test**. Fork PRs
+never touch the VPS runner. Use branch protection on deploy branches so only you merge deployable commits.
 
-Paths used below (keep in sync with the workflow `env:` block):
+Paths used below (keep in sync with the workflows):
 
 - User: `acore`
-- Live prefix: `/home/acore/server` (`bin/`, `etc/`, `data/`, `logs/`)
-- Staging prefix: `/home/acore/server-staging`
-- systemd user units: `auth.service`, `world.service` (via `service-manager.sh`)
+- **Live** (`Playerbot`): prefix `/home/acore/server`, staging `/home/acore/server-staging`, build `/home/acore/build/live`
+- **Test** (`dev`): prefix `/home/acore/server-test`, staging `/home/acore/server-staging-test`, build `/home/acore/build/test`
+- Shared client data: `/home/acore/server/data` (test symlinks here)
+- systemd user units: `auth.service`, `world.service`, `world-test.service`
+
+For live + test on one VPS (shared auth, separate world DBs), see [`MULTI-REALM.md`](MULTI-REALM.md).
 
 You need roughly **8 GB RAM** (plus swap) to compile on this machine.
 
@@ -169,7 +172,10 @@ Confirm `XDG_RUNTIME_DIR` is `/run/user/<acore-uid>` so `systemctl --user` works
 
 ## 8. First deploy
 
-On GitHub: **Actions** → **deploy-vps** → **Run workflow**. Pick the branch to build.
+On GitHub:
+
+- **Actions** → **vps-build** runs automatically on push to `Playerbot` or `dev`.
+- **Actions** → **deploy-vps** → **Run workflow** → choose **live** or **test**.
 
 If units are not created yet, the job still installs `bin/` and skips restart. Then run section 6
 and start the services once.

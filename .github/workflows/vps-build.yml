@@ -1,12 +1,13 @@
 name: vps-build
 
-# Compile on the VPS when Playerbot is updated. Output stays on the host at
-# ACORE_STAGING (no GitHub artifact upload). Deploy to live is manual (deploy-vps).
+# Compile on the VPS when a deploy branch is updated. Output stays on the host at
+# ACORE_STAGING (no GitHub artifact upload). Deploy is manual (deploy-vps).
 
 on:
   push:
     branches:
       - Playerbot
+      - dev
 
 concurrency:
   group: vps-build-${{ github.ref }}
@@ -16,8 +17,6 @@ permissions:
   contents: read
 
 env:
-  ACORE_PREFIX: /home/acore/server
-  ACORE_STAGING: /home/acore/server-staging
   CC: gcc
   CXX: g++
 
@@ -26,17 +25,38 @@ jobs:
     runs-on: [self-hosted, linux, acore-vps]
     name: compile-and-stage
     steps:
+      - name: Resolve paths for branch
+        id: paths
+        run: |
+          branch="${GITHUB_REF#refs/heads/}"
+          case "$branch" in
+            Playerbot)
+              echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging" >> "$GITHUB_OUTPUT"
+              echo "build_dir=/home/acore/build/live" >> "$GITHUB_OUTPUT"
+              ;;
+            dev)
+              echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+              echo "acore_staging=/home/acore/server-staging-test" >> "$GITHUB_OUTPUT"
+              echo "build_dir=/home/acore/build/test" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported branch: $branch" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Checkout AzerothCore
         uses: actions/checkout@v7
 
       - name: Resolve Playerbot module ref
         id: playerbots
         run: |
-          branch="$(git rev-parse --abbrev-ref HEAD)"
+          branch="${GITHUB_REF#refs/heads/}"
           if [ "$branch" = "Playerbot" ]; then
             echo "ref=master" >> "$GITHUB_OUTPUT"
           else
-            echo "ref=test-staging" >> "$GITHUB_OUTPUT"
+            echo "ref=master" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout Playerbot module
@@ -53,12 +73,26 @@ jobs:
           ref: master
           path: modules/mod-individual-progression
 
+      - name: Ensure test prefix etc exists (dev builds)
+        if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'
+        run: |
+          if [[ ! -d /home/acore/server-test/etc ]]; then
+            bash apps/deploy/debian12/init-test-prefix.sh
+          fi
+
       - uses: ./.github/actions/vps-build
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
+          BUILD_DIR: ${{ steps.paths.outputs.build_dir }}
 
       - name: Record build metadata on host
+        env:
+          ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: |
           {
             echo "sha=${GITHUB_SHA}"
             echo "ref=${GITHUB_REF}"
+            echo "branch=${GITHUB_REF#refs/heads/}"
             echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > "${ACORE_STAGING}/.build-info"

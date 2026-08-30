@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Create auth.service and world.service via AC service-manager (run once as acore,
-# after /home/acore/server/bin has authserver and worldserver).
+# Create auth.service, world.service, and world-test.service via AC service-manager.
+# Run once as acore after binaries and configs exist under live and test prefixes.
 
 set -euo pipefail
 
-ACORE_PREFIX="${ACORE_PREFIX:-/home/acore/server}"
-BIN_PATH="${ACORE_PREFIX}/bin"
-ETC_PATH="${ACORE_PREFIX}/etc"
+ACORE_USER="${ACORE_USER:-acore}"
+LIVE_PREFIX="${ACORE_PREFIX:-/home/${ACORE_USER}/server}"
+TEST_PREFIX="${TEST_PREFIX:-/home/${ACORE_USER}/server-test}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
@@ -24,18 +24,8 @@ find_service_manager() {
   return 1
 }
 
-if [ "$(id -un)" != "acore" ]; then
-  echo "run as acore: sudo -u acore bash $0" >&2
-  exit 1
-fi
-
-if [ ! -x "${BIN_PATH}/authserver" ] || [ ! -x "${BIN_PATH}/worldserver" ]; then
-  echo "binaries missing under ${BIN_PATH}; run deploy-vps or cmake --install first" >&2
-  exit 1
-fi
-
-if [ ! -f "${ETC_PATH}/authserver.conf" ] || [ ! -f "${ETC_PATH}/worldserver.conf" ]; then
-  echo "configs missing under ${ETC_PATH}; copy from *.conf.dist and edit DB settings" >&2
+if [ "$(id -un)" != "$ACORE_USER" ]; then
+  echo "run as ${ACORE_USER}: sudo -u ${ACORE_USER} bash $0" >&2
   exit 1
 fi
 
@@ -50,18 +40,40 @@ create_unit() {
   local name="$1"
   local type="$2"
   local conf="$3"
+  local bin_path="$4"
   if systemctl --user cat "${name}.service" >/dev/null 2>&1; then
     echo "skip: ${name}.service already exists"
     return 0
   fi
   bash "$SM" create "$type" "$name" \
     --provider systemd --user --restart-policy on-failure \
-    --bin-path "$BIN_PATH" \
+    --bin-path "$bin_path" \
     --server-config "$conf" \
     --no-start
 }
 
-create_unit auth auth "${ETC_PATH}/authserver.conf"
-create_unit world world "${ETC_PATH}/worldserver.conf"
+LIVE_BIN="${LIVE_PREFIX}/bin"
+LIVE_ETC="${LIVE_PREFIX}/etc"
+TEST_BIN="${TEST_PREFIX}/bin"
+TEST_ETC="${TEST_PREFIX}/etc"
 
-echo "units created. start with: /home/acore/deploy/restart-acore.sh start"
+if [ ! -x "${LIVE_BIN}/authserver" ] || [ ! -x "${LIVE_BIN}/worldserver" ]; then
+  echo "live binaries missing under ${LIVE_BIN}; deploy live first" >&2
+  exit 1
+fi
+
+if [ ! -f "${LIVE_ETC}/authserver.conf" ] || [ ! -f "${LIVE_ETC}/worldserver.conf" ]; then
+  echo "live configs missing under ${LIVE_ETC}" >&2
+  exit 1
+fi
+
+create_unit auth auth "${LIVE_ETC}/authserver.conf" "${LIVE_BIN}"
+create_unit world world "${LIVE_ETC}/worldserver.conf" "${LIVE_BIN}"
+
+if [ -x "${TEST_BIN}/worldserver" ] && [ -f "${TEST_ETC}/worldserver.conf" ]; then
+  create_unit world-test world "${TEST_ETC}/worldserver.conf" "${TEST_BIN}"
+else
+  echo "skip world-test: deploy test realm first (${TEST_PREFIX})"
+fi
+
+echo "units ready. start with: /home/acore/deploy/restart-acore.sh start all"
