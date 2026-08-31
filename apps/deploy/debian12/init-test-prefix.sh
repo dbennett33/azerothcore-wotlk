@@ -79,6 +79,10 @@ if [[ -f "${LIVE_PREFIX}/etc/modules/playerbots.conf" && ! -f "${TEST_PREFIX}/et
   cp -a "${LIVE_PREFIX}/etc/modules/playerbots.conf" "${TEST_PREFIX}/etc/modules/playerbots.conf"
 fi
 
+if [[ -f "${LIVE_PREFIX}/etc/modules/individualProgression.conf" && ! -f "${TEST_PREFIX}/etc/modules/individualProgression.conf" ]]; then
+  cp -a "${LIVE_PREFIX}/etc/modules/individualProgression.conf" "${TEST_PREFIX}/etc/modules/individualProgression.conf"
+fi
+
 WS="${TEST_PREFIX}/etc/worldserver.conf"
 if [[ -f "$WS" ]]; then
   set_kv "$WS" "RealmID" "2"

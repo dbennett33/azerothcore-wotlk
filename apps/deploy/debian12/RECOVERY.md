@@ -7,13 +7,13 @@ If the VPS is lost, you can rebuild from **git + one offsite backup** + client d
 | Item | Location |
 |------|----------|
 | Build & deploy pipelines | `.github/workflows/vps-build.yml`, `deploy-vps.yml` |
-| WotLK gameplay settings (re-applied every deploy) | `configure-realm.sh` |
+| WotLK tier-13 gameplay settings (re-applied every deploy) | `configure-realm.sh` |
 | Bootstrap / units / restart | `bootstrap.md`, `setup-systemd-units.sh`, `restart-acore.sh` |
 | Backup & restore scripts | `backup-acore.sh`, `restore-acore.sh` |
 
-After deploy, **WotLK settings** (expansion 2, cap 80, DK enabled, SOAP on localhost, 1000 live
-bots with ~10% at 80, etc.) are enforced from `configure-realm.sh` — you do not need to remember
-every knob.
+After deploy, **WotLK tier-13 settings** (expansion 2, cap 80, IP tier 13 start/limit, DK enabled,
+SOAP on localhost, 1000 live bots with ~10% at 80, etc.) are enforced from `configure-realm.sh` —
+you do not need to remember every knob.
 
 ## What is **not** in git (must backup or redo once)
 
@@ -64,7 +64,7 @@ Suggested schedule: daily or before each `deploy-vps`.
 ## What deploy does **not** wipe
 
 - Restored `etc/` stays until you replace it; deploy only adds missing files from staging `etc/` (`rsync --ignore-existing`).
-- `configure-realm.sh` updates **listed keys only** (WotLK + bot policy).
+- `configure-realm.sh` updates **listed keys only** (WotLK tier 13 + bot policy).
 - `data/`, MySQL, and optional-patch marker survive deploy when already present.
 
 ## Secrets

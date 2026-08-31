@@ -190,12 +190,13 @@ After the first deploy, as `acore`:
 The deploy workflow copies helpers to `/home/acore/deploy/` and startup-scripts to
 `/home/acore/src/azerothcore/` on each run.
 
-## 9. WotLK realm settings
+## 9. WotLK realm settings (tier 13)
 
 After deploy, `configure-realm.sh` sets:
 
 - `Expansion = 2`, `MaxPlayerLevel = 80`, `MinDualSpecLevel = 40`
-- Death Knight enabled; dual spec at 40; RDF available (WotLK defaults)
+- `mod-individual-progression`: server-wide **tier 13** (WotLK phase 1 — Naxx 80, Eye of Eternity, Obsidian Sanctum)
+- Death Knight enabled; dual spec at 40; RDF available
 - Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
 - Test playerbots: 50 bots, same level distribution
 
@@ -203,7 +204,8 @@ After deploy, `configure-realm.sh` sets:
 patches from `Data/` if previously installed.
 
 **Migrating from vanilla progression:** world and character DBs must be reset once (see
-`.agents/plans/migrate-to-wotlk-80/PLAN.md`). `mod-individual-progression` is no longer built.
+`.agents/plans/migrate-to-wotlk-80/PLAN.md`). `mod-individual-progression` remains enabled with
+tier 13 as both the starting and maximum progression stage.
 
 ## 10. Backups and disaster recovery
 

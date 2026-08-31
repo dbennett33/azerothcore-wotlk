@@ -110,7 +110,9 @@ ACORE_PREFIX=/home/acore/server-test /home/acore/deploy/graceful-stop-world.sh
 shutdown you only lose progress since the last periodic save if shutdown fails. For less
 rollback on crashes, lower it in `worldserver.conf` (e.g. `300000` = 5 min).
 
-`configure-realm.sh` runs on **both** deploys (WotLK defaults; live vs test bot counts differ by RealmID).
+`configure-realm.sh` runs on **both** deploys (WotLK tier 13 + bot policy; live vs test bot counts differ by RealmID).
+
+`vps-build` also checks out **mod-individual-progression** (`ZhengPeiRu21/mod-individual-progression`, `master`).
 
 ## Backups
 

@@ -136,7 +136,7 @@ jobs:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: /home/acore/deploy/promote-staging.sh
 
-      - name: Configure WotLK realm settings
+      - name: Configure WotLK tier-13 realm settings
         env:
           ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
         run: /home/acore/deploy/configure-realm.sh

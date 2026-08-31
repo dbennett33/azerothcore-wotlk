@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Apply worldserver + playerbots settings for full WotLK 3.3.5 realms.
+# Apply worldserver + mod-individual-progression + playerbots for WotLK phase 1 (tier 13).
 # Safe to re-run; edits live config under ACORE_PREFIX (default /home/acore/server).
 set -euo pipefail
 
 ACORE_PREFIX="${ACORE_PREFIX:-/home/acore/server}"
 WS_CONF="${ACORE_PREFIX}/etc/worldserver.conf"
 PB_CONF="${ACORE_PREFIX}/etc/modules/playerbots.conf"
+IP_DIST="${ACORE_PREFIX}/etc/modules/individualProgression.conf.dist"
+IP_CONF="${ACORE_PREFIX}/etc/modules/individualProgression.conf"
 
 set_kv() {
   local file="$1" key="$2" value="$3"
@@ -43,8 +45,8 @@ db_info() {
 set_kv "$WS_CONF" "Expansion" "2"
 set_kv "$WS_CONF" "MaxPlayerLevel" "80"
 set_kv "$WS_CONF" "MinDualSpecLevel" "40"
-set_kv "$WS_CONF" "EnablePlayerSettings" "0"
-set_kv "$WS_CONF" "DBC.EnforceItemAttributes" "1"
+set_kv "$WS_CONF" "EnablePlayerSettings" "1"
+set_kv "$WS_CONF" "DBC.EnforceItemAttributes" "0"
 set_kv "$WS_CONF" "CharacterCreating.Disabled.ClassMask" "0"
 set_kv "$WS_CONF" "SOAP.Enabled" "1"
 set_kv "$WS_CONF" "SOAP.IP" "127.0.0.1"
@@ -58,6 +60,31 @@ set_kv "$WS_CONF" "CharacterDatabaseInfo" "\"$(db_info "$character_db")\""
 set_kv "$WS_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
 set_kv "$WS_CONF" "PlayerbotsDatabaseInfo" "\"$(db_info "$playerbots_db")\""
 set_kv "$WS_CONF" "Playerbots.Updates.EnableDatabases" "1"
+
+if [[ -f "$IP_DIST" && ! -f "$IP_CONF" ]]; then
+  cp "$IP_DIST" "$IP_CONF"
+fi
+
+if [[ -f "$IP_CONF" ]]; then
+  # Tier 13 = WotLK phase 1 (Naxx 80, Eye of Eternity, Obsidian Sanctum).
+  set_kv "$IP_CONF" "IndividualProgression.Enable" "1"
+  set_kv "$IP_CONF" "IndividualProgression.ProgressionLimit" "13"
+  set_kv "$IP_CONF" "IndividualProgression.StartingProgression" "13"
+  set_kv "$IP_CONF" "IndividualProgression.TbcRacesUnlockProgression" "0"
+  set_kv "$IP_CONF" "IndividualProgression.DeathKnightUnlockProgression" "13"
+  set_kv "$IP_CONF" "IndividualProgression.DeathKnightStartingProgression" "13"
+  set_kv "$IP_CONF" "IndividualProgression.VanillaPowerAdjustment" "1"
+  set_kv "$IP_CONF" "IndividualProgression.VanillaHealingAdjustment" "1"
+  set_kv "$IP_CONF" "IndividualProgression.TBCPowerAdjustment" "1"
+  set_kv "$IP_CONF" "IndividualProgression.TBCHealingAdjustment" "1"
+  set_kv "$IP_CONF" "IndividualProgression.SimpleConfigOverride" "1"
+  set_kv "$IP_CONF" "IndividualProgression.DisableRDF" "0"
+  set_kv "$IP_CONF" "IndividualProgression.BotAccountsMaxLevel" "80"
+  set_kv "$IP_CONF" "IndividualProgression.BotAccountsRegex" "^RNDBOT.*"
+  set_kv "$IP_CONF" "IndividualProgression.BotOnlyAdjustments" "0"
+else
+  echo "individualProgression.conf not found (module not installed yet?). Skipping module config."
+fi
 
 if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.Enabled" "1"
@@ -88,4 +115,4 @@ if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.PlayerbotsDatabaseInfo" "$(db_info "$playerbots_db")"
 fi
 
-echo "WotLK realm config applied under ${ACORE_PREFIX}/etc"
+echo "WotLK tier-13 realm config applied under ${ACORE_PREFIX}/etc"
