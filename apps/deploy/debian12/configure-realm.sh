@@ -63,6 +63,12 @@ set_kv "$WS_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
 set_kv "$WS_CONF" "PlayerbotsDatabaseInfo" "\"$(db_info "$playerbots_db")\""
 set_kv "$WS_CONF" "Playerbots.Updates.EnableDatabases" "1"
 
+AUTH_CONF="${ACORE_PREFIX}/etc/authserver.conf"
+if [[ -f "$AUTH_CONF" ]]; then
+  # Compiled-in default is the build-VM runner path; auth will refuse to start without this.
+  set_kv "$AUTH_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
+fi
+
 if [[ -f "$IP_DIST" && ! -f "$IP_CONF" ]]; then
   cp "$IP_DIST" "$IP_CONF"
 fi
