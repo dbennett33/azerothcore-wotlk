@@ -190,31 +190,35 @@ After the first deploy, as `acore`:
 The deploy workflow copies helpers to `/home/acore/deploy/` and startup-scripts to
 `/home/acore/src/azerothcore/` on each run.
 
-## 9. Vanilla progression (`mod-individual-progression`)
+## 9. WotLK realm settings (tier 13)
 
-The **Playerbot** branch also builds [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression)
-for classic-style world content (vanilla raids, attunements, NPC/quest restoration, per-player
-progression capped at end of vanilla).
+After deploy, `configure-realm.sh` sets:
 
-After deploy, `configure-vanilla-progression.sh` sets:
+- `Expansion = 2`, `MaxPlayerLevel = 80`, `MinDualSpecLevel = 40`
+- `mod-individual-progression`: server-wide **tier 13** (WotLK phase 1 — Naxx 80, Eye of Eternity, Obsidian Sanctum)
+- Death Knight enabled; dual spec at 40; RDF available
+- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
+- Test playerbots: 50 bots, same level distribution
 
-- `Expansion = 0`, `MaxPlayerLevel = 60`, `EnablePlayerSettings = 1`, `DBC.EnforceItemAttributes = 0`
-- Module config: `ProgressionLimit = 7`, vanilla damage/healing tuning, no RDF, DK/BE locked until TBC
+**Client:** use a clean 3.3.5a client (ChromieCraft). Remove any old `patch-V.mpq` / vanilla MPQ
+patches from `Data/` if previously installed.
 
-**One-time optional patches** (phasing, vanilla crafting, server DBC) run via `apply-vanilla-optional.sh`
-during deploy (marker: `/home/acore/server/etc/.vanilla-optional-applied`). Requires `p7zip-full` and
-module clone at `/home/acore/src/mod-individual-progression`.
+**Migrating from vanilla progression** (one-time, before first WotLK deploy of each realm):
 
-**Client (ChromieCraft):** for vanilla spell mana costs, add `patch-V.mpq` from the module’s
-`optional/patch-V.7z` to your client `Data/` folder. Optional visuals: `patch-J.mpq` / `patch-U.mpq`
-from `optional/dbc.7z`. See `optional/patch-explanations.txt` in the module repo.
+1. Backup MySQL (`backup-acore.sh` plus test DB dumps).
+2. Stop that realm's worldserver, then drop/recreate `acore_world[_test]`,
+   `acore_characters[_test]`, and `acore_playerbots[_test]` (leave `acore_auth`).
+3. Restore stock WotLK `Map.dbc` (vanilla cutover set Naxxramas expansion to 0).
+   Remove `etc/.vanilla-optional-applied`.
+4. `UPDATE acore_auth.account SET expansion = 2;`
+5. Merge to `dev` (auto-deploys test), then PR `dev` → `Playerbot` and run `deploy-vps` for live.
 
-**Note:** Module world SQL is **permanent** (restored vanilla quests/creatures). Take a DB backup
-before the first deploy that includes this module.
+`mod-individual-progression` stays enabled with tier 13 as both start and cap.
+Client: remove `patch-V.mpq` / vanilla MPQ patches from `Data/` if they were installed.
 
 ## 10. Backups and disaster recovery
 
-Gameplay tuning is in git (`configure-vanilla-progression.sh`, deploy workflows). **Secrets,
+Gameplay tuning is in git (`configure-realm.sh`, deploy workflows). **Secrets,
 characters, and full `etc/`** are on the VPS — snapshot them regularly:
 
 ```bash

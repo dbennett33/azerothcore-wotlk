@@ -93,8 +93,7 @@ jobs:
           install -D -m 755 apps/deploy/debian12/warn-before-world-stop.sh /home/acore/deploy/warn-before-world-stop.sh
           install -D -m 755 apps/deploy/debian12/verify-vps-binary.sh /home/acore/deploy/verify-vps-binary.sh
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
-          install -D -m 755 apps/deploy/debian12/configure-vanilla-progression.sh /home/acore/deploy/configure-vanilla-progression.sh
-          install -D -m 755 apps/deploy/debian12/apply-vanilla-optional.sh /home/acore/deploy/apply-vanilla-optional.sh
+          install -D -m 755 apps/deploy/debian12/configure-realm.sh /home/acore/deploy/configure-realm.sh
           install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
           install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
           install -D -m 755 apps/deploy/debian12/promote-staging.sh /home/acore/deploy/promote-staging.sh
@@ -112,35 +111,12 @@ jobs:
           bash deploy-src/apps/deploy/debian12/clone-extra-modules.sh \
             /home/acore/src/azerothcore-wotlk/modules
 
-      - name: Clone mod-individual-progression for optional SQL/DBC
-        run: |
-          set -euo pipefail
-          dest=/home/acore/src/mod-individual-progression
-          repo=https://github.com/ZhengPeiRu21/mod-individual-progression.git
-          branch=master
-          if [[ ! -d "$dest/.git" ]]; then
-            git clone --depth 1 --branch "$branch" "$repo" "$dest"
-          else
-            git -C "$dest" fetch --depth 1 origin "$branch"
-            git -C "$dest" checkout -f "$branch"
-            git -C "$dest" reset --hard "origin/$branch"
-          fi
-
       - name: Ensure test prefix layout
         if: inputs.target == 'test'
         run: /home/acore/deploy/init-test-prefix.sh
 
       - name: Ensure auth realmlist entries
         run: /home/acore/deploy/ensure-realmlist.sh
-
-      - name: Apply optional vanilla SQL and DBC (once per prefix)
-        env:
-          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
-          WORLD_DB: ${{ inputs.target == 'test' && 'acore_world_test' || 'acore_world' }}
-        run: |
-          set -euo pipefail
-          export MOD_IP_ROOT=/home/acore/src/mod-individual-progression
-          /home/acore/deploy/apply-vanilla-optional.sh || true
 
       - name: Warn players before restart
         env:
@@ -160,10 +136,10 @@ jobs:
           ACORE_STAGING: ${{ steps.paths.outputs.acore_staging }}
         run: /home/acore/deploy/promote-staging.sh
 
-      - name: Configure vanilla progression settings
+      - name: Configure WotLK tier-13 realm settings
         env:
           ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
-        run: /home/acore/deploy/configure-vanilla-progression.sh
+        run: /home/acore/deploy/configure-realm.sh
 
       - name: Start services
         run: /home/acore/deploy/restart-acore.sh start "${{ inputs.target }}"
