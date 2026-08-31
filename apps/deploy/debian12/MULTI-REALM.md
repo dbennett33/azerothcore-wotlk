@@ -66,8 +66,7 @@ First start of each worldserver applies SQL updates to its DBs automatically.
 
 `init-test-prefix.sh` creates **separate** `server-test/data/` (not a symlink). On first run it
 `rsync`s from live so test starts with the same maps/dbc/vmaps; after that each prefix owns its
-own files. Optional DBC patches (`apply-vanilla-optional.sh`) apply per prefix into that realm's
-`data/dbc/`. Re-copy live data into test: `FORCE_DATA_SYNC=1 bash init-test-prefix.sh`.
+own files. Re-copy live data into test: `FORCE_DATA_SYNC=1 bash init-test-prefix.sh`.
 
 Run once after live exists:
 
@@ -111,9 +110,9 @@ ACORE_PREFIX=/home/acore/server-test /home/acore/deploy/graceful-stop-world.sh
 shutdown you only lose progress since the last periodic save if shutdown fails. For less
 rollback on crashes, lower it in `worldserver.conf` (e.g. `300000` = 5 min).
 
-`configure-vanilla-progression.sh` runs on **both** deploys (same vanilla locks; override with test-specific keys later if needed).
+`configure-realm.sh` runs on **both** deploys (WotLK tier 13 + bot policy; live vs test bot counts differ by RealmID).
 
-`apply-vanilla-optional.sh` uses per-prefix marker (`etc/.vanilla-optional-applied`). Test deploy sets `WORLD_DB=acore_world_test`.
+`vps-build` also checks out **mod-individual-progression** (`ZhengPeiRu21/mod-individual-progression`, `master`).
 
 ## Backups
 
