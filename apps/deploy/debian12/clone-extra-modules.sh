@@ -20,3 +20,4 @@ clone_or_update() {
 clone_or_update https://github.com/dbennett33/mod-npc-enchanter.git mod-npc-enchanter
 clone_or_update https://github.com/azerothcore/mod-npc-services.git mod-npc-services
 clone_or_update https://github.com/kadeshar/mod-dungeon-clear.git mod-dungeon-clear
+clone_or_update https://github.com/azerothcore/mod-skip-dk-starting-area.git mod-skip-dk-starting-area

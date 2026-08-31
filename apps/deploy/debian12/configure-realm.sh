@@ -127,4 +127,19 @@ if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.PlayerbotsDatabaseInfo" "$(db_info "$playerbots_db")"
 fi
 
+SKIP_DIST="${ACORE_PREFIX}/etc/modules/skip_dk_module.conf.dist"
+SKIP_CONF="${ACORE_PREFIX}/etc/modules/skip_dk_module.conf"
+if [[ -f "$SKIP_DIST" && ! -f "$SKIP_CONF" ]]; then
+  cp "$SKIP_DIST" "$SKIP_CONF"
+fi
+if [[ -f "$SKIP_CONF" ]]; then
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Starter.Enable" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Optional.Enable" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Start.Level" "58"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Start.Trained" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Starter.Announce.enable" "0"
+  set_kv "$SKIP_CONF" "GM.Skip.Deathknight.Starter.Enable" "0"
+  set_kv "$SKIP_CONF" "DeleteGold.Deathknight.Optional.Enable" "1"
+fi
+
 echo "WotLK tier-13 realm config applied under ${ACORE_PREFIX}/etc"
