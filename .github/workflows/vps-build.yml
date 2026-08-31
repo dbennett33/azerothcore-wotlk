@@ -176,14 +176,6 @@ jobs:
           path: modules/mod-playerbots
           clean: false
 
-      - name: Checkout mod-individual-progression
-        uses: actions/checkout@v7
-        with:
-          repository: ZhengPeiRu21/mod-individual-progression
-          ref: master
-          path: modules/mod-individual-progression
-          clean: false
-
       - name: Checkout extra modules (enchanter, services, dungeon-clear)
         run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
 
@@ -302,14 +294,6 @@ jobs:
           repository: ${{ steps.mod_repo.outputs.repository }}
           ref: ${{ steps.playerbots.outputs.ref }}
           path: modules/mod-playerbots
-          clean: false
-
-      - name: Checkout mod-individual-progression
-        uses: actions/checkout@v7
-        with:
-          repository: ZhengPeiRu21/mod-individual-progression
-          ref: master
-          path: modules/mod-individual-progression
           clean: false
 
       - name: Checkout extra modules (enchanter, services, dungeon-clear)

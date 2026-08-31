@@ -21,11 +21,6 @@ if [[ ! -d "$ROOT/modules/mod-playerbots/src" ]]; then
   echo "Missing modules/mod-playerbots/src (symlink or clone mod-playerbots)" >&2
   exit 1
 fi
-if [[ ! -d "$ROOT/modules/mod-individual-progression/src" ]]; then
-  echo "Missing modules/mod-individual-progression/src" >&2
-  exit 1
-fi
-
 echo "Build dir: $BUILD_DIR"
 echo "Jobs: $JOBS"
 echo "CPU: $(nproc) cores"

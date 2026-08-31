@@ -190,31 +190,24 @@ After the first deploy, as `acore`:
 The deploy workflow copies helpers to `/home/acore/deploy/` and startup-scripts to
 `/home/acore/src/azerothcore/` on each run.
 
-## 9. Vanilla progression (`mod-individual-progression`)
+## 9. WotLK realm settings
 
-The **Playerbot** branch also builds [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression)
-for classic-style world content (vanilla raids, attunements, NPC/quest restoration, per-player
-progression capped at end of vanilla).
+After deploy, `configure-realm.sh` sets:
 
-After deploy, `configure-vanilla-progression.sh` sets:
+- `Expansion = 2`, `MaxPlayerLevel = 80`, `MinDualSpecLevel = 40`
+- Death Knight enabled; dual spec at 40; RDF available (WotLK defaults)
+- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
+- Test playerbots: 50 bots, same level distribution
 
-- `Expansion = 0`, `MaxPlayerLevel = 60`, `EnablePlayerSettings = 1`, `DBC.EnforceItemAttributes = 0`
-- Module config: `ProgressionLimit = 7`, vanilla damage/healing tuning, no RDF, DK/BE locked until TBC
+**Client:** use a clean 3.3.5a client (ChromieCraft). Remove any old `patch-V.mpq` / vanilla MPQ
+patches from `Data/` if previously installed.
 
-**One-time optional patches** (phasing, vanilla crafting, server DBC) run via `apply-vanilla-optional.sh`
-during deploy (marker: `/home/acore/server/etc/.vanilla-optional-applied`). Requires `p7zip-full` and
-module clone at `/home/acore/src/mod-individual-progression`.
-
-**Client (ChromieCraft):** for vanilla spell mana costs, add `patch-V.mpq` from the module’s
-`optional/patch-V.7z` to your client `Data/` folder. Optional visuals: `patch-J.mpq` / `patch-U.mpq`
-from `optional/dbc.7z`. See `optional/patch-explanations.txt` in the module repo.
-
-**Note:** Module world SQL is **permanent** (restored vanilla quests/creatures). Take a DB backup
-before the first deploy that includes this module.
+**Migrating from vanilla progression:** world and character DBs must be reset once (see
+`.agents/plans/migrate-to-wotlk-80/PLAN.md`). `mod-individual-progression` is no longer built.
 
 ## 10. Backups and disaster recovery
 
-Gameplay tuning is in git (`configure-vanilla-progression.sh`, deploy workflows). **Secrets,
+Gameplay tuning is in git (`configure-realm.sh`, deploy workflows). **Secrets,
 characters, and full `etc/`** are on the VPS — snapshot them regularly:
 
 ```bash
