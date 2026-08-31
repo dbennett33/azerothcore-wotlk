@@ -203,9 +203,18 @@ After deploy, `configure-realm.sh` sets:
 **Client:** use a clean 3.3.5a client (ChromieCraft). Remove any old `patch-V.mpq` / vanilla MPQ
 patches from `Data/` if previously installed.
 
-**Migrating from vanilla progression:** world and character DBs must be reset once (see
-`.agents/plans/migrate-to-wotlk-80/PLAN.md`). `mod-individual-progression` remains enabled with
-tier 13 as both the starting and maximum progression stage.
+**Migrating from vanilla progression** (one-time, before first WotLK deploy of each realm):
+
+1. Backup MySQL (`backup-acore.sh` plus test DB dumps).
+2. Stop that realm's worldserver, then drop/recreate `acore_world[_test]`,
+   `acore_characters[_test]`, and `acore_playerbots[_test]` (leave `acore_auth`).
+3. Restore stock WotLK `Map.dbc` (vanilla cutover set Naxxramas expansion to 0).
+   Remove `etc/.vanilla-optional-applied`.
+4. `UPDATE acore_auth.account SET expansion = 2;`
+5. Merge to `dev` (auto-deploys test), then PR `dev` → `Playerbot` and run `deploy-vps` for live.
+
+`mod-individual-progression` stays enabled with tier 13 as both start and cap.
+Client: remove `patch-V.mpq` / vanilla MPQ patches from `Data/` if they were installed.
 
 ## 10. Backups and disaster recovery
 

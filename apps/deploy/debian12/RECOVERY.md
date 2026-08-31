@@ -58,14 +58,14 @@ Suggested schedule: daily or before each `deploy-vps`.
    bash /home/acore/deploy/restore-acore.sh /path/to/acore-backup-....tar.gz
    ```
 
-6. GitHub **Actions → deploy-vps** (installs bin from staging, runs configure + optional patches).
+6. GitHub **Actions → deploy-vps** (installs bin from staging, runs `configure-realm.sh`).
 7. `setup-systemd-units.sh` + `restart-acore.sh start` if units are new (§6).
 
 ## What deploy does **not** wipe
 
 - Restored `etc/` stays until you replace it; deploy only adds missing files from staging `etc/` (`rsync --ignore-existing`).
 - `configure-realm.sh` updates **listed keys only** (WotLK tier 13 + bot policy).
-- `data/`, MySQL, and optional-patch marker survive deploy when already present.
+- `data/` and MySQL survive deploy when already present.
 
 ## Secrets
 
