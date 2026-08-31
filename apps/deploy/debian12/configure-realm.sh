@@ -63,6 +63,12 @@ set_kv "$WS_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
 set_kv "$WS_CONF" "PlayerbotsDatabaseInfo" "\"$(db_info "$playerbots_db")\""
 set_kv "$WS_CONF" "Playerbots.Updates.EnableDatabases" "1"
 
+AUTH_CONF="${ACORE_PREFIX}/etc/authserver.conf"
+if [[ -f "$AUTH_CONF" ]]; then
+  # Compiled-in default is the build-VM runner path; auth will refuse to start without this.
+  set_kv "$AUTH_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
+fi
+
 if [[ -f "$IP_DIST" && ! -f "$IP_CONF" ]]; then
   cp "$IP_DIST" "$IP_CONF"
 fi
@@ -119,6 +125,21 @@ if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.LimitGearExpansion" "0"
   set_kv "$PB_CONF" "AiPlayerbot.LimitTalentsExpansion" "0"
   set_kv "$PB_CONF" "AiPlayerbot.PlayerbotsDatabaseInfo" "$(db_info "$playerbots_db")"
+fi
+
+SKIP_DIST="${ACORE_PREFIX}/etc/modules/skip_dk_module.conf.dist"
+SKIP_CONF="${ACORE_PREFIX}/etc/modules/skip_dk_module.conf"
+if [[ -f "$SKIP_DIST" && ! -f "$SKIP_CONF" ]]; then
+  cp "$SKIP_DIST" "$SKIP_CONF"
+fi
+if [[ -f "$SKIP_CONF" ]]; then
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Starter.Enable" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Optional.Enable" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Start.Level" "58"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Start.Trained" "1"
+  set_kv "$SKIP_CONF" "Skip.Deathknight.Starter.Announce.enable" "0"
+  set_kv "$SKIP_CONF" "GM.Skip.Deathknight.Starter.Enable" "0"
+  set_kv "$SKIP_CONF" "DeleteGold.Deathknight.Optional.Enable" "1"
 fi
 
 echo "WotLK tier-13 realm config applied under ${ACORE_PREFIX}/etc"
