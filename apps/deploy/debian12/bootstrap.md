@@ -85,7 +85,12 @@ Copy maps, dbc, vmaps, and mmaps into `/home/acore/server/data`. Do **not** down
 
 ```bash
 sudo chown -R acore:acore /home/acore/server/data
+mkdir -p /home/acore/client-patches/releases
+sudo chown -R acore:acore /home/acore/client-patches
 ```
+
+Custom MPQ patches and matching server data overlays are managed separately — see
+[`docs/client-patches.md`](../../../docs/client-patches.md).
 
 ## 5. Config files (once, never overwritten by deploy)
 
@@ -200,8 +205,8 @@ After deploy, `configure-realm.sh` sets:
 - Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
 - Test playerbots: 50 bots, same level distribution
 
-**Client:** use a clean 3.3.5a client (ChromieCraft). Remove any old `patch-V.mpq` / vanilla MPQ
-patches from `Data/` if previously installed.
+**Client:** use a clean 3.3.5a client (ChromieCraft). When custom patches are released, players run
+`client-patches/scripts/update-client.sh` (see [`docs/client-patches.md`](../../../docs/client-patches.md)).
 
 **Migrating from vanilla progression** (one-time, before first WotLK deploy of each realm):
 
@@ -214,7 +219,6 @@ patches from `Data/` if previously installed.
 5. Merge to `dev` (auto-deploys test), then PR `dev` → `Playerbot` and run `deploy-vps` for live.
 
 `mod-individual-progression` stays enabled with tier 13 as both start and cap.
-Client: remove `patch-V.mpq` / vanilla MPQ patches from `Data/` if they were installed.
 
 ## 10. Backups and disaster recovery
 

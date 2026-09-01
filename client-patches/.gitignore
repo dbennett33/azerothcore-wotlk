@@ -1,0 +1,11 @@
+# Built release artifacts (publish to VPS or GitHub Releases; do not commit binaries)
+bundles/*
+!bundles/.gitkeep
+output/
+
+# Local WoW client paths used during extraction
+.wow-client-path
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db

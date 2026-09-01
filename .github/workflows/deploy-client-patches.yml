@@ -1,0 +1,85 @@
+name: deploy-client-patches
+
+# Apply published client patch server data to live or test realm prefixes on the VPS.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy environment
+        type: choice
+        options:
+          - live
+          - test
+        default: live
+      version:
+        description: Patch release version (empty = current symlink)
+        type: string
+        default: ""
+      dry_run:
+        description: Dry run (show actions only)
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-client-patches-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, acore-vps]
+    name: client-patches-${{ inputs.target }}
+    steps:
+      - name: Resolve deploy paths
+        id: paths
+        run: |
+          case "${{ inputs.target }}" in
+            live)
+              echo "acore_prefix=/home/acore/server" >> "$GITHUB_OUTPUT"
+              ;;
+            test)
+              echo "acore_prefix=/home/acore/server-test" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown target" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout deploy scripts
+        uses: actions/checkout@v7
+        with:
+          path: deploy-src
+          sparse-checkout: |
+            apps/deploy
+            client-patches
+          sparse-checkout-cone-mode: false
+
+      - name: Install client patch helpers
+        working-directory: deploy-src
+        run: |
+          install -D -m 755 apps/deploy/debian12/client-patches/apply-server-data.sh /home/acore/deploy/apply-server-data.sh
+          install -D -m 755 apps/deploy/debian12/client-patches/publish-client-patches.sh /home/acore/deploy/publish-client-patches.sh
+          rsync -a apps/deploy/debian12/client-patches/ /home/acore/deploy/client-patches/
+          rsync -a client-patches/scripts/ /home/acore/deploy/client-patches-scripts/
+
+      - name: Apply server data overlay
+        env:
+          ACORE_PREFIX: ${{ steps.paths.outputs.acore_prefix }}
+          REPO_ROOT: ${{ github.workspace }}/deploy-src
+        run: |
+          args=()
+          if [[ -n "${{ inputs.version }}" ]]; then
+            args+=("${{ inputs.version }}")
+          fi
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          /home/acore/deploy/apply-server-data.sh "${args[@]}"
+
+      - name: Restart worldserver
+        if: inputs.dry_run == false
+        run: /home/acore/deploy/restart-acore.sh restart "${{ inputs.target }}"
