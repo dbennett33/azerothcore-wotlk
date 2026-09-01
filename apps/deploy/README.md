@@ -7,6 +7,7 @@
 | [`debian12/restart-acore.sh`](debian12/restart-acore.sh) | Stop/start `auth.service` / `world.service` |
 | [`debian12/setup-systemd-units.sh`](debian12/setup-systemd-units.sh) | Create units after first binary install |
 | [`debian12/backup-acore.sh`](debian12/backup-acore.sh) | Offsite snapshot: `etc/`, MySQL, run-engine configs |
+| [`debian12/backup-client-patches.sh`](debian12/backup-client-patches.sh) | Offsite snapshot: `/home/acore/client-patches/releases/` |
 | [`debian12/restore-acore.sh`](debian12/restore-acore.sh) | Restore snapshot on a fresh VPS |
 | [`debian12/RECOVERY.md`](debian12/RECOVERY.md) | Disaster recovery checklist |
 | [`../../docs/client-patches.md`](../../docs/client-patches.md) | MPQ + server data patch workflow |

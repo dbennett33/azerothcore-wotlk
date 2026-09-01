@@ -95,6 +95,7 @@ jobs:
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
           install -D -m 755 apps/deploy/debian12/configure-realm.sh /home/acore/deploy/configure-realm.sh
           install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
+          install -D -m 755 apps/deploy/debian12/backup-client-patches.sh /home/acore/deploy/backup-client-patches.sh
           install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
           install -D -m 755 apps/deploy/debian12/promote-staging.sh /home/acore/deploy/promote-staging.sh
           install -D -m 755 apps/deploy/debian12/ensure-realmlist.sh /home/acore/deploy/ensure-realmlist.sh

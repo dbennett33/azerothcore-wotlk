@@ -23,6 +23,7 @@ you do not need to remember every knob.
 | **Live `etc/`** (DB passwords in DSN, any custom edits) | Small | `backup-acore.sh` |
 | **run-engine service configs** | Tiny | `backup-acore.sh` |
 | **Client data** (`data/maps`, `vmaps`, `mmaps`, base `dbc`) | Large | Re-download once per [bootstrap §4](bootstrap.md); optional `INCLUDE_DATA_DBC=1` for patched `dbc/` |
+| **Client patch releases** (`/home/acore/client-patches/releases/`) | Large | `backup-client-patches.sh` — MPQs and server data bundles are **not** in git |
 | **GitHub Actions runner** | — | Re-register runner on new VPS |
 | **Binaries** | — | Rebuild via `vps-build` or restore from staging |
 
@@ -40,6 +41,9 @@ bash /home/acore/deploy/backup-acore.sh
 
 # Optional: include server DBC overrides (Map.dbc, Spell.dbc, …)
 INCLUDE_DATA_DBC=1 bash /home/acore/deploy/backup-acore.sh
+
+# Client patch bundles (MPQs + server-data tarballs on VPS)
+bash /home/acore/deploy/backup-client-patches.sh
 ```
 
 Output: `/home/acore/backups/acore-backup-<timestamp>.tar.gz` — **copy off the server** (rsync, S3, etc.).
