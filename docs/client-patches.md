@@ -13,6 +13,19 @@ This document explains how to ship custom WoW 3.3.5a client MPQ patches **and** 
 
 When both sides are needed, this system keeps them on the **same version** and deploys them together.
 
+## Storage policy
+
+**All patch binaries (MPQs, server data archives) live on the VPS.** Git tracks only `manifest.json` — version numbers, checksums, and changelog.
+
+| Location | In git? | Role |
+|----------|---------|------|
+| `client-patches/manifest.json` | Yes | Release metadata |
+| `client-patches/sources/` | Structure only | Local dev-machine staging; binaries are gitignored |
+| `client-patches/bundles/` | No | Local build output before upload |
+| `/home/acore/client-patches/` on VPS | No | **Canonical store** for all releases |
+
+Back up the VPS patch store offsite (`backup-client-patches.sh`). If the VPS is lost without a backup, custom map work is gone even though git still has the manifest.
+
 ## Repository layout
 
 ```
@@ -20,16 +33,16 @@ client-patches/
   manifest.json              # Current release metadata (commit this)
   manifest.schema.json       # JSON schema for validation
   sources/
-    client/mpq/              # Finished MPQ files for players
-    client/loose/            # Optional staging before packing MPQ
-    server/dbc/              # Server DBC overlay
-    server/maps/             # Map tiles
-    server/vmaps/            # Visual maps
-    server/mmaps/            # Movement maps
+    client/mpq/              # Local staging: finished MPQs (gitignored)
+    client/loose/            # Local staging before packing MPQ (gitignored)
+    server/dbc/              # Local staging: server DBC overlay (gitignored)
+    server/maps/             # Local staging (gitignored)
+    server/vmaps/            # Local staging (gitignored)
+    server/mmaps/            # Local staging (gitignored)
   scripts/                   # Build, publish, update helpers
   bundles/                   # Local build output (gitignored)
 
-/home/acore/client-patches/   # VPS binary store (not in git)
+/home/acore/client-patches/   # VPS canonical binary store (not in git)
   releases/<version>/
   current -> releases/<version>
 ```
@@ -40,9 +53,9 @@ WoW loads patch archives from `Data/<locale>/patch-*.MPQ`. Custom patches should
 
 1. Edit DBCs, interface XML, models, etc. with your tools of choice.
 2. Pack them into an MPQ using an editor such as [Ladik's MPQ Editor](https://github.com/ladislav-zezula/StormLib) or similar.
-3. Place the finished archive in `client-patches/sources/client/mpq/`.
+3. Place the finished archive in `client-patches/sources/client/mpq/` on your **dev machine** (local staging — not committed to git).
 
-Loose files can be staged under `sources/client/loose/` for reference; `build-bundle.sh` expects finished MPQs in `sources/client/mpq/`.
+Loose files can be staged under `sources/client/loose/`; `build-bundle.sh` expects finished MPQs in `sources/client/mpq/`. After building, publish to the VPS — that is where binaries are kept long-term.
 
 ## Creating server data
 
@@ -79,7 +92,7 @@ This produces:
 - `client-patches/bundles/1.0.0/server/server-data.tar.gz`
 - `client-patches/bundles/1.0.0/manifest.json` (copied to `client-patches/manifest.json`)
 
-Commit **`manifest.json` only**. Do not commit `bundles/` (binaries are large).
+Commit **`manifest.json` only**. Do not commit `bundles/`, MPQs, or extracted server data — those belong on the VPS.
 
 ## Publishing to the VPS
 
@@ -96,7 +109,7 @@ On the VPS directly:
 apps/deploy/debian12/client-patches/publish-client-patches.sh client-patches/bundles/1.0.0
 ```
 
-This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` symlink.
+This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` symlink. This directory is the **single source of truth** for patch binaries.
 
 ### Optional HTTP downloads
 

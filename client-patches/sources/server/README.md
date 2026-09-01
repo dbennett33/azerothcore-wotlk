@@ -1,6 +1,6 @@
-# Server data sources
+# Server data staging (local dev machine only)
 
-Overlay directories merged into the realm `data/` folder on deploy:
+Overlay directories used when building a release:
 
 ```
 dbc/     Spell.dbc, Talent.dbc, Map.dbc, ...
@@ -9,6 +9,6 @@ vmaps/   From vmap4_extractor + vmap4_assembler
 mmaps/   From mmaps_generator (optional but recommended)
 ```
 
-Populate with `client-patches/scripts/extract-server-data.sh` or copy from extractor output.
+**These files are gitignored.** Populate with `client-patches/scripts/extract-server-data.sh`, then build and publish to the VPS.
 
 See `docs/client-patches.md`.
