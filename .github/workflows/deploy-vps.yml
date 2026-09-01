@@ -95,10 +95,15 @@ jobs:
           install -D -m 755 apps/deploy/debian12/setup-systemd-units.sh /home/acore/deploy/setup-systemd-units.sh
           install -D -m 755 apps/deploy/debian12/configure-realm.sh /home/acore/deploy/configure-realm.sh
           install -D -m 755 apps/deploy/debian12/backup-acore.sh /home/acore/deploy/backup-acore.sh
+          install -D -m 755 apps/deploy/debian12/backup-client-patches.sh /home/acore/deploy/backup-client-patches.sh
           install -D -m 755 apps/deploy/debian12/restore-acore.sh /home/acore/deploy/restore-acore.sh
           install -D -m 755 apps/deploy/debian12/promote-staging.sh /home/acore/deploy/promote-staging.sh
           install -D -m 755 apps/deploy/debian12/ensure-realmlist.sh /home/acore/deploy/ensure-realmlist.sh
           install -D -m 755 apps/deploy/debian12/init-test-prefix.sh /home/acore/deploy/init-test-prefix.sh
+          install -D -m 755 apps/deploy/debian12/client-patches/apply-server-data.sh /home/acore/deploy/apply-server-data.sh
+          install -D -m 755 apps/deploy/debian12/client-patches/publish-client-patches.sh /home/acore/deploy/publish-client-patches.sh
+          mkdir -p /home/acore/deploy/client-patches
+          rsync -a apps/deploy/debian12/client-patches/ /home/acore/deploy/client-patches/
           install -D -m 644 apps/deploy/debian12/.acore-backup.env.example /home/acore/deploy/.acore-backup.env.example
           mkdir -p /home/acore/src/azerothcore/apps
           rsync -a apps/startup-scripts/ /home/acore/src/azerothcore/apps/startup-scripts/

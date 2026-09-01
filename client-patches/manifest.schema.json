@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AzerothCore client patch bundle manifest",
+  "type": "object",
+  "required": ["version", "released", "blizzard_build", "client_cache_version", "changelog", "client", "server"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+    },
+    "released": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "blizzard_build": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "client_cache_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "changelog": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "client": {
+      "type": "object",
+      "required": ["locale", "patches"],
+      "properties": {
+        "locale": { "type": "string", "minLength": 2 },
+        "patches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "sha256", "size", "install_path"],
+            "properties": {
+              "file": { "type": "string" },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "size": { "type": "integer", "minimum": 0 },
+              "install_path": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "required": ["archive", "sha256", "size", "components"],
+      "properties": {
+        "archive": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^$|^[a-f0-9]{64}$" },
+        "size": { "type": "integer", "minimum": 0 },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dbc", "maps", "vmaps", "mmaps"]
+          }
+        }
+      }
+    }
+  }
+}

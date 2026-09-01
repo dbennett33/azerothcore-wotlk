@@ -1,0 +1,19 @@
+{
+  "version": "0.0.0",
+  "released": "2026-01-01T00:00:00Z",
+  "blizzard_build": 12340,
+  "client_cache_version": 0,
+  "changelog": [
+    "Placeholder manifest. Run build-bundle.sh after adding sources to produce a real release."
+  ],
+  "client": {
+    "locale": "enUS",
+    "patches": []
+  },
+  "server": {
+    "archive": "server-data.tar.gz",
+    "sha256": "",
+    "size": 0,
+    "components": []
+  }
+}
