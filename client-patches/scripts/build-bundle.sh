@@ -182,11 +182,10 @@ Built bundle ${VERSION}:
   manifest copied to ${CLIENT_PATCHES_ROOT}/manifest.json
 
 Next steps:
-  1. Commit manifest.json (not bundle binaries under bundles/).
-  2. Publish binaries to the VPS:
-       apps/deploy/debian12/client-patches/publish-client-patches.sh ${OUT_DIR}
-  3. Deploy server data:
-       GitHub Actions -> deploy-client-patches (or apply-server-data.sh on the VPS)
-  4. Players update locally:
+  1. Commit manifest.json with the matching C++/SQL (not bundle binaries).
+  2. Publish binaries to the VPS store (does not apply to any realm):
+       VPS_HOST=debian@your.vps client-patches/scripts/publish-to-vps.sh ${OUT_DIR}
+  3. Push \`dev\` (Test) or merge to \`Playerbot\` (Live). deploy-vps applies the overlay.
+  4. Players update locally after that realm has the version:
        client-patches/scripts/update-client.sh
 EOF

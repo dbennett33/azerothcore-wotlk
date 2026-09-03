@@ -138,9 +138,9 @@ Write-Host "  $outDir"
 Write-Host "  manifest copied to $existingManifest"
 Write-Host ""
 Write-Host 'Next steps:'
-Write-Host '  1. Commit manifest.json (not bundle binaries under bundles/).'
-Write-Host '  2. Publish binaries to the VPS:'
+Write-Host '  1. Commit manifest.json with the matching C++/SQL (not bundle binaries).'
+Write-Host '  2. Publish binaries to the VPS store (does not apply to any realm):'
 Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 '$outDir'"
-Write-Host '  3. Deploy server data: GitHub Actions -> deploy-client-patches'
-Write-Host '  4. Players update locally:'
+Write-Host '  3. Push dev (Test) or merge to Playerbot (Live). deploy-vps applies the overlay.'
+Write-Host '  4. Players update locally after that realm has the version:'
 Write-Host '       .\client-patches\scripts\update-client.ps1 -WowDir <WoW> -FromVps debian@your.vps'

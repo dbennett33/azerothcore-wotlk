@@ -125,7 +125,7 @@ On the VPS directly:
 apps/deploy/debian12/client-patches/publish-client-patches.sh client-patches/bundles/1.0.0
 ```
 
-This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` symlink. This directory is the **single source of truth** for patch binaries.
+This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` symlink. This directory is the **single source of truth** for patch binaries. **Publishing does not overlay Live or Test.** The matching git commit's `manifest.json` is applied the next time that realm's `deploy-vps` runs.
 
 ### Optional HTTP downloads
 
@@ -137,27 +137,28 @@ PATCHES_BASE_URL=https://your.domain/client-patches/current
 
 ## Deploying server data
 
-### GitHub Actions (recommended)
+Server overlay is applied by **`deploy-vps`**, using the `client-patches/manifest.json` of the commit that was **built** for that realm:
 
-1. Publish the bundle to the VPS (above).
-2. Run **Actions → deploy-client-patches**.
-3. Choose **live** or **test**, optionally pin a **version**, then run.
+| Branch | Realm | When overlay applies |
+|--------|-------|----------------------|
+| `dev` | Test (`/home/acore/server-test`) | Auto after `vps-build` on push |
+| `Playerbot` | Live (`/home/acore/server`) | Manual `deploy-vps` target `live` after `vps-build` |
 
-The workflow applies the server data overlay, sets `ClientCacheVersion` in `worldserver.conf`, and restarts worldserver.
+If that commit's manifest is placeholder `0.0.0` / empty server archive, deploy skips the overlay. If the version is real but missing from `/home/acore/client-patches/releases/`, deploy **fails** (publish the bundle first).
+
+SQL is the same story: `deploy-vps` rsyncs `data/sql` from that commit into a **per-realm** `SourceDirectory` (`azerothcore-wotlk` for Live, `azerothcore-wotlk-test` for Test). Worldserver then applies `pending_db_*` on start. Do not share one stale clone between realms.
+
+### Manual override (emergency only)
+
+**Actions → deploy-client-patches** applies a store release immediately and restarts that world. Default target is Test. Prefer `deploy-vps` so C++, SQL, and the MPQ overlay stay on the same SHA.
 
 ### Manual (on VPS)
 
-```bash
-ACORE_PREFIX=/home/acore/server \
-apps/deploy/debian12/client-patches/apply-server-data.sh 1.0.0
-/home/acore/deploy/restart-acore.sh restart live
-```
-
-For test:
+Only when `deploy-vps` cannot run. This still does **not** apply pending SQL.
 
 ```bash
 ACORE_PREFIX=/home/acore/server-test \
-apps/deploy/debian12/client-patches/apply-server-data.sh 1.0.0
+apps/deploy/debian12/client-patches/apply-server-data.sh --from-manifest /path/to/manifest.json
 /home/acore/deploy/restart-acore.sh restart test
 ```
 
@@ -227,7 +228,7 @@ Players must run this **before** logging in when a new client bundle is required
 - Use semver for `manifest.version` (`1.0.0`, `1.1.0`, …).
 - Increment `client_cache_version` whenever DBC data changes (build-bundle does this automatically).
 - Keep `blizzard_build` at `12340` for WotLK 3.3.5a unless you ship a custom client executable.
-- Server code deploys (`deploy-vps`) and client patch deploys (`deploy-client-patches`) are independent, but **DBC/map releases should be deployed together**.
+- Server code deploys (`deploy-vps`) apply C++, pending SQL, and the git `manifest.json` overlay together. Publishing binaries to the VPS store is not a realm deploy.
 
 ## Manifest reference
 

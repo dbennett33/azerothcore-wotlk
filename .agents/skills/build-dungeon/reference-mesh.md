@@ -109,7 +109,7 @@ cathedral (or fails server-side if `044*` were never extracted).
 
 **Reuse 44** only after `patch-4.MPQ` **replaces** `Monastery.wdt` to point
 at `Waxworks.wmo`, extractors emit `vmaps/044.vmtree` + `vmaps/Waxworks.wmo.vmo`
-(+ `mmaps/044*`), the volume has that **`.vmo`**, and Wow is restarted.
+(+ `mmaps/044*`), realm `data/` has that **`.vmo`**, and Wow is restarted.
 No `maps/044*.map` (WMO-only). No `map_dbc` row if Directory stays `Monastery`.
 
 Do not use leftover maps 13/25/35/37/42/169/451 as a 5-man cave.
@@ -184,10 +184,14 @@ vmap4_assembler Buildings vmaps
 mmaps_generator --threads 8 44
 ```
 
-Copy `vmaps/044*`, **`vmaps/Waxworks.wmo.vmo`**, `mmaps/044*` into the Docker
-`ac-client-data` volume (`copy-044-to-volume.ps1`). Do **not** copy only `044*`.
-WMO-only maps have no `maps/044*.map`. Then `dungeon_access_template`,
-scripted veil/Wickham teleport, creatures on map 44.
+Stage `vmaps/044*`, **`vmaps/Waxworks.wmo.vmo`**, `mmaps/044*` under
+`client-patches/sources/server/`, then `build-bundle` + `publish-to-vps`
+(`VPS_HOST=debian@…`). Do **not** copy only `044*` and do **not** commit
+binaries. Canonical store: `/home/acore/client-patches/`. Overlay applies on
+**deploy-vps** (`dev` → test `/home/acore/server-test/data`, `Playerbot` →
+live `/home/acore/server/data`). WMO-only maps have no `maps/044*.map`.
+Then `dungeon_access_template`, scripted veil/Wickham teleport, creatures
+on map 44.
 
 Prefer an **isolated** vmap extract: slim `Data/` with `enUS/locale-enUS.MPQ`
 + `patch-4.MPQ` so other maps' WDTs are missing and skip. Wipe `Buildings/`
@@ -201,13 +205,12 @@ an instance = leftover Scarlet liquid and/or missing `.vmo`. Abort; do not
 Z-nudge. ROOM-FLOORS Z is a guess until `.gps`. Prove the view with
 [walk-instance](../walk-instance/SKILL.md) (scout PNG + `.gps` in frame), not SOAP.
 
-Set in `.env` (compose default `./var/client` is **wrong** for this machine):
-
-`DOCKER_AC_CLIENT_FOLDER=C:\dev\wow-335\ChromieCraft_3.3.5a\Data`
-
-Image `acore/ac-wotlk-tools:master` must be pulled; `tools` stage has **no
-CMD** — run extractors explicitly (commands in `TOOLCHAIN.md`). Worldserver
-`--build-arg CTOOLS_BUILD=none` does not include extractors.
+Extract on the machine that has the packed client + AC tools (see
+`TOOLCHAIN.md` / `client-patches/scripts/extract-server-data.sh`). This
+fork's playable client is often
+`/home/dan/Downloads/ChromieCraft_3.3.5a/` (Linux) or
+`C:\dev\wow-335\ChromieCraft_3.3.5a\` (Windows scout). Do not assume a
+Docker `./var/client` data volume.
 
 **Elwynn ADT edit** (custom WMO on map 0): Noggit MODF on `Azeroth_32_48` /
 `Azeroth_31_50` / `Azeroth_31_49`, then re-extract **those** tiles. High
@@ -257,5 +260,6 @@ New geometry in Blender is weeks of 3.3.5 WMO export. Kitbash vanilla groups
 - Type-14 caves are not rooms with guaranteed floors.
 - Missing WMO indoor `0x2000` → outdoor light, mounts, rain.
 - Missing mmap → bosses walk through kitbashed walls.
-- Prebuilt Docker image: new maps are **data**; new C++ bosses need rebuild.
+- New maps are **data** (client-patches overlay); new C++ bosses need a
+  worldserver rebuild (`vps-build`), not a data-only restart.
 - MPQEditor `/console` scripts must be ASCII (UTF-8 BOM makes `new` silently fail).

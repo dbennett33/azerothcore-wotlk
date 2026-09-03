@@ -1,7 +1,8 @@
 # Dungeon content (how it feels like a place)
 
-Lessons from **The Waxworks** (`modules/mod-waxworks/`). Apply the same bar to
-any overlay or instance.
+Lessons from **The Waxworks** (`src/server/scripts/EasternKingdoms/Waxworks/`
+and `data/sql/updates/pending_db_world/`). Apply the same bar to any overlay
+or instance.
 
 ## Layout
 
@@ -101,14 +102,20 @@ Reference table pattern: `reference_loot_template` entry `9000101`,
 - Overlay exit plaza: same map, **outside** the entrance box (check
   `IsWithinBox` against the plaza xyz before shipping).
 
-## Live Docker quirks (this machine)
+## This fork (VPS, not Docker)
 
-- World `8086→8085`, SOAP `7878`, auth `3724`. SOAP user `ADMIN` / `password`.
-- Some volumes still have `creature.id` (not `id1`). Hand-apply: rewrite
-  `` `id1` `` → `` `id` ``. Module files stay on `id1` for current AC.
-- Apply module SQL then `docker compose restart ac-worldserver` for data-only.
-  Rebuild the image only when C++ in `modules/` changed
-  (`CTOOLS_BUILD=none` is fine for script-only).
+- Shared auth **3724**. Live world **8085**, test **8086**. SOAP is
+  localhost-only on the VPS — use the `gm-soap` skill in `azerothcore-priv`,
+  never open SOAP to the internet.
+- SQL: `data/sql/updates/pending_db_world/` (`./create_sql.sh`). Applied when
+  that realm's worldserver starts after deploy.
+- C++: `src/server/scripts/EasternKingdoms/Waxworks/`, hooked from
+  `eastern_kingdoms_script_loader.cpp`. Data-only SQL needs a world restart;
+  script changes need `vps-build` (push `dev` → auto test; live is manual
+  `deploy-vps` after `Playerbot`).
+- Mesh overlay lives in `/home/acore/client-patches/` (store only until `deploy-vps`).
+  Publish with `debian@` SSH. Overlay applies on **deploy-vps**: `dev` → test,
+  `Playerbot` → live. Do not run `deploy-client-patches` for a normal ship.
 
 ## Models that failed (do not repeat)
 

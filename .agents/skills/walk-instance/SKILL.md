@@ -64,7 +64,8 @@ SendKeys `.go` / `.gps` on **Walky only**.
 ## Preflight (hard stop)
 
 ```
-- [ ] Volume has vmaps/044.vmtree AND vmaps/<Wmo>.wmo.vmo (>10KB)
+- [ ] Realm data has vmaps/044.vmtree AND vmaps/<Wmo>.wmo.vmo (>10KB)
+      (live `/home/acore/server/data`, test `/home/acore/server-test/data`)
 - [ ] Scout client started AFTER patch-4.MPQ was packed
 - [ ] SOAP answers `server info` (scripts/scout-soap.ps1)
 - [ ] User's fullscreen Wow is minimized or closed (exclusive D3D blanks captures)

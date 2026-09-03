@@ -60,6 +60,7 @@ Invoke-Native -FilePath $ssh -ArgumentList @(
     "sudo chown -R acore:acore '$remoteStaging' && sudo -u acore bash '$publish' '$remoteStaging'"
 )
 
-Write-Host 'Done. Deploy server data with deploy-client-patches workflow or:'
-$apply = "$RemoteRepo/apps/deploy/debian12/client-patches/apply-server-data.sh"
-Write-Host "  ssh $VpsHost 'sudo -u acore env ACORE_PREFIX=/home/acore/server bash $apply $version'"
+Write-Host 'Done. Bundle is in the VPS store only — Live and Test are unchanged.'
+Write-Host 'Commit client-patches/manifest.json with the matching C++/SQL, then:'
+Write-Host '  git push origin dev        # vps-build → deploy-vps applies overlay to Test'
+Write-Host '  merge to Playerbot         # then deploy-vps live applies overlay to Live'

@@ -57,15 +57,21 @@ if [[ "$realm_id" == "2" ]]; then
 else
   set_kv "$WS_CONF" "SOAP.Port" "7878"
 fi
+if [[ "$realm_id" == "2" ]]; then
+  source_dir="${SOURCE_DIRECTORY:-/home/acore/src/azerothcore-wotlk-test}"
+else
+  source_dir="${SOURCE_DIRECTORY:-/home/acore/src/azerothcore-wotlk}"
+fi
 set_kv "$WS_CONF" "WorldDatabaseInfo" "\"$(db_info "$world_db")\""
 set_kv "$WS_CONF" "CharacterDatabaseInfo" "\"$(db_info "$character_db")\""
-set_kv "$WS_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
+set_kv "$WS_CONF" "SourceDirectory" "\"${source_dir}\""
 set_kv "$WS_CONF" "PlayerbotsDatabaseInfo" "\"$(db_info "$playerbots_db")\""
 set_kv "$WS_CONF" "Playerbots.Updates.EnableDatabases" "1"
 
 AUTH_CONF="${ACORE_PREFIX}/etc/authserver.conf"
 if [[ -f "$AUTH_CONF" ]]; then
   # Compiled-in default is the build-VM runner path; auth will refuse to start without this.
+  # Auth SQL stays on the live SourceDirectory even when this script runs for test.
   set_kv "$AUTH_CONF" "SourceDirectory" "\"/home/acore/src/azerothcore-wotlk\""
 fi
 

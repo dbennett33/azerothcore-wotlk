@@ -51,7 +51,7 @@ both from the same `o`.
 ## Map 44
 
 Leftover Scarlet `Monastery.wdt` until `patch-4` replaces it. Never `.go` there
-until the data volume has `vmaps/<Wmo>.wmo.vmo` and the client restarted.
+until realm `data/` has `vmaps/<Wmo>.wmo.vmo` and the client restarted.
 WMO-only dest = `(−blenderX, −blenderY, blenderZ)`. MAG `liquid_type` 0 is
 water (use 15). Pad MODF AABB on all axes — extractor `fixCoords` maps WDT Z
 to vmap X. Real instance work: [build-dungeon](../build-dungeon/SKILL.md).

@@ -30,16 +30,18 @@ Versioned MPQ patches for players and matching server data overlays (maps, vmaps
 client-patches/scripts/build-bundle.sh 1.0.0 --changelog "First custom area"
 # Windows: .\client-patches\scripts\build-bundle.ps1 1.0.0 -Changelog 'First custom area'
 
-# 3. Publish binaries to the VPS (canonical store)
+# 3. Publish binaries to the VPS store (does not apply to Live or Test)
 VPS_HOST=debian@your.vps client-patches/scripts/publish-to-vps.sh client-patches/bundles/1.0.0
 # Windows: .\client-patches\scripts\publish-to-vps.ps1 -BundleDir .\client-patches\bundles\1.0.0 -VpsHost debian@your.vps
 
-# 4. Commit manifest.json only
+# 4. Commit manifest.json with the matching C++/SQL
 git add client-patches/manifest.json
 git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 
-# 5. Deploy server data (GitHub Actions -> deploy-client-patches)
-# 6. Players update:
+# 5. Push the branch that owns the realm
+#    git push origin dev         → vps-build auto-deploys Test (SQL + overlay)
+#    merge to Playerbot          → vps-build; then deploy-vps live
+# 6. Players update after that realm has the version:
 #    client-patches/scripts/update-client.sh
 #    Windows: .\client-patches\scripts\update-client.ps1 -WowDir C:\Games\ChromieCraft -FromVps debian@your.vps
 ```
@@ -63,6 +65,6 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 | `scripts/update-client.sh` / `.ps1` | player PC | Install client MPQs from VPS |
 | `scripts/extract-server-data.sh` | dev machine | Run AC extractors into `sources/server/` (Linux) |
 | `scripts/publish-to-vps.sh` / `.ps1` | dev machine | Upload bundle + publish on VPS |
-| `apps/deploy/debian12/client-patches/apply-server-data.sh` | VPS | Overlay server data + bump cache version |
+| `apps/deploy/debian12/client-patches/apply-server-data.sh` | VPS | Overlay server data + bump cache version (**called by deploy-vps**) |
 | `apps/deploy/debian12/client-patches/publish-client-patches.sh` | VPS | Move bundle into canonical store |
 | `apps/deploy/debian12/backup-client-patches.sh` | VPS | Offsite backup of patch releases |

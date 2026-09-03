@@ -7,7 +7,7 @@ Short rules:
 
 - Overlay on map 0 cannot grow caves or delete ADT doodads (trees).
 - Never teleport to map 44 unless `patch-4` **replaced** the leftover Scarlet
-  `Monastery.wdt`, the client was **restarted**, and the data volume has both
+  `Monastery.wdt`, the client was **restarted**, and realm `data/` has both
   `vmaps/044.vmtree` **and** the WMO mesh `vmaps/<Name>.wmo.vmo`. WMO-only maps
   have no `maps/044*.map`; a tiny vmtree is normal. Missing `.vmo` = underwater
   then fall. As shipped, map 44 is unused Scarlet interior, not a blank cave.
@@ -19,7 +19,8 @@ Short rules:
   loot group (copies of the same class must not collapse into one roll).
 - WMO-only caves without mmaps: `IGNORE_PATHFINDING` on combat NPCs or they
   heal in combat (non-raid cannot-reach regen).
-- Custom content: module SQL, ids `9000000+`, clone appearance only.
+- Custom content: `pending_db_world` SQL + `EasternKingdoms/<Dungeon>/` scripts,
+  ids `9000000+`, clone appearance only. Not a module.
 
 Mesh / extract / DBC details: `.agents/skills/build-dungeon/reference-mesh.md`.
 Content bar (rooms, loot, shrines): `.agents/skills/build-dungeon/reference-content.md`.

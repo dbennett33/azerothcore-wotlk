@@ -19,9 +19,12 @@ reference only if you need it:
 
 Also read `.agents/docs/cpp-guidelines.md`, `.agents/docs/cpp-scripts.md`,
 `.agents/docs/sql-guidelines.md`. Any `.go` / SOAP / spawn xyz →
-`.agents/skills/wow-coordinates/SKILL.md` first. Module work stays under
-`modules/`. Never edit `data/sql/base/`, `data/sql/archive/`, or
-`data/sql/updates/db_*`.
+`.agents/skills/wow-coordinates/SKILL.md` first.
+
+This fork ships custom 5-mans as **world content**, not a module. The Waxworks
+is `src/server/scripts/EasternKingdoms/Waxworks/` plus pending world SQL.
+Do **not** put it in `modules/` or `src/server/scripts/Custom/` (gitignored).
+Never edit `data/sql/base/`, `data/sql/archive/`, or `data/sql/updates/db_*`.
 
 ## Hosting decision (pick one, do not mix)
 
@@ -83,23 +86,28 @@ distinct walkable space an agent can place without those tools.
 Task progress:
 - [ ] Hosting model chosen (overlay vs real instance)
 - [ ] Layout on real xyz (or WMO local space), rooms named
-- [ ] Templates: creatures, GOs, items, quests (module SQL)
+- [ ] Templates: creatures, GOs, items, quests (`pending_db_world`)
 - [ ] Spawns + lighting + at least one set-piece pull
 - [ ] Loot + gold on every combat NPC
 - [ ] SmartAI / C++ bosses; ScriptName = exact class name
 - [ ] Entrance/exit path (no empty map-44 hop, no AT-not-in-DBC)
-- [ ] If real instance: volume has `vmaps/<Wmo>.wmo.vmo` (not only `044.vmtree`); client restarted after patch-4
-- [ ] Live apply: Docker `creature.id` not `id1` if the volume is old
+- [ ] If real instance: VPS data has `vmaps/<Wmo>.wmo.vmo` (not only `044.vmtree`); client restarted after patch-4
 - [ ] Walk it **visually** ([walk-instance](../walk-instance/SKILL.md)): one PNG per
       named room with `.gps` in frame; cave vs Scarlet vs swim vs void. SOAP is not a screenshot.
 ```
 
-**SQL.** Module files under `modules/<mod>/data/sql/db-world/`. `DELETE`+`INSERT`
+**SQL.** `data/sql/updates/pending_db_world/` — `./create_sql.sh`, then `DELETE`+`INSERT`
 per block. `smart_scripts`: full rewrite of the `(entryorguid, source_type)` pair.
+Worldserver applies pending files on start after a `dev` (test) or `Playerbot` (live)
+deploy. `deploy-vps` syncs `data/sql` from that commit into the realm's
+`SourceDirectory` first — a stale clone on the VPS will not pick up pending files.
 
-**C++.** Allman, `Type const*`, `auto const&`. PlayerScript constructor **must**
-list every hook used (`PLAYERHOOK_ON_MAP_CHANGED` if you teleport maps). Do not
-store `Player*` across ticks. Do not build worldserver unless C++ changed.
+**C++.** `src/server/scripts/EasternKingdoms/<Dungeon>/`, register `AddSC_*` in
+`eastern_kingdoms_script_loader.cpp`. Allman, `Type const*`, `auto const&`.
+PlayerScript constructor **must** list every hook used (`PLAYERHOOK_ON_MAP_CHANGED`
+if you teleport maps). Do not store `Player*` across ticks. Do not build
+worldserver unless C++ changed. Push `dev` auto-deploys **test**; live is
+`deploy-vps` after merge to `Playerbot`.
 
 **Same-map teleport + phase.** `TeleportTo` on map 0 relocates then broadcasts
 the old position. `GetPosition()` after the call is not the destination. Set

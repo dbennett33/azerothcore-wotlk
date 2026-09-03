@@ -20,3 +20,5 @@ Then declare and call `AddSC_<name>()` from the regional loader (`Spells/spells_
 - A spell id missing from Wowhead is inconclusive — check the world DB's `spell_dbc` table (server-side spells) before concluding a sniffed id doesn't exist.
 
 Custom (non-upstream) scripts go in `src/server/scripts/Custom/` (gitignored).
+This fork's custom 5-mans (The Waxworks) go in the regional tree
+(`EasternKingdoms/Waxworks/`), not `Custom/` and not `modules/`.

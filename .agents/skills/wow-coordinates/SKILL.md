@@ -37,7 +37,7 @@ Tile math and coordinate spaces: [reference.md](reference.md).
    coords as `.go` world xyz.
 7. **Map 44 / custom instance.** Leftover Scarlet until `patch-4` replaces
    `Monastery.wdt` **and** the player **restarts Wow**. Even then, do not hop
-   until the data volume has `vmaps/<Wmo>.wmo.vmo` (collision). `044.vmtree`
+   until that realm's `data/` has `vmaps/<Wmo>.wmo.vmo` (collision). `044.vmtree`
    can be ~143 bytes on a doodad-less WMO-only map — that is not “empty.”
    Missing `.vmo` or leftover Scarlet client water = **underwater then fall**.
    Abort. Do not Z-nudge. ROOM-FLOORS Z is a guess until `.gps`.
@@ -72,7 +72,7 @@ Before any player teleport:
 - [ ] Z came from ground (vanilla spawn / .gps), not a plan file guess
 - [ ] XY is not open ocean (Westfall west of about -11200 with Y > 1600 is sea)
 - [ ] If dest is a type-14 / custom GO, do NOT .go the GO origin — go to a mob already inside it, or don't go
-- [ ] If dest is a custom instance: volume has `vmaps/<Wmo>.wmo.vmo`, client restarted after patch-4, no leftover Scarlet water
+- [ ] If dest is a custom instance: realm `data/` has `vmaps/<Wmo>.wmo.vmo`, client restarted after patch-4, no leftover Scarlet water
 - [ ] Never SOAP the user's logged-in character through a room checklist
 - [ ] Visual check uses the walk-instance scout, not Gonzalez
 - [ ] One move, then wait for the human. No loops. Underwater+fall → stop, do not Z-nudge.
@@ -88,7 +88,7 @@ Do **not** list these as safe: ocean `-12360, 2120, -92`; sky `-10200, -600, 280
 under-hill `-10200, -600, 48` (client GroundZ at that XY is **~112** — z=48
 falls through the world). Pocket land is `-10196, -600, 113`. Still outdoor
 woods + cave GOs. Map 44 Blender mouth `(12, 0, 0.15)` is **`.go xyz -12 0 0.15 44`**
-(WMO-local XY is negated). Still not safe until the `.vmo` is in the volume,
+(WMO-local XY is negated). Still not safe until the `.vmo` is in realm `data/`,
 the client restarted after `patch-4`, and a scout PNG shows cave not Scarlet.
 
 ## Who you may move

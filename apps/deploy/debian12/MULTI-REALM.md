@@ -58,11 +58,15 @@ First start of each worldserver applies SQL updates to its DBs automatically.
 
 ## Host layout
 
-```text
+```
 /home/acore/server/           live bin, etc, logs, data (auth + world live)
 /home/acore/server-test/      test bin, etc, logs, data (world only)
+/home/acore/src/azerothcore-wotlk/       live SourceDirectory (SQL for acore_world)
+/home/acore/src/azerothcore-wotlk-test/  test SourceDirectory (SQL for acore_world_test)
 /home/acore/build/live|test/  persistent cmake build dirs
 ```
+
+`deploy-vps` rsyncs `data/sql` from the **staged build SHA** into that realm's SourceDirectory, then starts worldserver so pending updates apply only to that realm's DB. Client-patch overlays use the same commit's `client-patches/manifest.json` (not “whatever is `current` on the VPS”).
 
 `init-test-prefix.sh` creates **separate** `server-test/data/` (not a symlink). On first run it
 `rsync`s from live so test starts with the same maps/dbc/vmaps; after that each prefix owns its

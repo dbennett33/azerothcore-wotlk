@@ -26,6 +26,7 @@ if [[ ! -d "${LIVE_PREFIX}/etc" ]]; then
 fi
 
 mkdir -p "${TEST_PREFIX}/bin" "${TEST_PREFIX}/etc/modules" "${TEST_PREFIX}/logs"
+mkdir -p /home/acore/src/azerothcore-wotlk-test
 
 LIVE_DATA="${LIVE_PREFIX}/data"
 TEST_DATA="${TEST_PREFIX}/data"
