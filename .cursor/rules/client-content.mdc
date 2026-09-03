@@ -1,0 +1,17 @@
+---
+description: Client MPQ, DBC, server data and client-patches work; routes to the data contract and skill
+globs: client-patches/**,apps/deploy/**/client-patches/**,src/tools/**,src/server/game/DataStores/**,src/server/shared/DataStores/**,data/sql/updates/pending_db_world/**
+alwaysApply: false
+---
+
+Before editing, read `.agents/docs/systems/client-data.md` (what belongs on the client, the server,
+or both; MPQ load order; extractor limits; `*_dbc` overlays). For any change that ships an MPQ or
+server `data/` files follow `.agents/skills/build-client-patch/SKILL.md`; OS-specific commands are
+in its `reference-windows-linux.md`.
+
+Hard rules from those docs:
+
+- Custom world files go in `Data/patch-4.MPQ`, DBCs in `Data/enUS/patch-enUS-4.MPQ`. Never past
+  `patch-5`, never lettered patches. Archives are MPQ v2.
+- A DBC changed on one side must change on the other in the same release.
+- Binaries never enter git; only `client-patches/manifest.json` does.

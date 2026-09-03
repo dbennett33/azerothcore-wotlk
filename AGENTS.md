@@ -21,6 +21,15 @@ Read the matching doc(s) BEFORE starting the task:
 - Reviewing a changeset or PR → `.agents/docs/code-review.md`
 - Self-reviewing a changeset before submission → also `.agents/docs/self-review-rules.md`
 - Touching a subsystem that has a doc in `.agents/docs/systems/` → read that doc too
+- Client MPQ/DBC files, server `data/` (maps, vmaps, mmaps, dbc), `client-patches/`, `*_dbc` tables
+  → `.agents/docs/systems/client-data.md`, then skill `.agents/skills/build-client-patch/`
+- Dungeons and instances (new map, WMO, entrance, bosses) → `.agents/docs/systems/dungeons.md`, then
+  skill `.agents/skills/build-dungeon/` (`reference-new-map.md` for any dungeon after The Waxworks)
+- Talent trees (`Talent.dbc`, `TalentTab.dbc`, talent spells) → `.agents/docs/systems/talents.md`,
+  then skill `.agents/skills/edit-talents/`
+- Overworld terrain (ADT/WDT, Noggit, doodads, water, area ids) → `.agents/docs/systems/terrain.md`,
+  then skill `.agents/skills/edit-terrain/`
+- Human overview of all of the above → `docs/custom-content.md`
   - Dungeon / custom instance / cave mesh / 5-man overlay → `.agents/docs/systems/dungeons.md`
     and `.agents/skills/build-dungeon/SKILL.md`
   - `.go` / teleport / SOAP player move / placing spawns by xyz → `.agents/docs/systems/coordinates.md`

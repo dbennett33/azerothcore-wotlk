@@ -16,10 +16,14 @@ reference only if you need it:
 
 - Mesh / client / extract → [reference-mesh.md](reference-mesh.md)
 - Content that feels like a real dungeon → [reference-content.md](reference-content.md)
+- **Any dungeon after The Waxworks** (new `Map.dbc` id, DBC rows, graveyard, access) →
+  [reference-new-map.md](reference-new-map.md)
 
-Also read `.agents/docs/cpp-guidelines.md`, `.agents/docs/cpp-scripts.md`,
-`.agents/docs/sql-guidelines.md`. Any `.go` / SOAP / spawn xyz →
-`.agents/skills/wow-coordinates/SKILL.md` first.
+Also read `.agents/docs/systems/dungeons.md` (id registry, what Waxworks did that does not
+repeat), `.agents/docs/systems/client-data.md`, `.agents/docs/cpp-guidelines.md`,
+`.agents/docs/cpp-scripts.md`, `.agents/docs/sql-guidelines.md`. Any `.go` / SOAP / spawn xyz →
+`.agents/skills/wow-coordinates/SKILL.md` first. Packing / extracting / publishing →
+`.agents/skills/build-client-patch/SKILL.md`.
 
 This fork ships custom 5-mans as **world content**, not a module. The Waxworks
 is `src/server/scripts/EasternKingdoms/Waxworks/` plus pending world SQL.
@@ -32,9 +36,12 @@ Never edit `data/sql/base/`, `data/sql/archive/`, or `data/sql/updates/db_*`.
 |---|---|---|---|
 | **Phase overlay** on map 0 | No — Fargodeep walls | Shared world | No |
 | **Type-14 cave GOs** on map 0 | Glued vanilla caves | Shared world | No (existing display ids) |
-| **Kitbash WMO on map 44** | Yes, if you ship tiles | Real instance | Yes (`Monastery.wdt` + WMO) |
-| **New `Map.dbc` id + patch** | Yes | Real instance | Yes (client **and** `map_dbc`) |
+| **Kitbash WMO on map 44** | Yes, if you ship tiles | Real instance | Yes (`Monastery.wdt` + WMO) — **taken by The Waxworks** |
+| **New `Map.dbc` id + patch** | Yes | Real instance | Yes (client **and** `map_dbc`) — the path for every further dungeon |
 
+- Map 44 is used. Do not hunt for another "free" instance id: the remaining
+  unused ids are test/junk maps that `mmaps_generator` skips. Dungeon #2+ is
+  a new `Map.dbc` row on both sides — [reference-new-map.md](reference-new-map.md).
 - Overlay **cannot** enlarge caves or delete ADT trees. Dress the existing shaft
   or change hosting.
 - Map **44** already has a leftover Scarlet `Monastery.wdt` (not a blank
@@ -78,13 +85,15 @@ distinct walkable space an agent can place without those tools.
    box or you yo-yo.
 7. **Do not sit on vanilla quest geometry.** Fargodeep: Goldtooth guid `80644`
    at `-9745.84, 87.57, 12.77` — keep ≥15y. Do not edit quests 62/60/87/47/88/132/176.
-8. **IDs are 9,000,000+.** Header enum is the source of truth.
+8. **IDs are 9,000,000+.** Header enum is the source of truth; the block is reserved in the
+   registry table of `.agents/docs/systems/dungeons.md` before the first SQL line.
 
 ## Workflow
 
 ```
 Task progress:
-- [ ] Hosting model chosen (overlay vs real instance)
+- [ ] Hosting model chosen (overlay vs real instance); new map id reserved if real
+- [ ] Id block reserved in systems/dungeons.md registry; header enum written
 - [ ] Layout on real xyz (or WMO local space), rooms named
 - [ ] Templates: creatures, GOs, items, quests (`pending_db_world`)
 - [ ] Spawns + lighting + at least one set-piece pull
@@ -134,8 +143,8 @@ Client and server must agree. Server `map_dbc` without a client `Map.dbc` row
 WMO-only maps have **no** `maps/044*.map`; height is 100% vmaps. A tiny
 `044.vmtree` is normal — the mesh is `vmaps/<Name>.wmo.vmo`. Missing that
 file = `WorldModelStore: could not load` and the player falls. Full pipeline:
-[reference-mesh.md](reference-mesh.md). Tool paths: `C:/dev/tools/` and
-`.agents/plans/waxworks-mesh/TOOLCHAIN.md`.
+[reference-mesh.md](reference-mesh.md). Tool paths and pack/extract commands
+(Windows and Linux): `../build-client-patch/reference-windows-linux.md`.
 
 WMO-only + MODF at origin (Ragefire pattern) has three extra traps:
 
