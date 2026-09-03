@@ -134,6 +134,8 @@ __pycache__/
 #  module directly in repositoryyou can do:
 #
 #  !modules/yourmodule
+!/modules/mod-waxworks/
+!/modules/mod-waxworks/**
 #
 # ==================
 .cache

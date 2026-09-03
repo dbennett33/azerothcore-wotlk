@@ -5100,7 +5100,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
         LOG_WARN("entities.player.loading", "Player::LoadFromDB: Player ({}) has invalid knowntitles mask ({}). Forcing partial load.", guid, fields[69].Get<std::string_view>());
     }
 
-    SetObjectScale(1.0f);
+    SetObjectScale(getRace() == RACE_DWARF ? 5.0f : 1.0f);
     SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);
 
     // load character creation date, relevant for achievements of type average

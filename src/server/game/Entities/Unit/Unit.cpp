@@ -77,6 +77,11 @@
 #include <cmath>
 #include <limits>
 
+namespace
+{
+    float constexpr DWARF_OBJECT_SCALE_MULTIPLIER = 5.0f;
+}
+
 float baseMoveSpeed[MAX_MOVE_TYPE] =
 {
     2.5f,                  // MOVE_WALK
@@ -13165,7 +13170,10 @@ bool Unit::IsPolymorphed() const
 void Unit::RecalculateObjectScale()
 {
     int32 scaleAuras = GetTotalAuraModifier(SPELL_AURA_MOD_SCALE) + GetTotalAuraModifier(SPELL_AURA_MOD_SCALE_2);
-    float scale = GetNativeObjectScale() + CalculatePct(1.0f, scaleAuras);
+    float nativeScale = GetNativeObjectScale();
+    if (IsPlayer() && getRace() == RACE_DWARF)
+        nativeScale = DWARF_OBJECT_SCALE_MULTIPLIER;
+    float scale = nativeScale + CalculatePct(1.0f, scaleAuras);
     float scaleMin = IsPlayer() ? 0.1f : 0.01f;
     SetObjectScale(std::max(scale, scaleMin));
 }
@@ -13178,7 +13186,16 @@ void Unit::SetDisplayId(uint32 modelId, float displayScale /*=1.f*/)
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
         SetByteValue(UNIT_FIELD_BYTES_0, 2, minfo->gender);
 
-    SetObjectScale(displayScale);
+    float scale = displayScale;
+    if (IsPlayer())
+    {
+        if (getRace() == RACE_DWARF)
+            scale *= DWARF_OBJECT_SCALE_MULTIPLIER;
+    }
+    else if (GetDisplayRaceFromModelId(modelId) == DisplayRace::Dwarf)
+        scale *= DWARF_OBJECT_SCALE_MULTIPLIER;
+
+    SetObjectScale(scale);
 
     sScriptMgr->OnDisplayIdChange(this, modelId);
 }

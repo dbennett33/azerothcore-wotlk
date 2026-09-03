@@ -3508,7 +3508,11 @@ void Creature::UpdateMovementFlags()
 
 float Creature::GetNativeObjectScale() const
 {
-    return ObjectMgr::ChooseDisplayId(GetCreatureTemplate())->DisplayScale;
+    CreatureModel const* model = ObjectMgr::ChooseDisplayId(GetCreatureTemplate());
+    float scale = model->DisplayScale;
+    if (GetDisplayRaceFromModelId(model->CreatureDisplayID) == DisplayRace::Dwarf)
+        scale *= 5.0f;
+    return scale;
 }
 
 void Creature::SetObjectScale(float scale)

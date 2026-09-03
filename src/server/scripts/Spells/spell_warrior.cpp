@@ -16,6 +16,7 @@
  */
 
 #include "Player.h"
+#include "PlayerScript.h"
 #include "SpellAuraEffects.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
@@ -35,6 +36,10 @@ enum WarriorSpells
     SPELL_WARRIOR_BLOODTHIRST                       = 23885,
     SPELL_WARRIOR_BLOODTHIRST_DAMAGE                = 23881,
     SPELL_WARRIOR_CHARGE                            = 34846,
+    SPELL_WARRIOR_CHARGE_RANK_1                     = 100,
+    SPELL_WARRIOR_CHARGE_RANK_2                     = 6178,
+    SPELL_WARRIOR_CHARGE_RANK_3                     = 11578,
+    SPELL_WARRIOR_WARBRINGER                        = 57499,
     SPELL_WARRIOR_DAMAGE_SHIELD_DAMAGE              = 59653,
     SPELL_WARRIOR_DEEP_WOUNDS_RANK_1                = 12162,
     SPELL_WARRIOR_DEEP_WOUNDS_RANK_2                = 12850,
@@ -77,6 +82,13 @@ enum WarriorSpellIcons
 {
     WARRIOR_ICON_ID_SUDDEN_DEATH                    = 1989,
     WARRIOR_ICON_ID_SECOND_WIND                     = 1697
+};
+
+enum WarriorChargeLowLevel
+{
+    // Below this level Charge has no cooldown, can be used in combat, and generates a flat 10 rage.
+    WARRIOR_CHARGE_LOW_LEVEL_MAX                    = 30,
+    WARRIOR_CHARGE_LOW_LEVEL_RAGE                   = 10
 };
 
 enum MiscSpells
@@ -283,6 +295,93 @@ class spell_warr_deep_wounds : public SpellScript
     }
 };
 
+static bool IsLowLevelChargeCaster(Unit const* caster)
+{
+    return caster && caster->IsPlayer() && caster->GetLevel() < WARRIOR_CHARGE_LOW_LEVEL_MAX;
+}
+
+static bool HasAnyChargeRank(Player const* player)
+{
+    return player->HasSpell(SPELL_WARRIOR_CHARGE_RANK_1)
+        || player->HasSpell(SPELL_WARRIOR_CHARGE_RANK_2)
+        || player->HasSpell(SPELL_WARRIOR_CHARGE_RANK_3);
+}
+
+static void PlaceChargeOnBattleStanceBar(Player* player)
+{
+    uint8 constexpr battleStanceFirst = 72;
+    uint8 constexpr battleStanceLast = 83;
+
+    for (uint8 button = battleStanceFirst; button <= battleStanceLast; ++button)
+        if (ActionButton const* existing = player->GetActionButton(button))
+            if (existing->GetAction() == SPELL_WARRIOR_CHARGE_RANK_1
+                || existing->GetAction() == SPELL_WARRIOR_CHARGE_RANK_2
+                || existing->GetAction() == SPELL_WARRIOR_CHARGE_RANK_3)
+                return;
+
+    for (uint8 button = battleStanceFirst; button <= battleStanceLast; ++button)
+    {
+        if (!player->GetActionButton(button))
+        {
+            player->addActionButton(button, SPELL_WARRIOR_CHARGE_RANK_1, ACTION_BUTTON_SPELL);
+            return;
+        }
+    }
+}
+
+static void TeachChargeAtLevelOne(Player* player)
+{
+    if (!player || player->getClass() != CLASS_WARRIOR || HasAnyChargeRank(player))
+        return;
+
+    player->learnSpell(SPELL_WARRIOR_CHARGE_RANK_1);
+    PlaceChargeOnBattleStanceBar(player);
+}
+
+static void UpdateLowLevelChargeCombatAura(Player* player)
+{
+    if (!player || player->getClass() != CLASS_WARRIOR)
+        return;
+
+    if (IsLowLevelChargeCaster(player))
+    {
+        // Warbringer is the client-known aura that allows Charge in combat.
+        if (!player->HasAura(SPELL_WARRIOR_WARBRINGER))
+            player->AddAura(SPELL_WARRIOR_WARBRINGER, player);
+        return;
+    }
+
+    if (!player->HasTalent(SPELL_WARRIOR_WARBRINGER, player->GetActiveSpec()))
+        player->RemoveAurasDueToSpell(SPELL_WARRIOR_WARBRINGER);
+}
+
+class spell_warr_charge_low_level : public PlayerScript
+{
+public:
+    spell_warr_charge_low_level() : PlayerScript("spell_warr_charge_low_level",
+        { PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LEVEL_CHANGED, PLAYERHOOK_ON_CREATE })
+    {
+    }
+
+    void OnPlayerCreate(Player* player) override
+    {
+        TeachChargeAtLevelOne(player);
+        if (player && player->getClass() == CLASS_WARRIOR)
+            player->SaveToDB(false, false);
+    }
+
+    void OnPlayerLogin(Player* player) override
+    {
+        TeachChargeAtLevelOne(player);
+        UpdateLowLevelChargeCombatAura(player);
+    }
+
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        UpdateLowLevelChargeCombatAura(player);
+    }
+};
+
 // -100 - Charge
 class spell_warr_charge : public SpellScript
 {
@@ -298,10 +397,22 @@ class spell_warr_charge : public SpellScript
             });
     }
 
+    void HandleAfterCast()
+    {
+        Unit* caster = GetCaster();
+        if (!IsLowLevelChargeCaster(caster))
+            return;
+
+        caster->ToPlayer()->RemoveSpellCooldown(GetSpellInfo()->Id, true);
+    }
+
     void HandleDummy(SpellEffIndex /*effIndex*/)
     {
         int32 chargeBasePoints0 = GetEffectValue();
         Unit* caster = GetCaster();
+        if (IsLowLevelChargeCaster(caster))
+            chargeBasePoints0 = WARRIOR_CHARGE_LOW_LEVEL_RAGE;
+
         caster->CastCustomSpell(caster, SPELL_WARRIOR_CHARGE, &chargeBasePoints0, nullptr, nullptr, true);
 
         // Juggernaut crit bonus
@@ -311,6 +422,7 @@ class spell_warr_charge : public SpellScript
 
     void Register() override
     {
+        AfterCast += SpellCastFn(spell_warr_charge::HandleAfterCast);
         OnEffectHitTarget += SpellEffectFn(spell_warr_charge::HandleDummy, EFFECT_1, SPELL_EFFECT_DUMMY);
     }
 };
@@ -1246,6 +1358,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_bloodthirst);
     RegisterSpellScript(spell_warr_bloodthirst_heal);
     RegisterSpellScript(spell_warr_charge);
+    new spell_warr_charge_low_level();
     RegisterSpellScript(spell_warr_concussion_blow);
     RegisterSpellScript(spell_warr_damage_shield);
     RegisterSpellScript(spell_warr_deep_wounds);

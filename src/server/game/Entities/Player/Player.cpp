@@ -518,7 +518,7 @@ bool Player::Create(ObjectGuid::LowType guidlow, CharacterCreateInfo* createInfo
 
     uint8 powertype = cEntry->powerType;
 
-    SetObjectScale(1.0f);
+    SetObjectScale(createInfo->Race == RACE_DWARF ? 5.0f : 1.0f);
 
     m_realRace = createInfo->Race; // set real race flag
     m_race = createInfo->Race; // set real race flag
@@ -2635,7 +2635,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
 
     // reset size before reapply auras
-    SetObjectScale(1.0f);
+    SetObjectScale(getRace() == RACE_DWARF ? 5.0f : 1.0f);
 
     // save base values (bonuses already included in stored stats
     for (uint8 i = STAT_STRENGTH; i < MAX_STATS; ++i)

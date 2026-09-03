@@ -5791,7 +5791,15 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
             return SPELL_FAILED_CASTER_AURASTATE;
 
         if (reqCombat && m_caster->IsInCombat() && !m_spellInfo->CanBeUsedInCombat())
-            return SPELL_FAILED_AFFECTING_COMBAT;
+        {
+            // Players below 30 can Charge in combat (paired with Warbringer grant in spell_warr_charge).
+            bool const allowLowLevelCharge = m_caster->IsPlayer()
+                && m_caster->GetLevel() < 30
+                && m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR
+                && (m_spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_WARRIOR_CHARGE);
+            if (!allowLowLevelCharge)
+                return SPELL_FAILED_AFFECTING_COMBAT;
+        }
     }
 
     // Xinef: exploit protection
