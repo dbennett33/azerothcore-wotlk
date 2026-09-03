@@ -67,8 +67,8 @@ Same ADT also places `MD_SpiderMine` (Jasperlode family). Variants
 says otherwise. Cata’s Fargodeep micro-dungeon **does not exist in 3.3.5**.
 Vanilla quests 62/47/60/87 and Goldtooth stay on this mesh, phase 1.
 
-Dump notes: `.agents/plans/waxworks-mesh/TOOLCHAIN.md`. Close `Wow.exe`
-before re-reading live MPQs (exclusive lock).
+Dump commands per OS: `../build-client-patch/reference-windows-linux.md`. Close
+`Wow.exe` before re-reading live MPQs (exclusive lock).
 
 ## Server load path
 
@@ -121,8 +121,8 @@ Do not use leftover maps 13/25/35/37/42/169/451 as a 5-man cave.
 Copy Ragefire’s **WDT pattern only** (WMO-only, MODF at origin) — not its
 lava halls. Point MWMO at a kitbashed `World/wmo/Dungeon/Waxworks/Waxworks.wmo`.
 
-Waxworks families (catalog: `.agents/plans/waxworks-mesh/ART-SOURCES.md`;
-paths: `TOOLCHAIN.md`): `AZ_Deadmines_A` foundry/Cookie, `MD_Goldmine`
+Waxworks families (the ART-SOURCES catalog was a gitignored plan; re-derive
+with wow.export if needed): `AZ_Deadmines_A` foundry/Cookie, `MD_Goldmine`
 shafts, crypt chapels, candle/cauldron/cart M2s. Optional: one WC wet
 group; farm M2s for the sty.
 
@@ -205,8 +205,9 @@ an instance = leftover Scarlet liquid and/or missing `.vmo`. Abort; do not
 Z-nudge. ROOM-FLOORS Z is a guess until `.gps`. Prove the view with
 [walk-instance](../walk-instance/SKILL.md) (scout PNG + `.gps` in frame), not SOAP.
 
-Extract on the machine that has the packed client + AC tools (see
-`TOOLCHAIN.md` / `client-patches/scripts/extract-server-data.sh`). This
+Extract on the machine that has the packed client + AC tools (commands in
+`../build-client-patch/reference-windows-linux.md`; run the tools by hand,
+`extract-server-data.sh` assumes they sit in the WoW dir). This
 fork's playable client is often
 `/home/dan/Downloads/ChromieCraft_3.3.5a/` (Linux) or
 `C:\dev\wow-335\ChromieCraft_3.3.5a\` (Windows scout). Do not assume a
@@ -218,7 +219,8 @@ risk of Goldshire holes. Goldtooth and quest AT 88 stay.
 
 ## Tools (this machine, 2026-08-30)
 
-Full table and pack/extract commands: `.agents/plans/waxworks-mesh/TOOLCHAIN.md`.
+Full table and pack/extract commands for Windows and Linux:
+`../build-client-patch/reference-windows-linux.md` (the original planning notes were gitignored).
 
 | Tool | Path | Notes |
 |---|---|---|
