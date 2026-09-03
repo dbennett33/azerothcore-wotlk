@@ -143,4 +143,4 @@ Write-Host '  2. Publish binaries to the VPS:'
 Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 '$outDir'"
 Write-Host '  3. Deploy server data: GitHub Actions -> deploy-client-patches'
 Write-Host '  4. Players update locally:'
-Write-Host '       .\client-patches\scripts\update-client.ps1 -WowDir <WoW> -FromVps acore@your.vps'
+Write-Host '       .\client-patches\scripts\update-client.ps1 -WowDir <WoW> -FromVps debian@your.vps'

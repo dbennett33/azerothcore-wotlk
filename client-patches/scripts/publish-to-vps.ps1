@@ -7,7 +7,8 @@
     Path to client-patches\bundles\<version> (contains manifest.json).
 
 .PARAMETER VpsHost
-    user@host (e.g. acore@203.0.113.10). Env: VPS_HOST
+    SSH login user@host (e.g. debian@203.0.113.10). Env: VPS_HOST
+    Files are stored under /home/acore/; publish runs as acore via sudo.
 
 .PARAMETER RemoteRepo
     AzerothCore checkout on the VPS. Env: REMOTE_REPO
@@ -25,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib.ps1')
 
 if (-not $VpsHost) {
-    throw 'Set -VpsHost or environment variable VPS_HOST (e.g. acore@203.0.113.10)'
+    throw 'Set -VpsHost or environment variable VPS_HOST (e.g. debian@203.0.113.10)'
 }
 if (-not $RemoteRepo) {
     $RemoteRepo = '/home/acore/src/azerothcore-wotlk'
@@ -53,9 +54,12 @@ Get-ChildItem -LiteralPath $BundleDir -Force | ForEach-Object {
 }
 
 $publish = "$RemoteRepo/apps/deploy/debian12/client-patches/publish-client-patches.sh"
-Write-Host 'Publishing on VPS ...'
-Invoke-Native -FilePath $ssh -ArgumentList @($VpsHost, "bash '$publish' '$remoteStaging'")
+Write-Host 'Publishing on VPS as acore ...'
+Invoke-Native -FilePath $ssh -ArgumentList @(
+    $VpsHost,
+    "sudo chown -R acore:acore '$remoteStaging' && sudo -u acore bash '$publish' '$remoteStaging'"
+)
 
 Write-Host 'Done. Deploy server data with deploy-client-patches workflow or:'
 $apply = "$RemoteRepo/apps/deploy/debian12/client-patches/apply-server-data.sh"
-Write-Host "  ssh $VpsHost 'ACORE_PREFIX=/home/acore/server bash $apply $version'"
+Write-Host "  ssh $VpsHost 'sudo -u acore env ACORE_PREFIX=/home/acore/server bash $apply $version'"

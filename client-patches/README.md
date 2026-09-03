@@ -31,8 +31,8 @@ client-patches/scripts/build-bundle.sh 1.0.0 --changelog "First custom area"
 # Windows: .\client-patches\scripts\build-bundle.ps1 1.0.0 -Changelog 'First custom area'
 
 # 3. Publish binaries to the VPS (canonical store)
-VPS_HOST=acore@your.vps client-patches/scripts/publish-to-vps.sh client-patches/bundles/1.0.0
-# Windows: .\client-patches\scripts\publish-to-vps.ps1 -BundleDir .\client-patches\bundles\1.0.0 -VpsHost acore@your.vps
+VPS_HOST=debian@your.vps client-patches/scripts/publish-to-vps.sh client-patches/bundles/1.0.0
+# Windows: .\client-patches\scripts\publish-to-vps.ps1 -BundleDir .\client-patches\bundles\1.0.0 -VpsHost debian@your.vps
 
 # 4. Commit manifest.json only
 git add client-patches/manifest.json
@@ -41,7 +41,7 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 # 5. Deploy server data (GitHub Actions -> deploy-client-patches)
 # 6. Players update:
 #    client-patches/scripts/update-client.sh
-#    Windows: .\client-patches\scripts\update-client.ps1 -WowDir C:\Games\ChromieCraft -FromVps acore@your.vps
+#    Windows: .\client-patches\scripts\update-client.ps1 -WowDir C:\Games\ChromieCraft -FromVps debian@your.vps
 ```
 
 ## VPS storage layout

@@ -3,7 +3,7 @@
 #
 # Usage:
 #   WOW_DIR=/path/to/WoW PATCHES_BASE_URL=https://example.com/client-patches/current ./update-client.sh
-#   ./update-client.sh --wow-dir /path/to/WoW --from-vps acore@your.vps
+#   ./update-client.sh --wow-dir /path/to/WoW --from-vps debian@your.vps
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

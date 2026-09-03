@@ -107,14 +107,16 @@ Commit **`manifest.json` only**. Do not commit `bundles/`, MPQs, or extracted se
 From your dev machine:
 
 ```bash
-VPS_HOST=acore@your.vps \
+VPS_HOST=debian@your.vps \
 client-patches/scripts/publish-to-vps.sh client-patches/bundles/1.0.0
 ```
+
+SSH as **debian** (the VPS login). The script writes into `/home/acore/client-patches/` and runs the publish helper as `acore` via sudo.
 
 ```powershell
 .\client-patches\scripts\publish-to-vps.ps1 `
   -BundleDir '.\client-patches\bundles\1.0.0' `
-  -VpsHost 'acore@your.vps'
+  -VpsHost 'debian@your.vps'
 ```
 
 On the VPS directly:
@@ -174,7 +176,7 @@ Quit WoW completely before installing patches.
 
 ```bash
 WOW_DIR=/path/to/ChromieCraft \
-FROM_VPS=acore@your.vps \
+FROM_VPS=debian@your.vps \
 client-patches/scripts/update-client.sh
 ```
 
@@ -190,7 +192,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 cd path\to\azerothcore-wotlk
 .\client-patches\scripts\update-client.ps1 `
   -WowDir 'C:\Games\ChromieCraft' `
-  -FromVps 'acore@your.vps'
+  -FromVps 'debian@your.vps'
 ```
 
 `-DryRun` prints destinations without writing. `-Version 1.0.0` pulls that release instead of `current`. Delete `.acore-client-patch-version` in the WoW folder to force a reinstall.

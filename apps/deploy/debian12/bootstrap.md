@@ -35,6 +35,9 @@ attention if `dpkg` reports configuration errors — see section 3.
 sudo adduser --disabled-password --gecos "" acore
 sudo mkdir -p /home/acore/server/{bin,etc,data,logs} /home/acore/server-staging
 sudo chown -R acore:acore /home/acore/server /home/acore/server-staging
+# SSH login is debian, not acore. Let debian browse /home/acore (secrets stay 600).
+sudo usermod -aG acore debian
+sudo chmod 750 /home/acore
 ```
 
 ## 2. Build and runtime packages
@@ -87,6 +90,9 @@ Copy maps, dbc, vmaps, and mmaps into `/home/acore/server/data`. Do **not** down
 sudo chown -R acore:acore /home/acore/server/data
 mkdir -p /home/acore/client-patches/releases
 sudo chown -R acore:acore /home/acore/client-patches
+# debian (SSH login) needs group write so publish-to-vps can rsync here.
+sudo chmod -R g+rwX /home/acore/client-patches
+sudo find /home/acore/client-patches -type d -exec chmod g+s {} +
 ```
 
 Custom MPQ patches and matching server data overlays are managed separately — see

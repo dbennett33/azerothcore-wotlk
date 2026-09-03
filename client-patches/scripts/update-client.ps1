@@ -14,7 +14,8 @@
     Base URL of a release directory that contains manifest.json. Env: PATCHES_BASE_URL
 
 .PARAMETER FromVps
-    user@host for scp from /home/acore/client-patches/current. Env: FROM_VPS
+    SSH login user@host (e.g. debian@203.0.113.10) for scp from
+    /home/acore/client-patches/current. Env: FROM_VPS
 
 .PARAMETER Version
     Release version when using -FromVps (default: current symlink). Env: VERSION
@@ -26,7 +27,7 @@
     Show install destinations without writing files.
 
 .EXAMPLE
-    .\update-client.ps1 -WowDir 'C:\Games\ChromieCraft' -FromVps 'acore@203.0.113.10'
+    .\update-client.ps1 -WowDir 'C:\Games\ChromieCraft' -FromVps 'debian@203.0.113.10'
 
 .EXAMPLE
     .\update-client.ps1 -WowDir 'C:\Games\ChromieCraft' -PatchesUrl 'https://example.com/client-patches/current'

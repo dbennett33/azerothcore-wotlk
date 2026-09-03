@@ -30,8 +30,17 @@ echo "==> user and directories"
 if ! id "$ACORE_USER" >/dev/null 2>&1; then
   adduser --disabled-password --gecos "" "$ACORE_USER"
 fi
-mkdir -p "${ACORE_PREFIX}/{bin,etc,data,logs}" "${ACORE_HOME}/server-staging"
-chown -R "${ACORE_USER}:${ACORE_USER}" "${ACORE_PREFIX}" "${ACORE_HOME}/server-staging"
+mkdir -p "${ACORE_PREFIX}/{bin,etc,data,logs}" "${ACORE_HOME}/server-staging" \
+  "${ACORE_HOME}/client-patches/releases"
+chown -R "${ACORE_USER}:${ACORE_USER}" "${ACORE_PREFIX}" "${ACORE_HOME}/server-staging" \
+  "${ACORE_HOME}/client-patches"
+chmod 750 "$ACORE_HOME"
+chmod -R g+rwX "${ACORE_HOME}/client-patches"
+find "${ACORE_HOME}/client-patches" -type d -exec chmod g+s {} +
+# SSH login is debian; let it browse acore's home and write the patch store.
+if id debian >/dev/null 2>&1; then
+  usermod -aG "$ACORE_USER" debian
+fi
 
 echo "==> build packages"
 apt-get update -y
