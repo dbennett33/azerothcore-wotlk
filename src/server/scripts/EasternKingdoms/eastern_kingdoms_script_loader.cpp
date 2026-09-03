@@ -117,6 +117,14 @@ void AddSC_boss_muru();
 void AddSC_boss_kiljaeden();
 void AddSC_instance_the_stockade();          //The Stockade
 void AddSC_instance_uldaman();               //Uldaman
+void AddSC_instance_waxworks();              //The Waxworks
+void AddSC_boss_king_wick();
+void AddSC_boss_chef_snarlroast();
+void AddSC_boss_foreman_voss();
+void AddSC_boss_princess();
+void AddSC_npc_sergeant_wickham();
+void AddSC_waxworks_player();
+void AddSC_waxworks_portal();
 void AddSC_boss_akilzon();                   //Zul'Aman
 void AddSC_boss_halazzi();
 void AddSC_boss_hex_lord_malacrass();
@@ -265,6 +273,14 @@ void AddEasternKingdomsScripts()
     AddSC_boss_kiljaeden();
     AddSC_instance_the_stockade();          //The Stockade
     AddSC_instance_uldaman();               //Uldaman
+    AddSC_instance_waxworks();              //The Waxworks
+    AddSC_boss_king_wick();
+    AddSC_boss_chef_snarlroast();
+    AddSC_boss_foreman_voss();
+    AddSC_boss_princess();
+    AddSC_npc_sergeant_wickham();
+    AddSC_waxworks_player();
+    AddSC_waxworks_portal();
     AddSC_boss_akilzon();                   //Zul'Aman
     AddSC_boss_halazzi();
     AddSC_boss_hex_lord_malacrass();
