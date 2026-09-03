@@ -82,7 +82,7 @@ shopt -u nullglob
 
 server_components=()
 for component in dbc maps vmaps mmaps; do
-  if [[ -d "${SOURCES}/server/${component}" ]] && [[ -n "$(ls -A "${SOURCES}/server/${component}" 2>/dev/null || true)" ]]; then
+  if dir_has_real_files "${SOURCES}/server/${component}"; then
     server_components+=("$component")
   fi
 done
@@ -95,7 +95,7 @@ if [[ ${#client_mpqs[@]} -eq 0 && ${#server_components[@]} -eq 0 ]]; then
   fi
 fi
 
-if [[ -d "${SOURCES}/client/loose" ]] && [[ -n "$(find "${SOURCES}/client/loose" -type f 2>/dev/null | head -1 || true)" ]]; then
+if dir_has_real_files "${SOURCES}/client/loose"; then
   echo "note: loose client files found. Pack them into sources/client/mpq/ with an MPQ editor."
   echo "      See docs/client-patches.md"
 fi
@@ -121,11 +121,19 @@ def sha256_file(path: str) -> str:
 entries = []
 for src in paths:
     base = os.path.basename(src)
+    lower = base.lower()
+    loc = locale.lower()
+    if lower.startswith(f"patch-{loc}"):
+        dest = f"Data/{locale}/{base}"
+    elif len(base) >= 7 and base.startswith("patch-") and base[6].isalpha():
+        dest = f"Data/{locale}/{base}"
+    else:
+        dest = f"Data/{base}"
     entries.append({
         "file": base,
         "sha256": sha256_file(src),
         "size": os.path.getsize(src),
-        "install_path": f"Data/{locale}/{base}",
+        "install_path": dest,
     })
 print(json.dumps(entries))
 PY

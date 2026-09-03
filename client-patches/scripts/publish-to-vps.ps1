@@ -37,8 +37,8 @@ if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Bundle directory not found or missing manifest.json: $BundleDir"
 }
 
-$ssh = Assert-NativeCommand 'ssh.exe' 'Install OpenSSH Client (Settings → Apps → Optional features).'
-$scp = Assert-NativeCommand 'scp.exe' 'Install OpenSSH Client (Settings → Apps → Optional features).'
+$ssh = Assert-NativeCommand 'ssh.exe' 'Install OpenSSH Client (Settings > Apps > Optional features).'
+$scp = Assert-NativeCommand 'scp.exe' 'Install OpenSSH Client (Settings > Apps > Optional features).'
 
 $manifest = Read-ClientPatchManifest $manifestPath
 $version = [string]$manifest.version

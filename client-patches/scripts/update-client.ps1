@@ -62,7 +62,7 @@ $scp = $null
 $remoteRelease = $null
 $base = $null
 if ($FromVps) {
-    $scp = Assert-NativeCommand 'scp.exe' 'Install OpenSSH Client (Settings → Apps → Optional features).'
+    $scp = Assert-NativeCommand 'scp.exe' 'Install OpenSSH Client (Settings > Apps > Optional features).'
 }
 
 $work = Join-Path ([System.IO.Path]::GetTempPath()) ('acore-client-patches-' + [guid]::NewGuid().ToString('n'))

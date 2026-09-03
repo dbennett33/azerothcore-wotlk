@@ -240,7 +240,25 @@ function Test-DirHasFiles {
         return $false
     }
     $null -ne (Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notin @('.gitkeep', 'README.md') } |
         Select-Object -First 1)
+}
+
+function Get-ClientMpqInstallPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$FileName,
+        [string]$Locale = 'enUS'
+    )
+    # Locale and lettered patches go under Data/<locale>/. Numeric global patches
+    # (patch-4.MPQ) go under Data/ -- that is where 3.3.5a and the extractors look.
+    if ($FileName -match ('(?i)^patch-{0}' -f [regex]::Escape($Locale))) {
+        return "Data/$Locale/$FileName"
+    }
+    if ($FileName -match '^patch-[A-Za-z]') {
+        return "Data/$Locale/$FileName"
+    }
+    return "Data/$FileName"
 }
 
 function Get-HttpDownloader {

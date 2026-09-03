@@ -1,19 +1,24 @@
 {
-  "version": "0.0.0",
-  "released": "2026-01-01T00:00:00Z",
+  "version": "1.0.1",
+  "released": "2026-09-03T20:52:25Z",
   "blizzard_build": 12340,
-  "client_cache_version": 0,
-  "changelog": [
-    "Placeholder manifest. Run build-bundle.sh after adding sources to produce a real release."
-  ],
+  "client_cache_version": 2,
+  "changelog": ["Waxworks map 44 client mesh (patch-4.MPQ)", "Server overlay: vmaps/044* + Waxworks.wmo.vmo and mmaps/044*"],
   "client": {
     "locale": "enUS",
-    "patches": []
+    "patches": [
+      {
+        "file": "patch-4.MPQ",
+        "sha256": "18250961951b72c8c918d97a5765fd48a018f7d51c7e1ce6639f88f39fc50cb1",
+        "size": 566953,
+        "install_path": "Data/patch-4.MPQ"
+      }
+    ]
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "",
-    "size": 0,
-    "components": []
+    "sha256": "afb0ff229ae8397b63a45ba5f53286bbf632480914351757cc11e41405f76f8c",
+    "size": 212923,
+    "components": ["vmaps", "mmaps"]
   }
 }

@@ -69,6 +69,30 @@ download_file() {
   fi
 }
 
+dir_has_real_files() {
+  local dir="$1"
+  [[ -d "$dir" ]] || return 1
+  find "$dir" -type f ! -name '.gitkeep' ! -name 'README.md' -print -quit 2>/dev/null | grep -q .
+}
+
+mpq_install_path() {
+  local file="$1"
+  local locale="${2:-enUS}"
+  local lower
+  lower="$(printf '%s' "$file" | tr '[:upper:]' '[:lower:]')"
+  local locale_lower
+  locale_lower="$(printf '%s' "$locale" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$lower" == "patch-${locale_lower}"* ]]; then
+    printf 'Data/%s/%s' "$locale" "$file"
+    return
+  fi
+  if [[ "$file" =~ ^patch-[A-Za-z] ]]; then
+    printf 'Data/%s/%s' "$locale" "$file"
+    return
+  fi
+  printf 'Data/%s' "$file"
+}
+
 bundle_dir_for_version() {
   local version="$1"
   printf '%s/bundles/%s' "$CLIENT_PATCHES_ROOT" "$version"

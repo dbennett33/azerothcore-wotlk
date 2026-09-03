@@ -81,7 +81,7 @@ foreach ($mpq in $clientMpqs) {
         file          = $mpq.Name
         sha256        = Get-FileSha256Hex $dest
         size          = [int64]$mpq.Length
-        install_path  = "Data/$Locale/$($mpq.Name)"
+        install_path  = Get-ClientMpqInstallPath -FileName $mpq.Name -Locale $Locale
     }
 }
 

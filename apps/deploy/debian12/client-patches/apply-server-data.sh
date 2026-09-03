@@ -8,6 +8,14 @@ PATCHES_ROOT="${PATCHES_ROOT:-${ACORE_HOME}/client-patches}"
 ACORE_PREFIX="${ACORE_PREFIX:-${ACORE_HOME}/server}"
 DRY_RUN=0
 
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Missing required command: ${cmd}" >&2
+    exit 1
+  fi
+}
+
 usage() {
   cat <<'EOF'
 Usage: apply-server-data.sh [version] [options]
