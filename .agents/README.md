@@ -13,6 +13,9 @@ them, so there is one copy to keep current.
 
 - **Claude Code** — reads `CLAUDE.md`, which imports `AGENTS.md`. Skills are exposed by a relative
   symlink: `.claude/skills/<name> -> ../../.agents/skills/<name>`.
+- **Cursor** — reads `AGENTS.md` natively. Path-scoped pointer rules in `.cursor/rules/*.mdc`
+  (`globs:` frontmatter) name the doc and skill to read for client-data and dungeon work; they
+  restate nothing.
 - **GitHub Copilot** — reads `AGENTS.md` natively. Code review also reads
   `.github/copilot-instructions.md`; custom agent profiles live in `.github/agents/`.
 - **Any other agent** — point it at `AGENTS.md` through its own entry file (`GEMINI.md`,
