@@ -1,0 +1,2 @@
+743 - (application.cpp:259): Noggit Studio - 3.3580 [7fff1e02]
+754 - (application.cpp:219): [Error] Path "C:/dev/tools/noggit3" does not contain a locale directory (invalid installation or no installation at all).
