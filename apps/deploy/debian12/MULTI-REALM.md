@@ -92,7 +92,7 @@ bash /home/acore/deploy/setup-systemd-units.sh
 
 Realmlist at login shows **Live** and **Test** (same host IP, ports 8085 / 8086). ChromieCraft: set realmlist to server IP; pick realm at character screen.
 
-When a custom client patch is required, players run `client-patches/scripts/update-client.sh` — see [`docs/client-patches.md`](../../../docs/client-patches.md).
+When a custom client patch is required, players run `update-client.sh` or `update-client.ps1` — see [`docs/client-patches.md`](../../../docs/client-patches.md).
 
 ## Deploy / restart
 

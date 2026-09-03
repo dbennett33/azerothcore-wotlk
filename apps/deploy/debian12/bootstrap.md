@@ -206,7 +206,8 @@ After deploy, `configure-realm.sh` sets:
 - Test playerbots: 50 bots, same level distribution
 
 **Client:** use a clean 3.3.5a client (ChromieCraft). When custom patches are released, players run
-`client-patches/scripts/update-client.sh` (see [`docs/client-patches.md`](../../../docs/client-patches.md)).
+`update-client.sh` (Linux/macOS/WSL) or `update-client.ps1` (Windows) — see
+[`docs/client-patches.md`](../../../docs/client-patches.md).
 
 **Migrating from vanilla progression** (one-time, before first WotLK deploy of each realm):
 

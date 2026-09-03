@@ -33,6 +33,15 @@
 # default build directory if not specified by CMAKE configuration
 /out/*
 
+# In-source CMake leftovers (out-of-source is required; use build/ or out/)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+CMakeOutput.log
+CMakeError.log
+CMakeConfigureLog.yaml
+
 #
 #Generic
 #

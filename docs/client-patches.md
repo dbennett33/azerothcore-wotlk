@@ -55,7 +55,7 @@ WoW loads patch archives from `Data/<locale>/patch-*.MPQ`. Custom patches should
 2. Pack them into an MPQ using an editor such as [Ladik's MPQ Editor](https://github.com/ladislav-zezula/StormLib) or similar.
 3. Place the finished archive in `client-patches/sources/client/mpq/` on your **dev machine** (local staging — not committed to git).
 
-Loose files can be staged under `sources/client/loose/`; `build-bundle.sh` expects finished MPQs in `sources/client/mpq/`. After building, publish to the VPS — that is where binaries are kept long-term.
+Loose files can be staged under `sources/client/loose/`; `build-bundle.sh` / `build-bundle.ps1` expect finished MPQs in `sources/client/mpq/`. After building, publish to the VPS — that is where binaries are kept long-term.
 
 ## Creating server data
 
@@ -86,6 +86,14 @@ client-patches/scripts/build-bundle.sh 1.0.0 \
   --changelog "Talent tab experiment"
 ```
 
+Windows (after packing MPQs with an editor such as Ladik's):
+
+```powershell
+.\client-patches\scripts\build-bundle.ps1 1.0.0 `
+  -CacheVersion 42 `
+  -Changelog 'Add eastern valley prototype','Talent tab experiment'
+```
+
 This produces:
 
 - `client-patches/bundles/1.0.0/client/*.MPQ`
@@ -103,6 +111,12 @@ VPS_HOST=acore@your.vps \
 client-patches/scripts/publish-to-vps.sh client-patches/bundles/1.0.0
 ```
 
+```powershell
+.\client-patches\scripts\publish-to-vps.ps1 `
+  -BundleDir '.\client-patches\bundles\1.0.0' `
+  -VpsHost 'acore@your.vps'
+```
+
 On the VPS directly:
 
 ```bash
@@ -113,7 +127,7 @@ This stores the release under `/home/acore/client-patches/releases/<version>/` a
 
 ### Optional HTTP downloads
 
-To let `update-client.sh` use HTTP instead of SCP, serve `/home/acore/client-patches/current` with nginx or Caddy and set:
+To let the player updater use HTTP instead of SCP, serve `/home/acore/client-patches/current` with nginx or Caddy and set:
 
 ```bash
 PATCHES_BASE_URL=https://your.domain/client-patches/current
@@ -154,13 +168,36 @@ apps/deploy/debian12/client-patches/apply-server-data.sh 1.0.0
 
 ## Player client updates
 
+Quit WoW completely before installing patches.
+
+### Linux / macOS / Git Bash / WSL
+
 ```bash
 WOW_DIR=/path/to/ChromieCraft \
 FROM_VPS=acore@your.vps \
 client-patches/scripts/update-client.sh
 ```
 
-Or over HTTP:
+### Windows (PowerShell)
+
+Needs OpenSSH Client (Settings → Apps → Optional features). If scripts are blocked:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+```powershell
+cd path\to\azerothcore-wotlk
+.\client-patches\scripts\update-client.ps1 `
+  -WowDir 'C:\Games\ChromieCraft' `
+  -FromVps 'acore@your.vps'
+```
+
+`-DryRun` prints destinations without writing. `-Version 1.0.0` pulls that release instead of `current`. Delete `.acore-client-patch-version` in the WoW folder to force a reinstall.
+
+### HTTP (any OS)
+
+Serve `/home/acore/client-patches/current` with nginx or Caddy, then:
 
 ```bash
 WOW_DIR=/path/to/ChromieCraft \
@@ -168,7 +205,13 @@ PATCHES_BASE_URL=https://your.domain/client-patches/current \
 client-patches/scripts/update-client.sh
 ```
 
-The script:
+```powershell
+.\client-patches\scripts\update-client.ps1 `
+  -WowDir 'C:\Games\ChromieCraft' `
+  -PatchesUrl 'https://your.domain/client-patches/current'
+```
+
+The updater:
 
 1. Downloads `manifest.json` and client MPQs
 2. Verifies SHA-256 checksums
@@ -202,7 +245,7 @@ Key fields:
 
 | Symptom | Check |
 |---------|-------|
-| Client sees wrong talents / map | Player ran `update-client.sh`? `ClientCacheVersion` bumped? |
+| Client sees wrong talents / map | Player ran `update-client`? `ClientCacheVersion` bumped? |
 | Server won't load map | `sources/server/maps` included in bundle? Extracted for correct map ID? |
 | `validate-manifest.sh` fails | Re-run `build-bundle.sh`; checksums must match files |
 | Release already exists on VPS | Publish a new version or remove old `releases/<version>/` |

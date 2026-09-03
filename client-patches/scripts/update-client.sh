@@ -32,6 +32,8 @@ Options:
 
 Environment:
   WOW_DIR, PATCHES_BASE_URL, FROM_VPS, VERSION
+
+Windows: use update-client.ps1 instead of this script.
 EOF
 }
 
