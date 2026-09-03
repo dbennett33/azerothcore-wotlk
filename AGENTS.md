@@ -21,6 +21,12 @@ Read the matching doc(s) BEFORE starting the task:
 - Reviewing a changeset or PR → `.agents/docs/code-review.md`
 - Self-reviewing a changeset before submission → also `.agents/docs/self-review-rules.md`
 - Touching a subsystem that has a doc in `.agents/docs/systems/` → read that doc too
+  - Dungeon / custom instance / cave mesh / 5-man overlay → `.agents/docs/systems/dungeons.md`
+    and `.agents/skills/build-dungeon/SKILL.md`
+  - `.go` / teleport / SOAP player move / placing spawns by xyz → `.agents/docs/systems/coordinates.md`
+    and `.agents/skills/wow-coordinates/SKILL.md`
+  - Visual instance walk / Wow.exe screenshot / scout client →
+    `.agents/skills/walk-instance/SKILL.md`
 - Capturing a lesson or adding/updating agent docs → `.agents/docs/README.md`
 
 ## Repository layout
