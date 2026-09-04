@@ -17,6 +17,8 @@ rsync -a --delete "${CHECKOUT}/data/sql/" "${SOURCE_DIR}/data/sql/"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "${SOURCE_DIR}/modules"
-bash "${SCRIPT_DIR}/clone-extra-modules.sh" "${SOURCE_DIR}/modules"
+CLONE_UPDATER_MODULES=1 \
+  PLAYERBOTS_REF="${PLAYERBOTS_REF:-master}" \
+  bash "${SCRIPT_DIR}/clone-extra-modules.sh" "${SOURCE_DIR}/modules"
 
 echo "Synced SQL sources ${CHECKOUT}/data/sql -> ${SOURCE_DIR}"

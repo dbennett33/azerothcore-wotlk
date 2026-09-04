@@ -66,7 +66,7 @@ First start of each worldserver applies SQL updates to its DBs automatically.
 /home/acore/build/live|test/  persistent cmake build dirs
 ```
 
-`deploy-vps` rsyncs `data/sql` from the **staged build SHA** into that realm's SourceDirectory, then starts worldserver so pending updates apply only to that realm's DB. Client-patch overlays use the same commit's `client-patches/manifest.json` (not “whatever is `current` on the VPS”).
+`deploy-vps` rsyncs `data/sql` from the **staged build SHA** into that realm's SourceDirectory, then clones `mod-playerbots` (`dev` on test, `master` on live) and `mod-individual-progression` under `SourceDirectory/modules/` so worldserver can apply those updaters. Client-patch overlays use the same commit's `client-patches/manifest.json` (not “whatever is `current` on the VPS”).
 
 `init-test-prefix.sh` creates **separate** `server-test/data/` (not a symlink). On first run it
 `rsync`s from live so test starts with the same maps/dbc/vmaps; after that each prefix owns its

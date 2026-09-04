@@ -148,7 +148,7 @@ Server overlay is applied by **`deploy-vps`**, using the `client-patches/manifes
 
 If that commit's manifest is placeholder `0.0.0`, deploy skips the overlay. If the version is real but missing from `/home/acore/client-patches/releases/`, or the git checksums do not match the store copy, deploy **fails** (publish the matching bundle first).
 
-SQL is the same story: `deploy-vps` rsyncs `data/sql` from that commit into a **per-realm** `SourceDirectory` (`azerothcore-wotlk` for Live, `azerothcore-wotlk-test` for Test). Worldserver then applies `pending_db_*` on start. Do not share one stale clone between realms.
+SQL is the same story: `deploy-vps` rsyncs `data/sql` from that commit into a **per-realm** `SourceDirectory` (`azerothcore-wotlk` for Live, `azerothcore-wotlk-test` for Test) and clones `mod-playerbots` / `mod-individual-progression` under `modules/`. Worldserver then applies `pending_db_*` on start. Do not share one stale clone between realms.
 
 ### Manual override (emergency only)
 

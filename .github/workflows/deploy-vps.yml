@@ -152,6 +152,8 @@ jobs:
       - name: Sync SQL sources for this realm
         env:
           SOURCE_DIR: ${{ steps.paths.outputs.source_dir }}
+          PLAYERBOTS_REF: ${{ inputs.target == 'test' && 'dev' || 'master' }}
+          PLAYERBOTS_REPO: https://github.com/${{ github.repository_owner }}/mod-playerbots.git
         run: |
           set -euo pipefail
           bash deploy-src/apps/deploy/debian12/sync-sql-sources.sh \
