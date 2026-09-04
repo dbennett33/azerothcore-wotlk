@@ -64,10 +64,6 @@ What was a shortcut that does **not** repeat:
   id: the remaining gaps (13, 25, 29, 42, 169, 451, …) are test maps that `mmaps_generator` skips as
   junk. Every further dungeon needs a **new `Map.dbc` row** in the client locale patch and in
   `map_dbc`.
-- `build-bundle.sh/.ps1` write `install_path = Data/enUS/<file>`; the manifest was hand-edited to
-  `Data/patch-4.MPQ`. Until the scripts learn base-vs-locale, edit the manifest after building.
-- `client-patches/scripts/extract-server-data.sh` runs `./map_extractor` from the WoW directory,
-  where the tools are not. Run the four extractors by hand.
 - The portal and player scripts hard-code `MAP_WAXWORKS` and Waxworks positions.
 - Planning notes for the mesh (`.agents/plans/`) are gitignored; the durable knowledge has been
   folded into `build-dungeon/reference-mesh.md` and `systems/dungeons.md`.
@@ -141,12 +137,14 @@ Pipeline per release (`build-client-patch` skill, §1–§7):
 2. Pack `patch-4.MPQ` and `patch-enUS-4.MPQ`; install into a dev client; check in game.
 3. Extract with that client: `map_extractor`, `vmap4_extractor`, `vmap4_assembler`,
    `mmaps_generator <map>`; keep only the new/changed files under `sources/server/`.
-4. `build-bundle` → `bundles/<version>/` with `manifest.json` (sha256, install paths,
-   `client_cache_version`). Fix `install_path` for `Data/` archives.
-5. `publish-to-vps` → `/home/acore/client-patches/releases/<version>/`, `current` symlink.
-6. Commit `client-patches/manifest.json` + SQL + C++; push `dev`; `deploy-vps` builds the core and
-   overlays `server-data.tar.gz`, `apply-server-data.sh` sets `ClientCacheVersion`.
-7. Players run `update-client.sh/.ps1`; verify on Test with a patched and an unpatched client.
+4. `build-bundle` → `bundles/<version>/` with `manifest.json` (sha256, `Data/` vs `Data/enUS/`
+   install paths, `client_cache_version`).
+5. `publish-to-vps` → `/home/acore/client-patches/releases/<version>/` (and `current`).
+6. Commit `client-patches/manifest.json` + SQL + C++; push `dev`; `vps-build` auto-deploys Test.
+   Live is merge to `Playerbot` then Actions → `deploy-vps` → `live`. Overlay + `ClientCacheVersion`
+   + `current-test` / `current-live` happen in `apply-server-data.sh`.
+7. Players run `update-client.sh/.ps1 --target test` (or `--target live`); verify on Test with a
+   patched and an unpatched client.
 
 Git tracks the manifest only. Binaries live on the VPS; back them up offsite
 (`backup-client-patches.sh`), or a lost VPS loses the map work.
@@ -174,7 +172,5 @@ extractors. Exact commands for both operating systems are in
 
 ## 8. Known gaps to fix before dungeon #2 (tracked in `systems/dungeons.md`)
 
-- `build-bundle.*`: no way to declare a `Data/` (non-locale) install path.
-- `extract-server-data.sh`: wrong working directory assumption for the tools.
 - Waxworks portal scripts are not table-driven.
 - No `LFGDungeons` / `WorldMapArea` rows for Waxworks (Dungeon Finder and map UI); optional.

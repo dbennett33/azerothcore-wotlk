@@ -19,6 +19,11 @@
 
 .PARAMETER Version
     Release version when using -FromVps (default: current symlink). Env: VERSION
+    Mutually exclusive with -Target.
+
+.PARAMETER Target
+    Fetch the release that realm last deployed: test → current-test, live → current-live.
+    Env: TARGET
 
 .PARAMETER Locale
     Override locale folder from the manifest (rewrites Data/<locale>/ in install_path).
@@ -38,6 +43,7 @@ param(
     [string]$PatchesUrl = $env:PATCHES_BASE_URL,
     [string]$FromVps = $env:FROM_VPS,
     [string]$Version = $env:VERSION,
+    [string]$Target = $env:TARGET,
     [string]$Locale,
     [switch]$DryRun
 )
@@ -58,6 +64,12 @@ if (-not (Test-Path -LiteralPath $dataDir -PathType Container)) {
 if (-not $FromVps -and -not $PatchesUrl) {
     throw 'Set -FromVps or -PatchesUrl (or FROM_VPS / PATCHES_BASE_URL)'
 }
+if ($Target -and -not $FromVps) {
+    throw '-Target requires -FromVps. For HTTP, point -PatchesUrl at current-test or current-live.'
+}
+if ($Target -and $Target -notin @('test', 'live')) {
+    throw '-Target must be test or live'
+}
 
 $scp = $null
 $remoteRelease = $null
@@ -75,10 +87,17 @@ $manifestLocal = Join-Path $work 'manifest.json'
 try {
     if ($FromVps) {
         $remoteBase = '/home/acore/client-patches'
+        if ($Version -and $Target) {
+            throw 'Use -Version or -Target, not both'
+        }
         if ($Version) {
             $remoteRelease = "$remoteBase/releases/$Version"
+        } elseif ($Target) {
+            $remoteRelease = "$remoteBase/current-$Target"
         } else {
             $remoteRelease = "$remoteBase/current"
+            Write-Host 'note: fetching latest published release (current).'
+            Write-Host '      Testers: -Target test. Live players: -Target live.'
         }
         Invoke-Native -FilePath $scp -ArgumentList @(
             '-q', '--',

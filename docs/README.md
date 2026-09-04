@@ -46,7 +46,7 @@ Workflows added by this fork (`.github/workflows/`):
 | Workflow | Trigger | Does |
 |---|---|---|
 | `vps-build.yml` | push to `Playerbot` or `dev`; manual | Compile on the build VM if online, else on the VPS (`.github/actions/vps-build`); stage to `server-staging[-test]`; `dev` auto-deploys the test realm. |
-| `deploy-vps.yml` | manual (`live`/`test`); called by `vps-build` | Promote staging → prefix, apply SQL `SourceDirectory`, overlay the current client-patch server data, restart units. |
+| `deploy-vps.yml` | manual (`live`/`test`); called by `vps-build` | Promote staging → prefix, apply SQL `SourceDirectory`, overlay the commit's client-patch server data, point `current-test`/`current-live`, restart units. |
 | `deploy-client-patches.yml` | manual, emergency only | Apply a client-patch store release without a code deploy. |
 | `branch-protection.yml` | PRs to `Playerbot` | Fails any PR whose head branch is not `dev`. |
 | `core-build.yml`, `core-build-playerbots.yml` | push/PR to `Playerbot`, `test-staging` | GitHub-hosted Ubuntu compile checks; the second also checks out `mod-playerbots` (`master` for `Playerbot`, else `test-staging`). |

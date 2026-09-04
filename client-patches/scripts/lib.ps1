@@ -7,6 +7,22 @@ function Get-ClientPatchesRoot {
     $script:ClientPatchesRoot
 }
 
+# World archives (patch-4.MPQ) belong in Data/. Locale archives
+# (patch-enUS-4.MPQ, locale-enUS.MPQ) belong in Data/<locale>/.
+function Get-MpqInstallPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$FileName,
+        [string]$Locale = 'enUS'
+    )
+    $lower = $FileName.ToLowerInvariant()
+    $loc = $Locale.ToLowerInvariant()
+    if ($lower.Contains("patch-$loc") -or $lower.Contains("locale-$loc")) {
+        return "Data/$Locale/$FileName"
+    }
+    return "Data/$FileName"
+}
+
 function Get-NativeCommand {
     param(
         [Parameter(Mandatory)]

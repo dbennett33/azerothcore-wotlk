@@ -40,7 +40,7 @@ Second and later dungeons (new `Map.dbc` id): `.agents/skills/build-dungeon/refe
 | Entrance | Walk-through `GameObjectAI` box on the Goldshire green → `TeleportTo(44, …)` | Yes; duplicate `waxworks_portal.cpp` / `waxworks_player.cpp` per dungeon or generalise them into one table-driven script (recommended before dungeon #3). |
 | Scripts | `EasternKingdoms/Waxworks/*.cpp`, loader `AddSC_*` | Yes: `EasternKingdoms/<Dungeon>/`, own header enum, own `AddSC_*` lines. |
 | SQL | One `pending_db_world` file, ids `9000000–9000211` | Yes, with the **next id block** (registry below). |
-| Client delivery | `patch-4.MPQ` v1.0.1, `install_path` hand-edited to `Data/` | Yes; rebuild the one archive, bump manifest version, re-publish. |
+| Client delivery | `patch-4.MPQ` v1.0.1, `install_path` `Data/patch-4.MPQ` | Yes; rebuild the one archive, bump manifest version, re-publish. |
 
 Knowledge that was only in gitignored `.agents/plans/waxworks-mesh/*` (TOOLCHAIN, ART-SOURCES,
 ROOM-SPEC) is **not** in the repo. Anything a future dungeon needs from it must be re-derived or
@@ -62,13 +62,10 @@ dungeon's block anyway so a grep for the block finds everything.
 ## Extensibility status (2026-09)
 
 Working and reusable as-is: script layout, SQL layout, walk-through entrance pattern, the bundle →
-publish → `deploy-vps` overlay path, the scout walk. Blocking a second dungeon until done:
+publish → `deploy-vps` overlay path, the scout walk, `build-bundle` install paths, `extract-server-data.sh`.
+Blocking a second dungeon until done:
 
 1. A new `Map.dbc` id requires the **DBC-in-locale-MPQ** step the Waxworks skipped. Follow
    `reference-new-map.md` end to end; do not look for another "free" map id.
-2. `build-bundle.*` cannot express `Data/` (base) install paths; hand-edit the manifest (documented in
-   `client-data.md`) or extend the scripts first.
-3. `extract-server-data.sh` calls `./map_extractor` from the WoW dir (tools are on `PATH`, not in
-   that dir); run the extractors by hand until it is fixed.
-4. Entrance/portal C++ is Waxworks-specific (`MAP_WAXWORKS`, positions in `waxworks.h`). Copy or
+2. Entrance/portal C++ is Waxworks-specific (`MAP_WAXWORKS`, positions in `waxworks.h`). Copy or
    generalise; do not add a second `PlayerScript` that fights the first for the same hooks.

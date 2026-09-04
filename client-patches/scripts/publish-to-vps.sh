@@ -41,4 +41,5 @@ ssh "$VPS_HOST" "sudo chown -R ${ACORE_USER}:${ACORE_USER} '${REMOTE_STAGING}' &
 echo "Done. Bundle is in the VPS store only — Live and Test are unchanged."
 echo "Commit client-patches/manifest.json with the matching C++/SQL, then:"
 echo "  git push origin dev        # vps-build → deploy-vps applies overlay to Test"
-echo "  merge to Playerbot         # vps-build; then deploy-vps live applies overlay to Live"
+echo "  merge to Playerbot         # vps-build; then Actions → deploy-vps → live"
+echo "Players: update-client.sh --from-vps debian@host --target test   # or --target live"

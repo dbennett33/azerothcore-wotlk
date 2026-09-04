@@ -44,18 +44,20 @@ client-patches/
 
 /home/acore/client-patches/   # VPS canonical binary store (not in git)
   releases/<version>/
-  current -> releases/<version>
+  current -> releases/<version>          # latest published
+  current-test -> releases/<version>     # last Test deploy
+  current-live -> releases/<version>     # last Live deploy
 ```
 
 ## Creating client MPQ files
 
-WoW loads patch archives from `Data/<locale>/patch-*.MPQ`. Custom patches should use letters **after** Blizzard's `patch-4.MPQ` (e.g. `patch-A.MPQ`, `patch-B.MPQ`).
+The client loads `Data/patch-N.MPQ` (world files) and `Data/enUS/patch-enUS-N.MPQ` (DBCs). This fork ships **one** `Data/patch-4.MPQ` for every custom world file and `Data/enUS/patch-enUS-4.MPQ` for DBC edits. Do not use lettered `patch-A.MPQ` or `patch-6+`: `map_extractor` stops at `patch-5` and lettered archives are invisible to it. Pack as MPQ **v2**.
 
 1. Edit DBCs, interface XML, models, etc. with your tools of choice.
-2. Pack them into an MPQ using an editor such as [Ladik's MPQ Editor](https://github.com/ladislav-zezula/StormLib) or similar.
-3. Place the finished archive in `client-patches/sources/client/mpq/` on your **dev machine** (local staging — not committed to git).
+2. Pack them into an MPQ using an editor such as [Ladik's MPQ Editor](https://github.com/ladislav-zezula/StormLib) (compatibility "WoW: WotLK") or `smpq -M 2`.
+3. Place the finished archive in `client-patches/sources/client/mpq/` on your **dev machine** (`patch-4.MPQ` and, if DBCs changed, `patch-enUS-4.MPQ`). Binaries are gitignored.
 
-Loose files can be staged under `sources/client/loose/`; `build-bundle.sh` / `build-bundle.ps1` expect finished MPQs in `sources/client/mpq/`. After building, publish to the VPS — that is where binaries are kept long-term.
+Loose files can be staged under `sources/client/loose/`; `build-bundle.sh` / `build-bundle.ps1` expect finished MPQs in `sources/client/mpq/`. World archives get `install_path = Data/<file>`; locale archives get `Data/<locale>/<file>`. After building, publish to the VPS — that is where binaries are kept long-term.
 
 ## Creating server data
 
@@ -66,12 +68,12 @@ After editing maps in Noggit (or similar) and updating your WoW install:
 ```bash
 WOW_CLIENT=/path/to/WoW \
 AC_TOOLS_BIN=/path/to/ac/build/bin \
-client-patches/scripts/extract-server-data.sh
+client-patches/scripts/extract-server-data.sh --map 44
 ```
 
-This runs the standard AzerothCore extractors (`map_extractor`, `vmap4_extractor`, `vmap4_assembler`, `mmaps_generator`) and syncs outputs into `sources/server/`.
+This runs the AzerothCore extractors from `AC_TOOLS_BIN` (not from the WoW folder) into a temp dir, then syncs `dbc/`, `maps/`, `vmaps/`, `mmaps/` into `sources/server/`. Pass `--map ID` (repeatable) so mmaps are generated only for those maps; `--skip-mmaps` skips them. Use a slim client copy so unchanged continents are not extracted. The VPS overlay is additive — ship only the files you changed.
 
-You can also use `apps/extractor/extractor.sh` from the WoW folder and manually rsync `dbc/`, `maps/`, `vmaps/`, `mmaps/` into `sources/server/`.
+You can also run the four tools by hand (see `.agents/skills/build-client-patch/reference-windows-linux.md`) and rsync outputs into `sources/server/`.
 
 ### DBC-only changes
 
@@ -100,7 +102,7 @@ This produces:
 - `client-patches/bundles/1.0.0/server/server-data.tar.gz`
 - `client-patches/bundles/1.0.0/manifest.json` (copied to `client-patches/manifest.json`)
 
-Commit **`manifest.json` only**. Do not commit `bundles/`, MPQs, or extracted server data — those belong on the VPS.
+Commit **`manifest.json` only**, **after** publishing the bundle so `deploy-vps` can find the binaries. Do not commit `bundles/`, MPQs, or extracted server data — those belong on the VPS.
 
 ## Publishing to the VPS
 
@@ -125,11 +127,11 @@ On the VPS directly:
 apps/deploy/debian12/client-patches/publish-client-patches.sh client-patches/bundles/1.0.0
 ```
 
-This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` symlink. This directory is the **single source of truth** for patch binaries. **Publishing does not overlay Live or Test.** The matching git commit's `manifest.json` is applied the next time that realm's `deploy-vps` runs.
+This stores the release under `/home/acore/client-patches/releases/<version>/` and updates the `current` (latest published) symlink. **Publishing does not overlay Live or Test.** The matching git commit's `manifest.json` is applied the next time that realm's `deploy-vps` runs; that apply also points `current-test` or `current-live` at the release.
 
 ### Optional HTTP downloads
 
-To let the player updater use HTTP instead of SCP, serve `/home/acore/client-patches/current` with nginx or Caddy and set:
+To let the player updater use HTTP instead of SCP, serve `/home/acore/client-patches/current-test` (or `current-live`) with nginx or Caddy and set:
 
 ```bash
 PATCHES_BASE_URL=https://your.domain/client-patches/current
@@ -144,7 +146,7 @@ Server overlay is applied by **`deploy-vps`**, using the `client-patches/manifes
 | `dev` | Test (`/home/acore/server-test`) | Auto after `vps-build` on push |
 | `Playerbot` | Live (`/home/acore/server`) | Manual `deploy-vps` target `live` after `vps-build` |
 
-If that commit's manifest is placeholder `0.0.0` / empty server archive, deploy skips the overlay. If the version is real but missing from `/home/acore/client-patches/releases/`, deploy **fails** (publish the bundle first).
+If that commit's manifest is placeholder `0.0.0`, deploy skips the overlay. If the version is real but missing from `/home/acore/client-patches/releases/`, or the git checksums do not match the store copy, deploy **fails** (publish the matching bundle first).
 
 SQL is the same story: `deploy-vps` rsyncs `data/sql` from that commit into a **per-realm** `SourceDirectory` (`azerothcore-wotlk` for Live, `azerothcore-wotlk-test` for Test). Worldserver then applies `pending_db_*` on start. Do not share one stale clone between realms.
 
@@ -178,7 +180,7 @@ Quit WoW completely before installing patches.
 ```bash
 WOW_DIR=/path/to/ChromieCraft \
 FROM_VPS=debian@your.vps \
-client-patches/scripts/update-client.sh
+client-patches/scripts/update-client.sh --target test
 ```
 
 ### Windows (PowerShell)
@@ -193,10 +195,11 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 cd path\to\azerothcore-wotlk
 .\client-patches\scripts\update-client.ps1 `
   -WowDir 'C:\Games\ChromieCraft' `
-  -FromVps 'debian@your.vps'
+  -FromVps 'debian@your.vps' `
+  -Target test
 ```
 
-`-DryRun` prints destinations without writing. `-Version 1.0.0` pulls that release instead of `current`. Delete `.acore-client-patch-version` in the WoW folder to force a reinstall.
+`-Target live` pulls the version Live last deployed. Omit `-Target` / `--target` to fetch `current` (latest **published**, which may be ahead of Live). `-DryRun` prints destinations without writing. `-Version 1.0.0` pulls that release instead of a symlink. Delete `.acore-client-patch-version` in the WoW folder to force a reinstall.
 
 ### HTTP (any OS)
 
@@ -218,7 +221,7 @@ The updater:
 
 1. Downloads `manifest.json` and client MPQs
 2. Verifies SHA-256 checksums
-3. Installs MPQs to the paths listed in the manifest (e.g. `Data/enUS/patch-A.MPQ`)
+3. Installs MPQs to the paths listed in the manifest (e.g. `Data/patch-4.MPQ`, `Data/enUS/patch-enUS-4.MPQ`)
 4. Writes `.acore-client-patch-version` in the WoW folder
 
 Players must run this **before** logging in when a new client bundle is required.
@@ -250,7 +253,9 @@ Key fields:
 |---------|-------|
 | Client sees wrong talents / map | Player ran `update-client`? `ClientCacheVersion` bumped? |
 | Server won't load map | `sources/server/maps` included in bundle? Extracted for correct map ID? |
-| `validate-manifest.sh` fails | Re-run `build-bundle.sh`; checksums must match files |
+| `validate-manifest.sh` fails | Re-run `build-bundle.sh`; checksums and `install_path` must match files |
+| Deploy fails: git ≠ store | Publish the bundle that matches this commit's `manifest.json` |
+| Client on Test sees Live (or vice versa) | Testers: `--target test`. Live players: `--target live`. `current` is latest published, not a realm. |
 | Release already exists on VPS | Publish a new version or remove old `releases/<version>/` |
 
 ## Related server docs

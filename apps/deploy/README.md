@@ -19,7 +19,7 @@
 | [`.github/workflows/deploy-vps.yml`](../../.github/workflows/deploy-vps.yml) | Promote staging: binaries + SQL `SourceDirectory` + client-patch overlay. **Manual** for live; auto from `vps-build` for test |
 | [`.github/workflows/deploy-client-patches.yml`](../../.github/workflows/deploy-client-patches.yml) | **Emergency only** → apply a store release without a code deploy |
 
-**CI flow:** `dev` push → `vps-build` → auto-deploy **test**. `Playerbot` push → `vps-build` only; run `deploy-vps` target `live` when ready.
+**CI flow:** `dev` push → `vps-build` → auto-deploy **test** (binaries + SQL + the commit's client-patch overlay). `Playerbot` push → `vps-build` only; run `deploy-vps` target `live` when ready. Publish MPQ bundles to the VPS store **before** that push, or deploy fails looking up the release.
 
 **Order:** bootstrap → register runner → merge triggers `vps-build` → `deploy-vps` → `setup-systemd-units.sh` → start services.
 

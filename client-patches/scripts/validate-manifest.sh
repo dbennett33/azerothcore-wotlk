@@ -42,6 +42,17 @@ if version == "0.0.0":
 print(f"manifest ok: version={manifest['version']}")
 PY
 
+manifest_locale="$(jq -r '.client.locale' "$MANIFEST")"
+while IFS=$'\t' read -r file install_path; do
+  [[ -z "$file" || "$file" == "null" ]] && continue
+  expected="$(mpq_install_path "$file" "$manifest_locale")"
+  if [[ "$install_path" != "$expected" ]]; then
+    echo "install_path for ${file} is ${install_path}; expected ${expected}" >&2
+    echo "World archives (patch-4.MPQ) go in Data/; locale archives (patch-enUS-4.MPQ) in Data/${manifest_locale}/." >&2
+    exit 1
+  fi
+done < <(jq -r '.client.patches[] | [.file, .install_path] | @tsv' "$MANIFEST")
+
 if [[ -n "$BUNDLE_DIR" ]]; then
   if [[ ! -d "$BUNDLE_DIR" ]]; then
     echo "Bundle directory not found: ${BUNDLE_DIR}" >&2
