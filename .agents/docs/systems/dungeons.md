@@ -32,12 +32,12 @@ Second and later dungeons (new `Map.dbc` id): `.agents/skills/build-dungeon/refe
 
 | Piece | Waxworks | Repeatable for dungeon #2? |
 |---|---|---|
-| Map id | Reused unused **44** (`Monastery`), no `map_dbc` row, no client `Map.dbc` edit | **No.** 44 is taken. Every other unused instance-type id is junk/test (13, 25, 29, 42, 169, 451, …) and `mmaps_generator` skips most of them. Next dungeon = **new `Map.dbc` row** (client locale MPQ + server `map_dbc`). |
+| Map id | Reused unused **44** (`Monastery`), no `map_dbc` row, no client `Map.dbc` edit | **Partial.** Map **35** (Stormwind Vault / `StormwindPrison`) is a real unused 5-man with client geometry and canal portal — not junk, not in `skipJunkMaps`. Taken by dungeon #2. Every other unused instance-type id is junk/test (13, 25, 29, 42, 169, 451, …). Dungeon #3+ = **new `Map.dbc` row**. |
 | Geometry | Kitbashed `Waxworks.wmo` behind the existing `World/Maps/Monastery/Monastery.wdt` path, packed into `Data/patch-4.MPQ` | Pattern yes, files no. New map = new `World/Maps/<Dir>/<Dir>.wdt` + `World/wmo/Dungeon/<Dir>/…`, added to the **same** `patch-4.MPQ`. |
 | Server mesh | `vmaps/044.vmtree`, `vmaps/Waxworks.wmo.vmo`, `mmaps/044*` in the bundle | Yes, same pipeline (`reference-mesh.md`, `build-client-patch` skill). |
 | Difficulty gate | `mapdifficulty_dbc` id `9000044` (server overlay only) | Yes; allocate the next `90000MM` id. New map also needs the **client** `MapDifficulty.dbc` row or the client shows no difficulty and may refuse the portal UI. |
-| Access | `instance_template` row already existed for 44; `dungeon_access_template` id 122 | New map needs a **new** `instance_template` row (`map, parent, script, allowMount`) plus the next free `dungeon_access_template` id (base max is 121). |
-| Entrance | Walk-through `GameObjectAI` box on the Goldshire green → `TeleportTo(44, …)` | Yes; duplicate `waxworks_portal.cpp` / `waxworks_player.cpp` per dungeon or generalise them into one table-driven script (recommended before dungeon #3). |
+| Access | `instance_template` row already existed for 44; `dungeon_access_template` id 122 | Map 35 had **no** `instance_template` (AT 107 at the vault island refused entry). The unused Trade/Old Town canal swirl has no `AreaTrigger.dbc` volume — that entrance is a `GameObjectAI` box. |
+| Entrance | Walk-through `GameObjectAI` box on the Goldshire green → `TeleportTo(44, …)` | Yes. Vault uses the same pattern on the unused Trade/Old Town **canal** swirl (not The Stockade). No second `PlayerScript` — vanilla AT 109 is the exit. Generalise before dungeon #3. |
 | Scripts | `EasternKingdoms/Waxworks/*.cpp`, loader `AddSC_*` | Yes: `EasternKingdoms/<Dungeon>/`, own header enum, own `AddSC_*` lines. |
 | SQL | One `pending_db_world` file, ids `9000000–9000211` | Yes, with the **next id block** (registry below). |
 | Client delivery | `patch-4.MPQ` v1.0.1, `install_path` hand-edited to `Data/` | Yes; rebuild the one archive, bump manifest version, re-publish. |
@@ -54,7 +54,8 @@ One block of **200** template ids and **500** spawn guids per dungeon. Reserve t
 | Dungeon | creature/GO/item/quest/gossip templates | `creature` / `gameobject` guids | `mapdifficulty_dbc` | `game_tele` | `dungeon_access_template` | `reference_loot_template` |
 |---|---|---|---|---|---|---|
 | The Waxworks (map 44) | `9000000–9000199` (used: creatures 1–50, GOs 1–32, items 50–79, quests 0/1/3, gossip/npc_text 0–11) | `9000001–9000211` | `9000044` | `9000044–9000052` | `122` | `9000101` |
-| next dungeon | `9000200–9000399` | `9000500–9000999` | `90000MM` (MM = new map id mod 100, or next free) | `9000060+` | `123` | `9000102` |
+| Stormwind Vault (map 35) | `9000200–9000399` (used: creature 200, GO 201, gossip/npc_text 200) | `9000500–9000999` (used: 500–501) | `9000035` | `9000060–9000061` | `123` | `9000102` (unused) |
+| next dungeon | `9000400–9000599` | `9001000–9001499` | `90000MM` (MM = new map id mod 100, or next free) | `9000070+` | `124` | `9000103` |
 
 Items and creatures share the numeric space by convention only (different tables); keep them in the
 dungeon's block anyway so a grep for the block finds everything.
@@ -62,13 +63,14 @@ dungeon's block anyway so a grep for the block finds everything.
 ## Extensibility status (2026-09)
 
 Working and reusable as-is: script layout, SQL layout, walk-through entrance pattern, the bundle →
-publish → `deploy-vps` overlay path, the scout walk. Blocking a second dungeon until done:
+publish → `deploy-vps` overlay path, the scout walk. Map 35 is taken (Stormwind Vault, unused canal
+swirl). Blocking dungeon #3 until done:
 
 1. A new `Map.dbc` id requires the **DBC-in-locale-MPQ** step the Waxworks skipped. Follow
-   `reference-new-map.md` end to end; do not look for another "free" map id.
+   `reference-new-map.md` end to end; do not look for another "free" map id (35 and 44 are both taken).
 2. `build-bundle.*` cannot express `Data/` (base) install paths; hand-edit the manifest (documented in
    `client-data.md`) or extend the scripts first.
 3. `extract-server-data.sh` calls `./map_extractor` from the WoW dir (tools are on `PATH`, not in
    that dir); run the extractors by hand until it is fixed.
-4. Entrance/portal C++ is Waxworks-specific (`MAP_WAXWORKS`, positions in `waxworks.h`). Copy or
-   generalise; do not add a second `PlayerScript` that fights the first for the same hooks.
+4. Entrance/portal C++ is per-dungeon (`waxworks_portal.cpp`, `stormwind_vault_portal.cpp`). Do not
+   add a second `PlayerScript` that fights Waxworks for the same hooks; generalise before dungeon #3.
