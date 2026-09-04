@@ -2,15 +2,16 @@
 
 This is the human overview of how this fork changes what the WoW 3.3.5a client shows and what the
 AzerothCore worldserver enforces: new dungeons, talent trees, overworld terrain, and the MPQ / server
-data pipeline that ships them. It answers "can we build another dungeon after The Waxworks?" and
-points to the agent-readable procedures that do the work.
+data pipeline that ships them. It answers "can we build another dungeon after Stormwind Vault?"
+(yes — with a **new `Map.dbc` id**; leftover vanilla instance maps are closed) and points to the
+agent-readable procedures that do the work.
 
 Agent entry points (read these when doing the work, they are the source of truth):
 
 | Task | Model doc | Procedure (skill) |
 |---|---|---|
 | Anything touching MPQs, DBCs, `data/` | `.agents/docs/systems/client-data.md` | `.agents/skills/build-client-patch/` |
-| New dungeon / instance | `.agents/docs/systems/dungeons.md` | `.agents/skills/build-dungeon/` (+ `reference-new-map.md` for dungeon #2+) |
+| New dungeon / instance | `.agents/docs/systems/dungeons.md` | `.agents/skills/build-dungeon/` (+ `reference-new-map.md` for dungeon #3+) |
 | Talent trees | `.agents/docs/systems/talents.md` | `.agents/skills/edit-talents/` |
 | Overworld ADT edits | `.agents/docs/systems/terrain.md` | `.agents/skills/edit-terrain/` |
 | Coordinates, tiles, teleports | `.agents/docs/systems/coordinates.md` | `.agents/skills/wow-coordinates/` |
@@ -50,6 +51,9 @@ under `src/server/scripts/EasternKingdoms/Waxworks/`, SQL in
 `data/sql/updates/pending_db_world/rev_1788471101263218298.sql`, and one shipped client archive
 `Data/patch-4.MPQ` (manifest version `1.0.1`, `client_cache_version` 2).
 
+Dungeon #2 is **Stormwind Vault** on unused map **35** (`StormwindPrison.wmo`, unused Trade/Old Town
+canal swirl). Same script/SQL layout, no new MPQ. That was the last leftover real instance.
+
 What went right and is reusable verbatim for the next dungeon:
 
 - Script and SQL layout (header enum as id source of truth, DELETE+INSERT blocks, `9000000+` ids).
@@ -60,32 +64,33 @@ What went right and is reusable verbatim for the next dungeon:
 
 What was a shortcut that does **not** repeat:
 
-- Reusing map 44 avoided editing `Map.dbc` on the client. There is no second unused *real* instance
-  id: the remaining gaps (13, 25, 29, 42, 169, 451, …) are test maps that `mmaps_generator` skips as
-  junk. Every further dungeon needs a **new `Map.dbc` row** in the client locale patch and in
-  `map_dbc`.
-- The portal and player scripts hard-code `MAP_WAXWORKS` and Waxworks positions.
+- Reusing map 44 (Waxworks) and map 35 (Stormwind Vault) avoided editing `Map.dbc` on the client.
+  Those are the only unused *real* instance ids. The remaining gaps (13, 25, 29, 42, 169, 451, …)
+  are test maps that `mmaps_generator` skips as junk. Going forward we **create our own maps** —
+  a new `Map.dbc` row in the client locale patch and in `map_dbc`. Do not hunt leftover scrap.
+- The portal and player scripts hard-code map ids and positions per dungeon.
 - Planning notes for the mesh (`.agents/plans/`) are gitignored; the durable knowledge has been
   folded into `build-dungeon/reference-mesh.md` and `systems/dungeons.md`.
 
-## 3. Can we build more dungeons? Yes, with these additions
+## 3. Can we build more dungeons? Yes — new `Map.dbc` ids, not leftover scrap
 
-Dungeon #2 and later follow `build-dungeon/reference-new-map.md`. Compared with Waxworks the extra
-work is:
+Dungeon #3 and later follow `build-dungeon/reference-new-map.md`. Map-id policy lives in
+`systems/dungeons.md` § Map ids. Compared with Waxworks/Vault the extra work is:
 
 1. **Ids**: pick a 3-digit unused map id (e.g. `900`), a `Directory` name, an unused `AreaTable`
-   id and `AreaBit`, a `MapDifficulty` id (`90000MM`), and the next `9000200–9000399` block from the
-   registry in `systems/dungeons.md`.
+   id and `AreaBit`, a `MapDifficulty` id (`90000MM`), and the next `9000400–9000599` block from the
+   registry in `systems/dungeons.md` (`dungeon_access_template` **124**).
 2. **Client DBCs** in `Data/enUS/patch-enUS-4.MPQ`: `Map.dbc`, `MapDifficulty.dbc`, `AreaTable.dbc`
    rows (WDBX Editor on Windows; WDBX under Wine or a scripted writer on Linux).
-3. **Client world files** in `Data/patch-4.MPQ` (rebuilt whole, Waxworks files included):
+3. **Client world files** in `Data/patch-4.MPQ` (rebuilt whole, existing custom files included):
    `World/Maps/<Dir>/<Dir>.wdt` plus the WMO and any new textures/M2s.
 4. **Server mirrors**: `map_dbc`, `mapdifficulty_dbc`, `areatable_dbc`, `instance_template`,
    `dungeon_access_template`, `graveyard_zone` SQL.
 5. **Extraction** with the patched client: `vmaps/<id>.vmtree`, `.wmo.vmo`, `mmaps/<id>*`. The
    `Map.dbc` row must be in the **locale** archive or `vmap4_extractor` never sees the map.
 6. **C++**: a new `InstanceMapScript(name, <id>)` and either a copy of the portal scripts or a
-   shared table-driven one.
+   shared table-driven one (do not add a third `PlayerScript` that fights Waxworks/Vault for the
+   same hooks).
 
 Everything else (content density, loot, pulls, lighting, the walk) is the existing skill.
 

@@ -53,7 +53,7 @@ The extractors do **not** mirror the client's full search. Verified against the 
 | `map_extractor` (maps + dbc) | `Data/`: `common`, `common-2`, `lichking`, `expansion`, `patch`, `patch-2`…**`patch-5`** only. Locale: `locale-XX`, `patch-XX`, `patch-XX-2`…**`-9`**. **DBCs are read with only the locale archives open.** | World files must be in `Data/patch-4.MPQ` or `patch-5.MPQ`. DBC edits must be in `Data/enUS/patch-enUS-4.MPQ`…`-9`, never in `Data/patch-N`. Lettered patches are invisible. |
 | `vmap4_extractor` | Locale base, `Data/` base, then `Data/patch*.MPQ` scanned `patch`, `-2`…`-99`, then locale `patch-XX*` `-2`…`-99` | Numeric only; no letters. Reads `Map.dbc` from whatever locale archive wins, so a `Map.dbc` row missing from the locale patch means **no vmaps for that map** (azerothcore#16740). |
 | `vmap4_assembler` | none (reads `Buildings/`) | `Buildings/` must be wiped between runs: `ExtractSingleWmo` skips a WMO whose output already exists. |
-| `mmaps_generator` | none (reads `maps/` + `vmaps/`, needs `mmaps-config.yaml` in cwd) | Takes a map id argument; `skipJunkMaps` drops 13/25/29/42/169/451/573/597/605/606 and transport maps. |
+| `mmaps_generator` | none (reads `maps/` + `vmaps/`, needs `mmaps-config.yaml` in cwd) | Takes a map id argument; `skipJunkMaps` drops 13/25/29/42/169/451/573/597/605/606 and transport maps. Map 35 is not junk (Stormwind Vault). Do not host a new 5-man on leftover ids — `systems/dungeons.md` § Map ids. |
 
 Both extractors' MPQ reader (`deps/libmpq`) understands **MPQ format v1 and v2 only**. Pack custom
 archives as v2 (`smpq -M 2`, or MPQEditor "WoW: WotLK" compatibility). A v4 archive is silently

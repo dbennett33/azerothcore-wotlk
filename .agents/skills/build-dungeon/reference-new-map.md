@@ -1,20 +1,21 @@
-# Dungeon #2 and later: a new `Map.dbc` id
+# Dungeon #3+: a new `Map.dbc` id
 
 Read [SKILL.md](SKILL.md) and [reference-mesh.md](reference-mesh.md) first. This file adds the
-steps The Waxworks **skipped** because it reused unused map 44. There is no second free instance
-id; every later dungeon follows this path. Data contract: `.agents/docs/systems/client-data.md`.
-Shipping: `.agents/skills/build-client-patch/SKILL.md`.
+steps The Waxworks and Stormwind Vault **skipped** because they reused leftover maps (44 and 35).
+Do not hunt leftover Blizzard instance ids. Every later dungeon follows this path. Data contract:
+`.agents/docs/systems/client-data.md`. Shipping: `.agents/skills/build-client-patch/SKILL.md`.
+Policy: `.agents/docs/systems/dungeons.md` § Map ids.
 
 ## Decide the ids first
 
-| Thing | Rule | Example (dungeon #2) |
+| Thing | Rule | Example (dungeon #3) |
 |---|---|---|
 | Map id | 3-digit, unused in `Map.dbc` (Blizzard max is 724). Keep `< 1000` so `{:03}` file names stay 3 digits. | `900` |
 | `Directory` | New, unique, ASCII, no spaces. Becomes `World/Maps/<Dir>/<Dir>.wdt` and the extractor's folder name. | `Tannery` |
 | `AreaTable` zone id | Unused (Blizzard max ~4400). One zone row; optional sub-areas. `AreaBit` unused and `< 4096`. | `9000` / bit `3990` |
 | `MapDifficulty` id | Unused; this fork uses `90000MM`. | `9000900` |
-| World DB block | Next block in `systems/dungeons.md` registry. | `9000200–9000399` |
-| `dungeon_access_template.id` | Next after 122. | `123` |
+| World DB block | Next block in `systems/dungeons.md` registry. | `9000400–9000599` |
+| `dungeon_access_template.id` | Next after 123. | `124` |
 
 Write them into `<dungeon>.h` as the enum (source of truth) before any SQL or DBC edit.
 
@@ -67,10 +68,10 @@ DELETE FROM `instance_template` WHERE `map` = 900;
 INSERT INTO `instance_template` (`map`, `parent`, `script`, `allowMount`) VALUES
 (900, 0, 'instance_tannery', 0);
 
-DELETE FROM `dungeon_access_template` WHERE `id` = 123;
+DELETE FROM `dungeon_access_template` WHERE `id` = 124;
 INSERT INTO `dungeon_access_template` (`id`, `map_id`, `difficulty`, `min_level`, `max_level`,
   `min_avg_item_level`, `comment`) VALUES
-(123, 900, 0, 12, 0, 0, 'The Tannery');
+(124, 900, 0, 12, 0, 0, 'The Tannery');
 
 -- Ghosts: link the new zone to an existing graveyard on the entrance map, or releases fall back to
 -- the faction default graveyard with a `graveyard_zone incomplete` error in the log.
@@ -88,8 +89,9 @@ Data: `vmaps/900.vmtree`, `vmaps/<Wmo>.wmo.vmo`, `mmaps/900*` via the extract pi
 **locale** archive (`vmap4_extractor` reads locale `Map.dbc`).
 
 C++: `EasternKingdoms/<Dungeon>/` with `instance_<name>` (`InstanceMapScript(name, 900)`), bosses,
-and either a copy of the Waxworks portal/player scripts with the new map/positions, or a shared
-table-driven portal script (preferred once two dungeons exist — one `PlayerScript` per hook set).
+and either a copy of the existing portal scripts with the new map/positions, or a shared
+table-driven portal script (preferred — Waxworks and Vault already each have a portal file;
+do not add a third `PlayerScript` that fights them for the same hooks).
 Register `AddSC_*` in `eastern_kingdoms_script_loader.cpp`.
 
 ## Order of operations (do not reorder)

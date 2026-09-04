@@ -1,8 +1,8 @@
 # This fork's documentation
 
 Everything written **for this fork** — the live/test VPS, the CI, the client-patch pipeline, the
-custom content (The Waxworks and what comes after), and the agent skills that do the work — is
-indexed here. Upstream AzerothCore docs are not: they live on
+custom content (The Waxworks, Stormwind Vault, and what comes after), and the agent skills that
+do the work — is indexed here. Upstream AzerothCore docs are not: they live on
 [the wiki](https://www.azerothcore.org/wiki/) and in `doc/`.
 
 Human prose lives in this directory. Two kinds of files stay where their tooling needs them and
@@ -13,11 +13,11 @@ from `.claude/skills/`), and one-screen `README.md` files next to the scripts th
 
 | | |
 |---|---|
-| What | Private AzerothCore 3.3.5a fork: one live realm and one test realm on a Debian 12 VPS, mod-playerbots compiled in, mod-individual-progression pinned to tier 13 (WotLK phase 1), custom client patches, custom 5-man The Waxworks. |
+| What | Private AzerothCore 3.3.5a fork: one live realm and one test realm on a Debian 12 VPS, mod-playerbots compiled in, mod-individual-progression pinned to tier 13 (WotLK phase 1), custom client patches, custom 5-mans The Waxworks (map 44) and Stormwind Vault (map 35). |
 | Branches | `dev` → test realm (auto build + deploy on push). `Playerbot` → live (build on push, **manual** `deploy-vps` target `live`). Flow `dev → PR → Playerbot`; `branch-protection.yml` rejects any other PR source. |
 | Host | User `acore`. Live prefix `/home/acore/server` (realm 1, port 8085), test `/home/acore/server-test` (realm 2, port 8086), one authserver on 3724. systemd user units `auth`, `world`, `world-test`. Patch store `/home/acore/client-patches/`. |
 | CI | `vps-build` compiles on the Debian build VM when online, else on the VPS; `deploy-vps` promotes staging, applies SQL, overlays client-patch server data, restarts. Runner labels `acore-build-vm` / `acore-vps`. |
-| Custom content | Regular trees, not `Custom/` or `modules/`: `src/server/scripts/EasternKingdoms/Waxworks/`, `data/sql/updates/pending_db_world/`, ids `9000000+` (registry in `.agents/docs/systems/dungeons.md`). |
+| Custom content | Regular trees, not `Custom/` or `modules/`: `src/server/scripts/EasternKingdoms/{Waxworks,StormwindVault}/`, `data/sql/updates/pending_db_world/`, ids `9000000+` (registry in `.agents/docs/systems/dungeons.md`). |
 | Client patches | Custom world files in `Data/patch-4.MPQ`, DBCs in `Data/enUS/patch-enUS-4.MPQ` (MPQ v2, never past `patch-5`). Server gets the same change as `data/` files or `*_dbc` SQL. Only `client-patches/manifest.json` is in git. |
 | Tooling split | Mesh/DBC/MPQ/extraction/visual checks on a Windows dev box; publish and deploy from any shell; the VPS has no extractors. |
 | Agents | `AGENTS.md` § "This fork" is loaded automatically by Cursor, Claude Code (`CLAUDE.md`), Copilot and Codex and routes here. Skills live in `.agents/skills/`. |
@@ -26,7 +26,7 @@ from `.claude/skills/`), and one-screen `README.md` files next to the scripts th
 
 | Read this | When |
 |---|---|
-| [`custom-content.md`](custom-content.md) | You want the big picture of how the 3.3.5a client and the server are changed together: dungeons, talents, terrain, MPQs, Windows vs Linux, and whether more dungeons can be built after The Waxworks (yes; see §3). |
+| [`custom-content.md`](custom-content.md) | You want the big picture of how the 3.3.5a client and the server are changed together: dungeons, talents, terrain, MPQs, Windows vs Linux, and whether more dungeons can be built after Stormwind Vault (yes, with a new `Map.dbc` id; see §3). |
 | [`branching.md`](branching.md) | You are about to push or merge. Branch roles (`dev` = test realm, `Playerbot` = live), what CI runs on each, branch protection, the cross-repo PAT. |
 | [`multi-realm.md`](multi-realm.md) | You need to know how live and test share one VPS (one authserver, two worldservers, ports, DBs, units). |
 
@@ -55,7 +55,7 @@ Workflows added by this fork (`.github/workflows/`):
 
 | Doc | Contents |
 |---|---|
-| [`custom-content.md`](custom-content.md) | The client–server data contract; The Waxworks case study (what repeats, what was a shortcut); the path for dungeon #2+; talents; terrain; MPQ/extractor facts; release pipeline; Windows vs Linux matrix; known gaps. |
+| [`custom-content.md`](custom-content.md) | The client–server data contract; The Waxworks case study (what repeats, what was a shortcut); Stormwind Vault; the path for dungeon #3+ (new `Map.dbc`, no leftover scrap); talents; terrain; MPQ/extractor facts; release pipeline; Windows vs Linux matrix; known gaps. |
 | [`client-patches.md`](client-patches.md) | The release mechanics: `manifest.json`, `sources/`, bundles, `publish-to-vps`, `apply-server-data.sh`, `update-client.*`, CI hooks, backups. |
 | [`../client-patches/README.md`](../client-patches/README.md) | Quick start for the `client-patches/` directory and storage policy (binaries on the VPS, manifest in git). |
 
@@ -64,6 +64,7 @@ Shipped content:
 | Item | Where |
 |---|---|
 | The Waxworks (map 44, 5-man, Elwynn entrance) | C++ `src/server/scripts/EasternKingdoms/Waxworks/`; SQL `data/sql/updates/pending_db_world/rev_1788471101263218298.sql`; client `Data/patch-4.MPQ` v1.0.1 per `client-patches/manifest.json` |
+| Stormwind Vault (map 35, 5-man, Stormwind canal swirl) | C++ `src/server/scripts/EasternKingdoms/StormwindVault/`; SQL `data/sql/updates/pending_db_world/rev_1788517208810518529.sql`; uses the unused vanilla `StormwindPrison` WMO (no new MPQ) |
 | Custom id blocks (`9000000+`) | Registry table in [`../.agents/docs/systems/dungeons.md`](../.agents/docs/systems/dungeons.md) — reserve before writing SQL |
 
 ## Agent docs (`.agents/docs/systems/`, fork-specific)
@@ -74,7 +75,7 @@ routes to them; they assume the reader will then follow a skill.
 | Doc | Subsystem |
 |---|---|
 | [`client-data.md`](../.agents/docs/systems/client-data.md) | Client MPQ vs server `data/`: load order, what each extractor actually opens (`patch-5` cap, locale-only DBC, MPQ v1/v2), `*_dbc` SQL overlays, `ClientCacheVersion`, this fork's shipping model. |
-| [`dungeons.md`](../.agents/docs/systems/dungeons.md) | Dungeon rules, Waxworks retrospective, id registry, extensibility status. |
+| [`dungeons.md`](../.agents/docs/systems/dungeons.md) | Dungeon rules, **map-id policy** (dungeon #3+ = new `Map.dbc`; leftover scrap is closed), Waxworks/Vault retrospective, id registry, extensibility status. |
 | [`talents.md`](../.agents/docs/systems/talents.md) | Talent/TalentTab/Spell DBC model, server validation, hard limits, `character_talent`, reset rules. |
 | [`terrain.md`](../.agents/docs/systems/terrain.md) | ADT/WDT tiles, Noggit constraints, per-tile re-extraction, area id and graveyard ripple effects. |
 | [`coordinates.md`](../.agents/docs/systems/coordinates.md) | Router only: sends every `.go` / teleport / xyz-placement task to the `wow-coordinates` skill. |
@@ -86,7 +87,7 @@ Step-by-step procedures with checklists. Each `SKILL.md` names the docs to read 
 | Skill | Use when | Extra files |
 |---|---|---|
 | [`build-client-patch`](../.agents/skills/build-client-patch/SKILL.md) | Anything ships an MPQ or server `data/` files: stage → pack (MPQ v2) → extract → bundle → publish → deploy → verify. | [`reference-windows-linux.md`](../.agents/skills/build-client-patch/reference-windows-linux.md) — tool and command matrix for both operating systems. |
-| [`build-dungeon`](../.agents/skills/build-dungeon/SKILL.md) | Designing or implementing a 5-man: hosting choice, mesh, content density, loot, entrance. | [`reference-mesh.md`](../.agents/skills/build-dungeon/reference-mesh.md) (Blender/WMO/WDT pipeline), [`reference-content.md`](../.agents/skills/build-dungeon/reference-content.md) (what a finished dungeon contains), [`reference-new-map.md`](../.agents/skills/build-dungeon/reference-new-map.md) (**every dungeon after The Waxworks**: new `Map.dbc` id on client and server). |
+| [`build-dungeon`](../.agents/skills/build-dungeon/SKILL.md) | Designing or implementing a 5-man: hosting choice, mesh, content density, loot, entrance. | [`reference-mesh.md`](../.agents/skills/build-dungeon/reference-mesh.md) (Blender/WMO/WDT pipeline), [`reference-content.md`](../.agents/skills/build-dungeon/reference-content.md) (what a finished dungeon contains), [`reference-new-map.md`](../.agents/skills/build-dungeon/reference-new-map.md) (**dungeon #3+**: new `Map.dbc` id on client and server; do not reuse leftover instance maps). |
 | [`edit-talents`](../.agents/skills/edit-talents/SKILL.md) | Changing talent trees: smallest change, DBC + overlay edit, reset policy, verification. | — |
 | [`edit-terrain`](../.agents/skills/edit-terrain/SKILL.md) | Overworld ADT edits with Noggit: tile list, per-tile extraction, DB follow-ups. | — |
 | [`walk-instance`](../.agents/skills/walk-instance/SKILL.md) | Visually verifying an instance with the scout client (screenshots, not SOAP alone). | `scripts/scout-*.ps1` (Windows only). |

@@ -5,10 +5,10 @@ AzerothCore is a C++ MMORPG server emulator for World of Warcraft 3.3.5a (WotLK)
 ## This fork (read before anything else)
 
 This checkout is a **private fork** that runs one live and one test realm on a Debian 12 VPS with
-mod-playerbots, ships custom client patches, and contains custom content (The Waxworks 5-man). It is
-not vanilla upstream. Every fork-specific doc and skill is indexed in **`docs/README.md`**; when a
-task touches deploy, CI, branches, client patches, custom content, or agent docs, open that index
-first and read the doc it names for the task.
+mod-playerbots, ships custom client patches, and contains custom content (The Waxworks and
+Stormwind Vault 5-mans). It is not vanilla upstream. Every fork-specific doc and skill is indexed
+in **`docs/README.md`**; when a task touches deploy, CI, branches, client patches, custom content,
+or agent docs, open that index first and read the doc it names for the task.
 
 Facts that change how you work here:
 
@@ -22,8 +22,10 @@ Facts that change how you work here:
   change on client and server**: client MPQ + server `data/` or `*_dbc` SQL, shipped through
   `client-patches/`. Binaries never enter git; only `client-patches/manifest.json` does. Model:
   `.agents/docs/systems/client-data.md`.
-- The Waxworks reused map 44; every later dungeon needs a new `Map.dbc` id on both sides
-  (`.agents/skills/build-dungeon/reference-new-map.md`).
+- The Waxworks reused map 44; Stormwind Vault reused map 35. Dungeon #3+ needs a **new
+  `Map.dbc` id** on both sides — do not hunt leftover Blizzard instance ids
+  (`.agents/docs/systems/dungeons.md` § Map ids,
+  `.agents/skills/build-dungeon/reference-new-map.md`).
 - Fork skills in `.agents/skills/`: `build-client-patch`, `build-dungeon`, `edit-talents`,
   `edit-terrain`, `walk-instance`, `wow-coordinates`. They are symlinked into `.claude/skills/` and
   pointed to by `.cursor/rules/`.
@@ -59,7 +61,7 @@ Fork-specific tasks (index: `docs/README.md`; human overview: `docs/custom-conte
   (release mechanics: `docs/client-patches.md`)
 - Dungeons and instances (new map, WMO, cave mesh, entrance, bosses, 5-man overlay) →
   `.agents/docs/systems/dungeons.md`, then skill `.agents/skills/build-dungeon/`
-  (`reference-new-map.md` for any dungeon after The Waxworks)
+  (`reference-new-map.md` for dungeon #3+)
 - Talent trees (`Talent.dbc`, `TalentTab.dbc`, talent spells) → `.agents/docs/systems/talents.md`,
   then skill `.agents/skills/edit-talents/`
 - Overworld terrain (ADT/WDT, Noggit, doodads, water, area ids) → `.agents/docs/systems/terrain.md`,

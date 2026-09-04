@@ -16,7 +16,7 @@ reference only if you need it:
 
 - Mesh / client / extract → [reference-mesh.md](reference-mesh.md)
 - Content that feels like a real dungeon → [reference-content.md](reference-content.md)
-- **Any dungeon after The Waxworks** (new `Map.dbc` id, DBC rows, graveyard, access) →
+- **Dungeon #3+** (new `Map.dbc` id, DBC rows, graveyard, access) →
   [reference-new-map.md](reference-new-map.md)
 
 Also read `.agents/docs/systems/dungeons.md` (id registry, what Waxworks did that does not
@@ -37,11 +37,13 @@ Never edit `data/sql/base/`, `data/sql/archive/`, or `data/sql/updates/db_*`.
 | **Phase overlay** on map 0 | No — Fargodeep walls | Shared world | No |
 | **Type-14 cave GOs** on map 0 | Glued vanilla caves | Shared world | No (existing display ids) |
 | **Kitbash WMO on map 44** | Yes, if you ship tiles | Real instance | Yes (`Monastery.wdt` + WMO) — **taken by The Waxworks** |
-| **New `Map.dbc` id + patch** | Yes | Real instance | Yes (client **and** `map_dbc`) — the path for every further dungeon |
+| **Unused vanilla instance (map 35)** | Yes — existing WMO | Real instance | SQL + C++ (client already has `StormwindPrison`) — **taken by Stormwind Vault** |
+| **New `Map.dbc` id + patch** | Yes | Real instance | Yes (client **and** `map_dbc`) — **the path for dungeon #3+** |
 
-- Map 44 is used. Do not hunt for another "free" instance id: the remaining
-  unused ids are test/junk maps that `mmaps_generator` skips. Dungeon #2+ is
-  a new `Map.dbc` row on both sides — [reference-new-map.md](reference-new-map.md).
+- Maps **44** (Waxworks) and **35** (Stormwind Vault) are taken. Do **not** hunt leftover
+  Blizzard instance ids: remaining unused ids are test/junk that `mmaps_generator` skips,
+  and even a leftover WMO with client geometry is closed as a hosting choice. Dungeon #3+
+  is a new `Map.dbc` row on both sides — [reference-new-map.md](reference-new-map.md).
 - Overlay **cannot** enlarge caves or delete ADT trees. Dress the existing shaft
   or change hosting.
 - Map **44** already has a leftover Scarlet `Monastery.wdt` (not a blank
