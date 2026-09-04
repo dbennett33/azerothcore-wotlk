@@ -95,7 +95,11 @@ cathedral, Cata Fargodeep, or another server's instance MPQ.
    second mirror. The Python generator emitted origin-symmetric verts as a hack; kitbash should
    not need that if you model on the playable side.
 4. Origin near `(0,0,0)`. Keep the mesh AABB compact; the WDT MODF still gets ±200 pad.
-5. Every playable room lives in the WBS **Indoor** collection (MOGP `INTERIOR` `0x2000` on
+5. Do **not** duplicate an overworld chapel (`Ext` / `Stairs05`) along the spawn spine. Those
+   groups are exterior buildings meant to sit on ADT terrain; copies with gaps are
+   unreachable rooms in a purple void. Keep the source WMO's indoor groups together and
+   overlap door faces; delete outdoor hulls (`righthall11`-sized shells).
+6. Every playable room lives in the WBS **Indoor** collection (MOGP `INTERIOR` `0x2000` on
    export). Vanilla crypt/Deadmines groups often import as **Outdoor** (`0x8`) — move them.
    Then select those groups and run WBS toolbar **Quick collision** (`scene.wow_quick_collision`):
    it fills vertex group `Collision` and sets Mesh Data → WMO Vertex Info → Collision vertex
@@ -104,14 +108,14 @@ cathedral, Cata Fargodeep, or another server's instance MPQ.
    (Object → WMO Group → Collision). It does **not** emit Python-hull `0x28` on visible faces.
    After export, `inspect-wmo-group.py` on each `_000.wmo`. `liquid_type` **15** (MAG `0` is
    water). No MLIQ. MOHD flag `0x2`.
-6. At least one MOLT on the root and MOLR on interior groups (or HAS_LIGHTS unset — unlit interior
+7. At least one MOLT on the root and MOLR on interior groups (or HAS_LIGHTS unset — unlit interior
    groups can look black / be skipped). Match a working group if unsure: Waxworks `_000` MOGP
    `0x2a05`.
-7. Materials keep BLP paths the client already has, or new BLPs staged into `patch-4` at the
+8. Materials keep BLP paths the client already has, or new BLPs staged into `patch-4` at the
    exact MOTX path. One MOBA batch per material.
-8. Floors need thickness or a two-sided pair. A paper-thin axis-aligned quad **renders and still
+9. Floors need thickness or a two-sided pair. A paper-thin axis-aligned quad **renders and still
    drops the player** (3.3.5 walk is client-authoritative; see reference-mesh pitfalls).
-9. File → Export → WoW WMO, **version 17**. Writes `Name.wmo` + `Name_000.wmo` ….
+10. File → Export → WoW WMO, **version 17**. Writes `Name.wmo` + `Name_000.wmo` ….
 
 ## WDT (WBS does not replace this)
 

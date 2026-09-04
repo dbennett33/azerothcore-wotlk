@@ -149,7 +149,14 @@ else
   exit 1
 fi
 
-"${SCRIPT_DIR}/validate-manifest.sh" "$MANIFEST_LOCAL" "${WORKDIR}"
+# Schema + install_path only. Do not pass WORKDIR as a bundle: players never
+# download server-data.tar.gz, and validate-manifest would then fail.
+"${SCRIPT_DIR}/validate-manifest.sh" "$MANIFEST_LOCAL"
+while IFS=$'\t' read -r file sha; do
+  [[ -z "$file" || "$file" == "null" ]] && continue
+  verify_sha256 "${WORKDIR}/client/${file}" "$sha"
+  echo "client patch checksum ok: ${file}"
+done < <(jq -r '.client.patches[] | [.file, .sha256] | @tsv' "$MANIFEST_LOCAL")
 
 manifest_locale="$(jq -r '.client.locale' "$MANIFEST_LOCAL")"
 LOCALE="${LOCALE:-$manifest_locale}"

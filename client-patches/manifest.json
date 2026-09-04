@@ -1,18 +1,18 @@
 {
-  "version": "1.1.3",
-  "released": "2026-09-04T17:56:53Z",
+  "version": "1.1.4",
+  "released": "2026-09-04T18:41:07Z",
   "blizzard_build": 12340,
   "client_cache_version": 4,
   "changelog": [
-    "Replace Drowned Belfry box hull with crypt and ruined-keep kitbash"
+    "Connect Drowned Belfry rooms: indoor crypt plus keep, no floating chapel copies"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "3d208d55f82342420e009df7424a8d24b69fa5931f818ecf8e80ee0c03b062ab",
-        "size": 2908234,
+        "sha256": "9fce6491675cd217b8922cad816245e29365845743682557e423ca2ad880cbcd",
+        "size": 3180473,
         "install_path": "Data/patch-4.MPQ"
       },
       {
@@ -25,8 +25,8 @@
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "b8450b59e1456a6f386e9363d404113a1d248dd5811ab1e822d8cae5f9f5e702",
-    "size": 874498,
+    "sha256": "4980405fd72cef322be5f9ce5c30006a03d0c038e5141d5dca8ce67d9e1c5843",
+    "size": 1043182,
     "components": [
       "vmaps",
       "mmaps"
