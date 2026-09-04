@@ -25,6 +25,12 @@ def _pad4(n: int) -> int:
     return (4 - (n % 4)) % 4
 
 
+def cstr_aligned(s: str) -> bytes:
+    """MOTX entries are 4-byte aligned; the client indexes them by that offset."""
+    b = s.encode("ascii") + b"\x00"
+    return b + b"\x00" * _pad4(len(b))
+
+
 def chunk(tag: str, data: bytes) -> bytes:
     """WMO/WDT chunk. Size includes 4-byte padding: AC extractors seek size
     bytes and do not align, so a pad-only trailer would skip the next chunk.
@@ -143,7 +149,8 @@ def write_group(path: Path, mesh: Mesh, name_ofs: int, desc_ofs: int) -> None:
     bb = bbox(mesh.verts)
     ntri = len(mesh.tris)
     nvert = len(mesh.verts)
-    flags = 0x1 | 0x4 | 0x2000  # HAS_BSP + HAS_MOCV + INTERIOR
+    # HAS_BSP + HAS_MOCV + INTERIOR. Must match SMOGroupInfo flags in the root MOGI.
+    flags = 0x1 | 0x4 | 0x2000
     # 68-byte MOGP: 60-byte vmap-read header + 8 bytes WotLK flags2/parent/sibling.
     mogp = b"".join((
         struct.pack("<III", name_ofs, desc_ofs, flags),
@@ -204,22 +211,26 @@ def write_root(path: Path, mesh: Mesh) -> tuple[int, int]:
     name_ofs = 1
     desc_ofs = 1 + len("DrownedBelfry") + 1
     bb = bbox(mesh.verts)
-    flags = 0x1 | 0x2000
+    flags = 0x1 | 0x4 | 0x2000  # same bits as the group MOGP header
     mogi = struct.pack("<I6fi", flags, *bb, name_ofs)
-    tex = TEX_FLOOR.encode("ascii") + b"\x00" + TEX_WALL.encode("ascii") + b"\x00"
+    floor_tex = cstr_aligned(TEX_FLOOR)
+    wall_tex = cstr_aligned(TEX_WALL)
+    tex = floor_tex + wall_tex
     floor_off = 0
-    wall_off = len(TEX_FLOOR) + 1
+    wall_off = len(floor_tex)
 
     def material(tex_off: int) -> bytes:
+        # SMOMaterial 64 bytes. Flags 0 matches the working Waxworks materials;
+        # texture1 is 4-aligned into MOTX. texture2 unused (shader 0).
         return struct.pack("<IIIIIIIIIIIIIIII",
-                           0x4,
+                           0,
                            0, 0, tex_off,
-                           0xFF808080, 0,
-                           0, 0xFF606060,
+                           0xFF000000, 0,
+                           0, 0xFF808080,
                            0, 0, 0, 0, 0, 0, 0, 0)
 
     momt = material(floor_off) + material(wall_off)
-    mohd = struct.pack("<7I", 2, 1, 0, 0, 0, 0, 1)
+    mohd = struct.pack("<7I", 2, 1, 0, 1, 0, 0, 1)
     mohd += struct.pack("<I", 0xFF405060)
     mohd += struct.pack("<I", 900000)
     mohd += struct.pack("<6f", *bb)
@@ -227,6 +238,15 @@ def write_root(path: Path, mesh: Mesh) -> tuple[int, int]:
     assert len(mohd) == 64, len(mohd)
 
     mods = struct.pack("<20sIII", b"Set_$DefaultGlobal", 0, 0, 0)
+    # One omni light so INTERIOR groups are not skipped as unlit.
+    molt = struct.pack("<BB2x I 3f f f f 4f",
+                       1, 1,
+                       0xFFC0D0E0,
+                       0.0, 0.0, 4.0,
+                       2.0,
+                       0.0, 400.0,
+                       0.0, 0.0, 0.0, 0.0)
+    assert len(molt) == 48, len(molt)
     fog = struct.pack("<I3f2f", 0, 0.0, 0.0, 0.0, 0.0, 0.0)
     fog += struct.pack("<ffI", 444.4445, 0.25, 0xFF708090)
     fog += struct.pack("<ffI", 222.2222, -0.5, 0xFF102030)
@@ -245,7 +265,7 @@ def write_root(path: Path, mesh: Mesh) -> tuple[int, int]:
         chunk("MOPR", b""),
         chunk("MOVV", b""),
         chunk("MOVB", b""),
-        chunk("MOLT", b""),
+        chunk("MOLT", molt),
         chunk("MODS", mods),
         chunk("MODN", b"\x00"),
         chunk("MODD", b""),
@@ -264,7 +284,7 @@ def write_wdt(path: Path, mesh: Mesh) -> None:
     mwmo = chunk("MWMO", WMO_PATH.encode("ascii") + b"\x00")
     modf = struct.pack(
         "<II 3f 3f 6f HHHH",
-        0, 900000,
+        0, 0xFFFFFFFF,  # nameId 0, uniqueId -1 (Ragefire / Waxworks)
         0.0, 0.0, 0.0,
         0.0, 0.0, 0.0,
         *bounds,
