@@ -1,18 +1,18 @@
 {
-  "version": "1.1.4",
-  "released": "2026-09-04T18:41:07Z",
+  "version": "1.1.5",
+  "released": "2026-09-04T19:54:59Z",
   "blizzard_build": 12340,
   "client_cache_version": 4,
   "changelog": [
-    "Connect Drowned Belfry rooms: indoor crypt plus keep, no floating chapel copies"
+    "Drowned Belfry is one Tirisfal crypt: chapel plus downstairs rooms, no stacked keep"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "9fce6491675cd217b8922cad816245e29365845743682557e423ca2ad880cbcd",
-        "size": 3180473,
+        "sha256": "a9531ad43ea7bc803301c999589dc8274d6271ae9503bbaf5ffb58e60a776ad0",
+        "size": 2340088,
         "install_path": "Data/patch-4.MPQ"
       },
       {
@@ -25,8 +25,8 @@
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "4980405fd72cef322be5f9ce5c30006a03d0c038e5141d5dca8ce67d9e1c5843",
-    "size": 1043182,
+    "sha256": "2637a2c53ab64a973db02ea543bb3bdb8003ad985b5ac75de1b3a59497f989b5",
+    "size": 708590,
     "components": [
       "vmaps",
       "mmaps"
