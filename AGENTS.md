@@ -61,7 +61,8 @@ Fork-specific tasks (index: `docs/README.md`; human overview: `docs/custom-conte
   (release mechanics: `docs/client-patches.md`)
 - Dungeons and instances (new map, WMO, cave mesh, entrance, bosses, 5-man overlay) →
   `.agents/docs/systems/dungeons.md`, then skill `.agents/skills/build-dungeon/`
-  (`reference-new-map.md` for dungeon #3+)
+  (`reference-new-map.md` for dungeon #3+; `reference-blender-wmo.md` for Blender/WBS kitbash.
+  The Python box generator is a hull, not the art path.)
 - Talent trees (`Talent.dbc`, `TalentTab.dbc`, talent spells) → `.agents/docs/systems/talents.md`,
   then skill `.agents/skills/edit-talents/`
 - Overworld terrain (ADT/WDT, Noggit, doodads, water, area ids) → `.agents/docs/systems/terrain.md`,

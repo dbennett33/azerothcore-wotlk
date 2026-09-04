@@ -24,7 +24,8 @@ Related skills: dungeons → `build-dungeon`; talents → `edit-talents`; ADT �
 - One `Data/patch-4.MPQ` holds **every** custom world file of this realm; DBC edits go in
   `Data/enUS/patch-enUS-4.MPQ`. Never introduce `patch-6+` or lettered patches: `map_extractor`
   stops at `patch-5` and reads DBCs from locale archives only.
-- Archives are MPQ **v2** (extractors use libmpq: v1/v2 only). `smpq` defaults to v4 — pass `-M 2`.
+- Archives are MPQ **v2** (extractors use libmpq: v1/v2 only). This machine packs with
+  `/home/dan/dev/tools/pack-mpq`. Distro `smpq` defaults to v4 — pass `-M 2`.
 - Binaries never enter git. Only `client-patches/manifest.json` is committed, in the **same
   commit** as the SQL/C++ that needs the data.
 - Close every `Wow.exe` before writing into a client `Data/` (exclusive lock; silent stale reads).
@@ -75,8 +76,9 @@ for its WMO/WDT set: `build-dungeon/reference-mesh.md` "Custom instance — mini
 
 ### 3. Pack
 
-Windows: MPQEditor console script (ASCII, no BOM) or GUI, compatibility "WoW: WotLK". Linux:
-`smpq -M 2 -c`. Exact commands and the listing check are in
+Windows: MPQEditor console script (ASCII, no BOM) or GUI, compatibility "WoW: WotLK". Linux on
+this machine: `/home/dan/dev/tools/pack-mpq` (StormLib, v2, spec `disk=archivepath`). Distro
+`smpq` defaults to v4 — pass `-M 2` if using it. Exact commands:
 [reference-windows-linux.md](reference-windows-linux.md). Output goes to
 `client-patches/sources/client/mpq/patch-4.MPQ` (and `patch-enUS-4.MPQ` when DBCs changed).
 

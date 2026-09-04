@@ -11,7 +11,7 @@ Agent entry points (read these when doing the work, they are the source of truth
 | Task | Model doc | Procedure (skill) |
 |---|---|---|
 | Anything touching MPQs, DBCs, `data/` | `.agents/docs/systems/client-data.md` | `.agents/skills/build-client-patch/` |
-| New dungeon / instance | `.agents/docs/systems/dungeons.md` | `.agents/skills/build-dungeon/` (+ `reference-new-map.md` for dungeon #3+) |
+| New dungeon / instance | `.agents/docs/systems/dungeons.md` | `.agents/skills/build-dungeon/` (+ `reference-new-map.md` for dungeon #3+; `reference-blender-wmo.md` for Blender/WBS kitbash) |
 | Talent trees | `.agents/docs/systems/talents.md` | `.agents/skills/edit-talents/` |
 | Overworld ADT edits | `.agents/docs/systems/terrain.md` | `.agents/skills/edit-terrain/` |
 | Coordinates, tiles, teleports | `.agents/docs/systems/coordinates.md` | `.agents/skills/wow-coordinates/` |
@@ -56,6 +56,8 @@ canal swirl). Same script/SQL layout, no new MPQ. That was the last leftover rea
 
 Dungeon #3 is **The Drowned Belfry** on a new `Map.dbc` id **900** (`Directory` `DrownedBelfry`),
 walk-through veil on the Darkshire graveyard road. That is the path every later 5-man follows.
+Its rooms are a Python box hull (`gen-drowned-belfry-mesh.py`), not a Blender kitbash — replace
+via `reference-blender-wmo.md` before calling the art finished.
 
 What went right and is reusable verbatim for the next dungeon:
 
@@ -73,7 +75,7 @@ What was a shortcut that does **not** repeat:
   a new `Map.dbc` row in the client locale patch and in `map_dbc`. Do not hunt leftover scrap.
 - The portal and player scripts hard-code map ids and positions per dungeon.
 - Planning notes for the mesh (`.agents/plans/`) are gitignored; the durable knowledge has been
-  folded into `build-dungeon/reference-mesh.md` and `systems/dungeons.md`.
+  folded into `build-dungeon/reference-mesh.md`, `reference-blender-wmo.md`, and `systems/dungeons.md`.
 
 ## 3. Can we build more dungeons? Yes — new `Map.dbc` ids, not leftover scrap
 
@@ -87,7 +89,8 @@ Dungeon #3 and later follow `build-dungeon/reference-new-map.md`. Map-id policy 
 2. **Client DBCs** in `Data/enUS/patch-enUS-4.MPQ`: `Map.dbc`, `MapDifficulty.dbc`, `AreaTable.dbc`
    rows (WDBX Editor on Windows; WDBX under Wine or a scripted writer on Linux).
 3. **Client world files** in `Data/patch-4.MPQ` (rebuilt whole, existing custom files included):
-   `World/Maps/<Dir>/<Dir>.wdt` plus the WMO and any new textures/M2s.
+   `World/Maps/<Dir>/<Dir>.wdt` plus the WMO and any new textures/M2s. Author the WMO with
+   Blender 3.4.1 + WBS (`reference-blender-wmo.md`); the Python box generator is hull-only.
 4. **Server mirrors**: `map_dbc`, `mapdifficulty_dbc`, `areatable_dbc`, `instance_template`,
    `dungeon_access_template`, `graveyard_zone` SQL.
 5. **Extraction** with the patched client: `vmaps/<id>.vmtree`, `.wmo.vmo`, `mmaps/<id>*`. The
@@ -160,24 +163,22 @@ Git tracks the manifest only. Binaries live on the VPS; back them up offsite
 
 ## 7. Windows vs Linux
 
-| Task | Windows | Linux |
+| Task | Linux (this fork) | Windows (other contributor) |
 |---|---|---|
-| Terrain (Noggit) | Native | Build from source or Wine; unsupported |
-| WMO / M2 (Blender + WoW Blender Studio) | Yes | Yes |
-| Browse Blizzard MPQs | wow.export (Legacy mode), MPQEditor | `smpq -l/-x`, wow.export |
-| Pack MPQ | MPQEditor (GUI or `/console`) | `smpq -M 2 -c` |
-| Edit DBC | WDBX Editor | WDBX under Wine/Mono, or SQL overlay + scripted writer |
-| Extractors | Build this repo with `-DTOOLS_BUILD=all` | Same |
-| Bundle | `build-bundle.ps1` | `build-bundle.sh` (`python3`, `jq`, `tar`) |
-| Publish | `publish-to-vps.ps1` (OpenSSH client) | `publish-to-vps.sh` (`ssh`, `rsync`) |
-| Player update | `update-client.ps1` | `update-client.sh` |
-| In-game scouting / screenshots | `walk-instance` PowerShell scripts | Not available |
-| SOAP GM commands | `scout-soap.ps1` | `curl` with the same XML |
+| Terrain (Noggit) | Unsupported / Wine | Native |
+| WMO kitbash | Blender **3.4.1** tarball + WBS (`reference-blender-wmo.md`). Not distro 4.x. No M2 export. | Same versions; they pick the install path |
+| Browse / dump MPQs | wow.export Linux portable; `extract-wmo-family.py` | wow.export Legacy / MPQEditor |
+| Pack MPQ | `/home/dan/dev/tools/pack-mpq` (v2, `disk=archivepath`) | MPQEditor, MPQ v2 |
+| Edit DBC | SQL overlay + scripted writer | WDBX |
+| Extractors | `build-tools/src/tools/` (`-DTOOLS_BUILD=all`) | Same flags, their build dir |
+| Bundle / publish / update | `*.sh` | `*.ps1` |
+| In-game proof | Proton client `/home/dan/dev/wow-3.3.5/` | Their scout / `walk-instance` scripts |
+| SOAP | `curl` | `scout-soap.ps1` |
 
-Practical split used so far: mesh, DBC, MPQ, extraction and visual checks on the Windows dev box;
-publishing and deployment from any shell; the VPS (Debian 12) runs the servers and has no
-extractors. Exact commands for both operating systems are in
-`.agents/skills/build-client-patch/reference-windows-linux.md`.
+This fork's authored process is Linux (`pack-mpq`, AC extractors, playable client
+`/home/dan/dev/wow-3.3.5/`). Mesh authoring: Blender 3.4.1 + WBS (`reference-blender-wmo.md`).
+A contributor also kitbashes on Windows — same versions, they pick MPQEditor/WDBX/Noggit. The VPS
+has no extractors. Linux commands: `.agents/skills/build-client-patch/reference-windows-linux.md`.
 
 ## 8. Known gaps after dungeon #3 (tracked in `systems/dungeons.md`)
 
@@ -186,5 +187,6 @@ Maps 44, 35, and 900 are taken. Remaining gaps:
 
 - Portal / enter-grace scripts are still per-dungeon (Waxworks, Vault, Belfry). Prefer a shared
   table-driven portal before dungeon #4.
+- Linux Blender 3.4.1 + WBS are installed; Belfry rooms are still the Python hull.
 - No `LFGDungeons` / `WorldMapArea` rows for custom 5-mans (Dungeon Finder and map UI); optional.
 

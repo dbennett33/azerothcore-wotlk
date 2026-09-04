@@ -29,6 +29,7 @@ Short rules:
   Blizzard instance ids (see Map ids below).
 
 Mesh / extract / DBC details: `.agents/skills/build-dungeon/reference-mesh.md`.
+Blender / WBS kitbash (the art path): `.agents/skills/build-dungeon/reference-blender-wmo.md`.
 Content bar (rooms, loot, shrines): `.agents/skills/build-dungeon/reference-content.md`.
 Visual walk (screenshots, scout client, not SOAP-only): `.agents/skills/walk-instance/SKILL.md`.
 Dungeon #3+ (new `Map.dbc` id): `.agents/skills/build-dungeon/reference-new-map.md`.
@@ -97,3 +98,6 @@ Maps 44, 35, and 900 are taken. Blocking dungeon #4 until done:
 1. A new `Map.dbc` id (every dungeon after Vault). Follow `reference-new-map.md` end to end.
 2. Entrance/portal C++ is still per-dungeon. Prefer a shared table-driven portal before adding more
    `PlayerScript`s that share the same hooks.
+3. Distinct-cave **art**: Linux Blender **3.4.1** + WBS are installed (2026-09-04). Procedure:
+   `reference-blender-wmo.md`. The Belfry Python generator is a hull/scaffold only. Do not
+   `pacman -S blender`.

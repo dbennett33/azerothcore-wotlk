@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Generate The Drowned Belfry WMO v17 + WDT (WotLK) and optional DBC rows.
 
+This is a hull/scaffold so map 900 can load and catch a walk. Real rooms go
+through Blender 3.4.1 + WBS: .agents/skills/build-dungeon/reference-blender-wmo.md.
+
 Clone DBC from patch-enUS-3.MPQ (66-field Map.dbc). Do not clone locale-enUS.MPQ
 (126-field vanilla layout the patches replaced).
 

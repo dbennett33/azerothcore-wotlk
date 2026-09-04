@@ -59,6 +59,8 @@ BLPs. Tile index math: `gx = 32 - y/533.333`, `gy = 32 - x/533.333` (`wow-coordi
 
 ## Windows vs Linux
 
-Noggit is Windows-first (a Linux build exists but is unsupported); Blender + WBS for new WMO/M2
-runs on both; MPQ packing is MPQEditor (Windows) or `smpq -M 2` (Linux); the AC extractors build on
-both from this repo with `-DTOOLS_BUILD=all`. Details: `build-client-patch/reference-windows-linux.md`.
+Noggit is Windows-first (a Linux build exists but is unsupported — terrain edits wait on the
+Windows contributor or Wine). New WMO is Blender **3.4.1** + WBS on Linux
+(`build-dungeon/reference-blender-wmo.md`; not distro Blender 4.x; do not export M2). MPQ packing
+here is `/home/dan/dev/tools/pack-mpq` (v2). Extractors: this repo, `-DTOOLS_BUILD=all`.
+Details: `build-client-patch/reference-windows-linux.md`.

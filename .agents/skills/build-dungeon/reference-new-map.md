@@ -1,6 +1,7 @@
 # Dungeon #3+: a new `Map.dbc` id
 
-Read [SKILL.md](SKILL.md) and [reference-mesh.md](reference-mesh.md) first. This file adds the
+Read [SKILL.md](SKILL.md), [reference-mesh.md](reference-mesh.md), and
+[reference-blender-wmo.md](reference-blender-wmo.md) (art path) first. This file adds the
 steps The Waxworks and Stormwind Vault **skipped** because they reused leftover maps (44 and 35).
 Do not hunt leftover Blizzard instance ids. Every later dungeon follows this path. Data contract:
 `.agents/docs/systems/client-data.md`. Shipping: `.agents/skills/build-client-patch/SKILL.md`.
@@ -97,9 +98,11 @@ Register `AddSC_*` in `eastern_kingdoms_script_loader.cpp`.
 ## Order of operations (do not reorder)
 
 1. Reserve ids; write the header enum; update the registry table in `systems/dungeons.md`.
-2. Mesh in Blender → WMO + WDT → `patch-4.MPQ`; DBC rows → `patch-enUS-4.MPQ`. Install into the dev
-   client, restart Wow, `.go xyz 0 0 5 900` as GM: client must load the map (black screen /
-   disconnect = client-side DBC or WDT missing).
+2. Mesh: WBS kitbash ([reference-blender-wmo.md](reference-blender-wmo.md)) or the Python hull
+   for a first load. WMO + WDT → `patch-4.MPQ`; DBC rows → `patch-enUS-4.MPQ`. Install into the
+   dev client, **fully quit** Wow, `.go xyz 0 0 5 900` as GM: client must load the map (black
+   screen / disconnect = client-side DBC or WDT missing). Visible room + falling = client hull,
+   not spawn Z.
 3. Extract with the patched client; confirm `vmaps/900.vmtree` and the `.vmo` exist and `mmaps/900*`
    were generated (map not in the junk list).
 4. SQL block above + spawns + templates + scripts; `git commit` with `manifest.json` from the bundle.

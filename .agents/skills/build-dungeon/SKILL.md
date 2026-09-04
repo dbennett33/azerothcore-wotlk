@@ -15,6 +15,8 @@ Read this skill before adding or reshaping a 5-man. Then read the matching
 reference only if you need it:
 
 - Mesh / client / extract → [reference-mesh.md](reference-mesh.md)
+- **Blender / WBS kitbash** (the art path for a distinct cave) →
+  [reference-blender-wmo.md](reference-blender-wmo.md)
 - Content that feels like a real dungeon → [reference-content.md](reference-content.md)
 - **Dungeon #3+** (new `Map.dbc` id, DBC rows, graveyard, access) →
   [reference-new-map.md](reference-new-map.md)
@@ -55,7 +57,9 @@ Never edit `data/sql/base/`, `data/sql/archive/`, or `data/sql/updates/db_*`.
   Walk-in = `GameObjectAI` + `Player::IsWithinBox`, or a **vanilla** AT id.
 
 Do not start a WMO/ADT project unless the user asked for a distinct cave **and**
-accepted Noggit/Blender + `patch-4.MPQ` + extract. Type-14 GOs are the only
+accepted Blender **3.4.1** + WoW Blender Studio (not distro Blender 4.x) +
+`patch-4.MPQ` + extract. Procedure: [reference-blender-wmo.md](reference-blender-wmo.md).
+The Python box generator is a hull/scaffold only. Type-14 GOs are the only
 distinct walkable space an agent can place without those tools.
 
 ## What “good” means (fail the PR if these are missing)
@@ -144,9 +148,9 @@ Client and server must agree. Server `map_dbc` without a client `Map.dbc` row
 `CANNOT_ENTER_NO_ENTRY`. Map 44 as shipped is leftover Scarlet, not a void.
 WMO-only maps have **no** `maps/044*.map`; height is 100% vmaps. A tiny
 `044.vmtree` is normal — the mesh is `vmaps/<Name>.wmo.vmo`. Missing that
-file = `WorldModelStore: could not load` and the player falls. Full pipeline:
-[reference-mesh.md](reference-mesh.md). Tool paths and pack/extract commands
-(Windows and Linux): `../build-client-patch/reference-windows-linux.md`.
+file = `WorldModelStore: could not load` and the player falls. Full pipeline: [reference-mesh.md](reference-mesh.md). Authoring a real cave:
+[reference-blender-wmo.md](reference-blender-wmo.md). Tool paths and pack/extract
+commands (Windows and Linux): `../build-client-patch/reference-windows-linux.md`.
 
 WMO-only + MODF at origin (Ragefire pattern) has three extra traps:
 

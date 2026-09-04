@@ -118,21 +118,32 @@ Stormwind Vault. Dungeon #3+ is a **new `Map.dbc` id** (path 3 below), not more 
 
 ## Ranked build paths
 
-### 1 — Kitbash WMO on map 44 (real distinct 5-man)
+### 0 — Python hull (scaffold only)
+
+`client-patches/scripts/gen-drowned-belfry-mesh.py` emits origin-symmetric boxes
+so a new `Map.dbc` id can load and catch a walk hull. It is **not** the art
+path. Replace rooms via path 1 before calling the instance finished.
+
+### 1 — Kitbash WMO in Blender 3.4.1 + WBS (real distinct 5-man)
 
 Copy Ragefire’s **WDT pattern only** (WMO-only, MODF at origin) — not its
-lava halls. Point MWMO at a kitbashed `World/wmo/Dungeon/Waxworks/Waxworks.wmo`.
+lava halls. Point MWMO at a kitbashed `World/wmo/Dungeon/<Dir>/<Name>.wmo`.
+Map 44 / `Waxworks.wmo` is the worked example; dungeon #3+ uses a **new**
+Directory ([reference-new-map.md](reference-new-map.md)).
 
-Waxworks families (the ART-SOURCES catalog was a gitignored plan; re-derive
-with wow.export if needed): `AZ_Deadmines_A` foundry/Cookie, `MD_Goldmine`
-shafts, crypt chapels, candle/cauldron/cart M2s. Optional: one WC wet
-group; farm M2s for the sty.
+Full Blender / WBS / dump / export / WDT procedure:
+[reference-blender-wmo.md](reference-blender-wmo.md). Helpers:
+`extract-wmo-family.py`, `write-wmo-only-wdt.py`.
+
+Source families live in `common-2.MPQ`: `AZ_Deadmines_A` foundry/Cookie,
+`MD_Goldmine` shafts, `MD_Crypt*` / `Ruinedkeep_crypt` chapels, plus vanilla
+candle/cauldron/cart M2s. Optional: one WC wet group; farm M2s for a sty.
 
 Do **not** start from RFC lava rooms, leftover map-44 Scarlet interior,
 Stockades, SFK, SM cathedral, Cata Fargodeep, or other servers’ instance
-MPQs. Pack `patch-4.MPQ` (**must overwrite** `Monastery.wdt`). Extract map
-44 only. `map_extractor` common list stops at `patch-5.MPQ` — do not use
-`patch-6+` for the WDT. Tools are on disk under `C:/dev/tools/`.
+MPQs. Pack `patch-4.MPQ` **whole** (keep every existing custom WMO). Extract
+only the new map id. `map_extractor` common list stops at `patch-5.MPQ` — do
+not use `patch-6+` for the WDT.
 
 ### 2 — Type-14 cave GOs (agent-speed distinct space)
 
@@ -208,34 +219,35 @@ an instance = leftover Scarlet liquid and/or missing `.vmo`. Abort; do not
 Z-nudge. ROOM-FLOORS Z is a guess until `.gps`. Prove the view with
 [walk-instance](../walk-instance/SKILL.md) (scout PNG + `.gps` in frame), not SOAP.
 
-Extract on the machine that has the packed client + AC tools (commands in
-`../build-client-patch/reference-windows-linux.md`; run the tools by hand,
-`extract-server-data.sh` assumes they sit in the WoW dir). This
-fork's playable client is often
-`/home/dan/Downloads/ChromieCraft_3.3.5a/` (Linux) or
-`C:\dev\wow-335\ChromieCraft_3.3.5a\` (Windows scout). Do not assume a
-Docker `./var/client` data volume.
+Extract on this Linux box (`extract-server-data.sh`, `AC_TOOLS_BIN` → `build-tools/src/tools`).
+Playable client: `/home/dan/dev/wow-3.3.5/` (Proton). Do not use `~/Downloads/ChromieCraft_*`.
+Do not assume a Docker `./var/client` data volume. Windows pack/scout is another contributor's.
 
 **Elwynn ADT edit** (custom WMO on map 0): Noggit MODF on `Azeroth_32_48` /
 `Azeroth_31_50` / `Azeroth_31_49`, then re-extract **those** tiles. High
 risk of Goldshire holes. Goldtooth and quest AT 88 stay.
 
-## Tools (this machine, 2026-08-30)
+## Tools (this Linux box, 2026-09-04)
 
-Full table and pack/extract commands for Windows and Linux:
-`../build-client-patch/reference-windows-linux.md` (the original planning notes were gitignored).
+Blender kitbash procedure: [reference-blender-wmo.md](reference-blender-wmo.md).
+Pack/extract commands: `../build-client-patch/reference-windows-linux.md` (Linux is the
+process we maintain; Windows columns are for the other contributor).
 
 | Tool | Path | Notes |
 |---|---|---|
-| Noggit3 `test-3580` | `C:/dev/tools/noggit3/noggit.exe` | GUI |
-| wow.export 0.2.19 | `C:/dev/tools/wow-export/wow.export.exe` | **Open Legacy Installation** (not CASC) |
-| MPQEditor 4.0.0.963 | `C:/dev/tools/mpqeditor/x64/MPQEditor.exe` | Agents: always `/console` |
-| Blender 3.4.1 + WBS | `C:/dev/tools/blender/blender-3.4.1-windows-x64/blender.exe` | Enable addon in Preferences |
-| WDBX Editor | `C:/dev/tools/wdbxeditor/` | Only if adding a new Map.dbc id |
-| Client | `C:/dev/wow-335/ChromieCraft_3.3.5a/` | Close `Wow.exe` before MPQ writes |
+| Blender 3.4.1 + WBS | `/home/dan/dev/tools/blender-3.4.1-linux-x64/blender` | Addon **WoW** enabled. Client path `/home/dan/dev/wow-3.3.5` |
+| wow.export 0.2.19 | `/home/dan/dev/tools/wow-export/wow.export` | **Open Legacy Installation** → `/home/dan/dev/wow-3.3.5` |
+| `pack-mpq` | `/home/dan/dev/tools/pack-mpq` | StormLib, MPQ v2, spec `disk=archivepath`. `smpq` is not installed |
+| StormLib | `/home/dan/dev/tools/StormLib/` + `stormlib-prefix/` | Built for `pack-mpq` |
+| AC extractors | `build-tools/src/tools/` | `extract-server-data.sh --map <id>` |
+| Slim extract client | `client-patches/extract-client/` | Locale + `patch-4` only |
+| Playable client | `/home/dan/dev/wow-3.3.5/` | Proton. Fully quit Wow after MPQ writes |
+| WDT helper | `client-patches/scripts/write-wmo-only-wdt.py` | After WBS export |
+| WMO dump | `client-patches/scripts/extract-wmo-family.py` | Native bytes from `common-2.MPQ` for WBS import |
+| WMO inspect | `client-patches/scripts/inspect-wmo-group.py` | MOPY/MOGP after WBS export (Indoor + Collision VG) |
 
-New geometry in Blender is weeks of 3.3.5 WMO export. Kitbash vanilla groups
-(Deadmines, RFC, WC, crypt, Horde Mine) if the user accepts reused art.
+Kitbash vanilla groups (Deadmines, crypt, Goldmine) if the user accepts reused art; do not
+start from RFC lava.
 
 ## Pitfalls
 
@@ -246,7 +258,9 @@ New geometry in Blender is weeks of 3.3.5 WMO export. Kitbash vanilla groups
   MONR `(0,0,1)` on every vert and a zero-thickness axis-aligned floor quad
   both match "I can see the chapel and still fall through." Compare a working
   group (Waxworks `_000`: MOPY `0x28`, proper MONR, MOBA per material, MOLR).
-  `Wow.exe` holds `patch-4.MPQ` mapped — replace on disk then **fully quit**.
+  WBS does not emit `0x28` on visible faces: **Quick collision** → `0x20`, incomplete
+  Collision VG → `0x24`, Indoor collection → MOGP `0x2000`. Inspect after export; hop
+  to prove walk. `Wow.exe` holds `patch-4.MPQ` mapped — replace on disk then **fully quit**.
 - Map 44 as shipped → leftover Scarlet interior (fountains at origin). Replace
   WDT in `patch-4`, copy **`.wmo.vmo`**, restart Wow **and** worldserver before
   any hop. `instance_template` is not geometry.

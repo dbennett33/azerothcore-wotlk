@@ -7,4 +7,5 @@ alwaysApply: false
 Read `.agents/docs/systems/dungeons.md` and `.agents/skills/build-dungeon/SKILL.md` before writing
 SQL or C++ for an instance. Any dungeon after The Waxworks needs a new `Map.dbc` id on both client
 and server: follow `.agents/skills/build-dungeon/reference-new-map.md` and reserve the id block in
-the registry table of `systems/dungeons.md` first. Map 44 is taken.
+the registry table of `systems/dungeons.md` first. Map 44 is taken. Distinct-cave art is Blender
+3.4.1 + WBS (`reference-blender-wmo.md`), not the Python box generator.

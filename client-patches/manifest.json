@@ -1,18 +1,18 @@
 {
-  "version": "1.1.2",
-  "released": "2026-09-04T16:48:17Z",
+  "version": "1.1.3",
+  "released": "2026-09-04T17:56:53Z",
   "blizzard_build": 12340,
   "client_cache_version": 4,
   "changelog": [
-    "Fix Drowned Belfry walkable hull (two-sided thick floors, real MONR, per-material MOBA, MOLR)"
+    "Replace Drowned Belfry box hull with crypt and ruined-keep kitbash"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "22179dddce717df6d00db23855f7cd34ceed96374118374107c9d99a4b8bdd73",
-        "size": 1380252,
+        "sha256": "3d208d55f82342420e009df7424a8d24b69fa5931f818ecf8e80ee0c03b062ab",
+        "size": 2908234,
         "install_path": "Data/patch-4.MPQ"
       },
       {
@@ -25,8 +25,8 @@
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "3fc0abb757dff0fe93a8e6ae00f86351674e8cf5e61ef1f2ebc6de2262629135",
-    "size": 267170,
+    "sha256": "b8450b59e1456a6f386e9363d404113a1d248dd5811ab1e822d8cae5f9f5e702",
+    "size": 874498,
     "components": [
       "vmaps",
       "mmaps"
