@@ -239,6 +239,14 @@ New geometry in Blender is weeks of 3.3.5 WMO export. Kitbash vanilla groups
 
 ## Pitfalls
 
+- Visible WMO + falling: 3.3.5 movement is **client-authoritative**. Server
+  `GetHeight` / a `.vmo` brute-force hit will not stop a player whose client
+  has no walkable hull. If NPCs stand in the room and you fall, fix the WMO
+  (MOPY `0x28`, real MONR, two-sided / thick floors), not spawn Z. Stub
+  MONR `(0,0,1)` on every vert and a zero-thickness axis-aligned floor quad
+  both match "I can see the chapel and still fall through." Compare a working
+  group (Waxworks `_000`: MOPY `0x28`, proper MONR, MOBA per material, MOLR).
+  `Wow.exe` holds `patch-4.MPQ` mapped — replace on disk then **fully quit**.
 - Map 44 as shipped → leftover Scarlet interior (fountains at origin). Replace
   WDT in `patch-4`, copy **`.wmo.vmo`**, restart Wow **and** worldserver before
   any hop. `instance_template` is not geometry.

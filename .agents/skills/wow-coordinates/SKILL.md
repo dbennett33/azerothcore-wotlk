@@ -40,7 +40,9 @@ Tile math and coordinate spaces: [reference.md](reference.md).
    until that realm's `data/` has `vmaps/<Wmo>.wmo.vmo` (collision). `044.vmtree`
    can be ~143 bytes on a doodad-less WMO-only map — that is not “empty.”
    Missing `.vmo` or leftover Scarlet client water = **underwater then fall**.
-   Abort. Do not Z-nudge. ROOM-FLOORS Z is a guess until `.gps`.
+   Abort. Do not Z-nudge. ROOM-FLOORS Z is a guess until `.gps`. Visible
+   chapel + still falling is a **client hull** miss (one-sided / paper-thin
+   floors, stub MONR); server `.vmo` hitting does not stop the player.
    WMO-only dest = `(−blenderX, −blenderY, blenderZ)`. MAG `liquid_type` 0 is
    water (use 15). MODF AABB must cover extractor `fixCoords` (pad all axes).
 8. **Same-map `TeleportTo`.** `GetPosition()` after the call is the *old* xyz.

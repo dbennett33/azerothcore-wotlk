@@ -6,6 +6,9 @@ When designing or implementing a 5-man (overlay or real instance), follow
 
 Short rules:
 
+- Visible WMO + falling: client movement is authoritative. Server vmaps can
+  hit while the player still falls. Fix the WMO hull (see reference-mesh.md
+  pitfalls), restart Wow after replacing `patch-4.MPQ`, do not Z-nudge.
 - Overlay on map 0 cannot grow caves or delete ADT doodads (trees).
 - Never teleport to map 44 unless `patch-4` **replaced** the leftover Scarlet
   `Monastery.wdt`, the client was **restarted**, and realm `data/` has both

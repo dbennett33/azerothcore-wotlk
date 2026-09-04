@@ -8,6 +8,10 @@ World SQL uses the -X copy. Verts are emitted origin-symmetric so the client
 shows a floor where players stand and vmaps have a hull after fixCoords.
 
 Textures reuse the Waxworks BLPs already shipped in patch-4.MPQ.
+
+Client collision: two-sided / thick floors, real MONR, MOBA per material, MOLR
+on the group. Stub normals and a paper-thin floor render but do not catch the
+3.3.5 walk hull (see reference-mesh.md pitfalls).
 """
 from __future__ import annotations
 
@@ -85,8 +89,35 @@ class Mesh:
 
     def floor_ceil(self, x0, x1, y0, y1, floor_z, height, mat_f, mat_c):
         zc = floor_z + height
+        zb = floor_z - 0.35
+        # Walkable top, CCW from +Z. Duplicate the opposite winding: the 3.3.5
+        # client collides one-sided, and a zero-thickness plane is easy to miss.
         self.add_quad((x0, y0, floor_z), (x1, y0, floor_z), (x1, y1, floor_z), (x0, y1, floor_z), mat_f)
+        self.add_quad((x0, y1, floor_z), (x1, y1, floor_z), (x1, y0, floor_z), (x0, y0, floor_z), mat_f)
+        self.add_quad((x0, y0, zb), (x0, y1, zb), (x1, y1, zb), (x1, y0, zb), mat_f)
         self.add_quad((x0, y1, zc), (x1, y1, zc), (x1, y0, zc), (x0, y0, zc), mat_c)
+        self.add_quad((x0, y0, zc), (x1, y0, zc), (x1, y1, zc), (x0, y1, zc), mat_c)
+
+    def compute_normals(self) -> list[tuple[float, float, float]]:
+        acc = [(0.0, 0.0, 0.0)] * len(self.verts)
+        for i0, i1, i2, _ in self.tris:
+            a, b, c = self.verts[i0], self.verts[i1], self.verts[i2]
+            e1 = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+            e2 = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+            nx = e1[1] * e2[2] - e1[2] * e2[1]
+            ny = e1[2] * e2[0] - e1[0] * e2[2]
+            nz = e1[0] * e2[1] - e1[1] * e2[0]
+            for i in (i0, i1, i2):
+                ax, ay, az = acc[i]
+                acc[i] = (ax + nx, ay + ny, az + nz)
+        out = []
+        for x, y, z in acc:
+            length = (x * x + y * y + z * z) ** 0.5
+            out.append((0.0, 0.0, 1.0) if length < 1e-6 else (x / length, y / length, z / length))
+        return out
+
+    def tris_by_material(self) -> list[tuple[int, int, int, int]]:
+        return [t for t in self.tris if t[3] == 0] + [t for t in self.tris if t[3] != 0]
 
     def mirror(self) -> None:
         n = len(self.verts)
@@ -147,16 +178,20 @@ def bbox(verts):
 
 def write_group(path: Path, mesh: Mesh, name_ofs: int, desc_ofs: int) -> None:
     bb = bbox(mesh.verts)
-    ntri = len(mesh.tris)
+    tris = mesh.tris_by_material()
+    ntri = len(tris)
     nvert = len(mesh.verts)
-    # HAS_BSP + HAS_MOCV + INTERIOR. Must match SMOGroupInfo flags in the root MOGI.
-    flags = 0x1 | 0x4 | 0x2000
+    n0 = sum(1 for t in tris if t[3] == 0)
+    n1 = ntri - n0
+    normals = mesh.compute_normals()
+    # HAS_BSP + HAS_MOCV + HAS_LIGHTS + INTERIOR. Must match root MOGI.
+    flags = 0x1 | 0x4 | 0x200 | 0x2000
     # 68-byte MOGP: 60-byte vmap-read header + 8 bytes WotLK flags2/parent/sibling.
     mogp = b"".join((
         struct.pack("<III", name_ofs, desc_ofs, flags),
         struct.pack("<6f", *bb),
         struct.pack("<HH", 0, 0),  # portalStart, portalCount
-        struct.pack("<HH", 0, 1 if ntri else 0),  # nBatchA trans, nBatchB int
+        struct.pack("<HH", 0, (1 if n0 else 0) + (1 if n1 else 0)),  # nBatchA trans, nBatchB int
         struct.pack("<I", 0),  # nBatchC
         struct.pack("<I", 0),  # fogIds
         struct.pack("<I", 15),  # groupLiquid = none
@@ -165,12 +200,12 @@ def write_group(path: Path, mesh: Mesh, name_ofs: int, desc_ofs: int) -> None:
     ))
     assert len(mogp) == 68, len(mogp)
 
-    mopy = b"".join(struct.pack("<BB", 0x28, tri[3]) for tri in mesh.tris)
-    movi = b"".join(struct.pack("<HHH", t[0], t[1], t[2]) for t in mesh.tris)
+    mopy = b"".join(struct.pack("<BB", 0x28, tri[3]) for tri in tris)
+    movi = b"".join(struct.pack("<HHH", t[0], t[1], t[2]) for t in tris)
     # MOPY size/2 is triangle count; keep payloads 4-aligned so padding is not counted as faces.
     assert len(mopy) % 4 == 0 and len(movi) % 4 == 0, (len(mopy), len(movi))
     movt = b"".join(struct.pack("<fff", *v) for v in mesh.verts)
-    monr = b"".join(struct.pack("<fff", 0.0, 0.0, 1.0) for _ in mesh.verts)
+    monr = b"".join(struct.pack("<fff", *n) for n in normals)
     motv = b"".join(struct.pack("<ff", v[0] * 0.12, v[1] * 0.12) for v in mesh.verts)
     mocv = b"".join(struct.pack("<BBBB", 70, 80, 95, 255) for _ in mesh.verts)
 
@@ -181,15 +216,22 @@ def write_group(path: Path, mesh: Mesh, name_ofs: int, desc_ofs: int) -> None:
     by1 = int(max(-32767, min(32767, bb[4])))
     bz1 = int(max(-32767, min(32767, bb[5])))
     # SMOBatch 24 bytes: int16 bbox[6], startIndex u32, count u16, minIndex u16, maxIndex u16, flags u8, mat u8
-    moba = struct.pack("<hhhhhhIHHHBB",
-                       bx0, by0, bz0, bx1, by1, bz1,
-                       0, ntri * 3, 0, nvert - 1, 0, 0)
-    assert len(moba) == 24, len(moba)
+    def batch(start_tri: int, count_tri: int, mat: int) -> bytes:
+        if count_tri == 0:
+            return b""
+        idxs = [i for t in tris[start_tri:start_tri + count_tri] for i in t[:3]]
+        return struct.pack("<hhhhhhIHHHBB",
+                           bx0, by0, bz0, bx1, by1, bz1,
+                           start_tri * 3, count_tri * 3, min(idxs), max(idxs), 0, mat)
+
+    moba = batch(0, n0, 0) + batch(n0, n1, 1)
+    assert len(moba) % 24 == 0, len(moba)
 
     # 16-byte BSP leaf
     mobn = struct.pack("<HhhHIf", 4, -1, -1, ntri, 0, 0.0)
     assert len(mobn) == 16, len(mobn)
     mobr = b"".join(struct.pack("<H", i) for i in range(ntri))
+    molt_ref = struct.pack("<H", 0)  # group uses root MOLT[0]
 
     inner = b"".join((
         chunk("MOPY", mopy),
@@ -198,6 +240,7 @@ def write_group(path: Path, mesh: Mesh, name_ofs: int, desc_ofs: int) -> None:
         chunk("MONR", monr),
         chunk("MOTV", motv),
         chunk("MOBA", moba),
+        chunk("MOLR", molt_ref),
         chunk("MOBN", mobn),
         chunk("MOBR", mobr),
         chunk("MOCV", mocv),
@@ -211,7 +254,7 @@ def write_root(path: Path, mesh: Mesh) -> tuple[int, int]:
     name_ofs = 1
     desc_ofs = 1 + len("DrownedBelfry") + 1
     bb = bbox(mesh.verts)
-    flags = 0x1 | 0x4 | 0x2000  # same bits as the group MOGP header
+    flags = 0x1 | 0x4 | 0x200 | 0x2000  # same bits as the group MOGP header
     mogi = struct.pack("<I6fi", flags, *bb, name_ofs)
     floor_tex = cstr_aligned(TEX_FLOOR)
     wall_tex = cstr_aligned(TEX_WALL)

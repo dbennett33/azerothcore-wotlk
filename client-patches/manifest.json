@@ -1,19 +1,18 @@
 {
-  "version": "1.1.1",
-  "released": "2026-09-04T13:02:39Z",
+  "version": "1.1.2",
+  "released": "2026-09-04T16:48:17Z",
   "blizzard_build": 12340,
   "client_cache_version": 4,
   "changelog": [
-    "Fix Drowned Belfry WMO so the client loads the chapel mesh (aligned MOTX, matching MOGI flags)",
-    "Server overlay: rebuilt vmaps/mmaps for map 900"
+    "Fix Drowned Belfry walkable hull (two-sided thick floors, real MONR, per-material MOBA, MOLR)"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "da8cd77afb96ba01b55c5bc70065132334b514e75873ccde3162008c475bb447",
-        "size": 1369286,
+        "sha256": "22179dddce717df6d00db23855f7cd34ceed96374118374107c9d99a4b8bdd73",
+        "size": 1380252,
         "install_path": "Data/patch-4.MPQ"
       },
       {
@@ -26,8 +25,8 @@
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "125f2363a6f3ed8f28ea87e482a6bba6d85e2e1fa20f9a5be39396f3c59e5ea1",
-    "size": 261418,
+    "sha256": "3fc0abb757dff0fe93a8e6ae00f86351674e8cf5e61ef1f2ebc6de2262629135",
+    "size": 267170,
     "components": [
       "vmaps",
       "mmaps"
