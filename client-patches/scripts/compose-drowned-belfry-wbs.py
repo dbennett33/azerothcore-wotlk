@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import atexit
 import os
+import subprocess
 import sys
 
 import bpy
@@ -86,8 +87,9 @@ def ray_floor(scene, x, y):
 
 
 def quick_collision(groups):
+    # WBS enum "15" is Green Lava (DBC id), not AC MAG-none. "0" = No liquid.
     for obj in groups:
-        obj.wow_wmo_group.liquid_type = "15"
+        obj.wow_wmo_group.liquid_type = "0"
     bpy.ops.object.select_all(action="DESELECT")
     for obj in groups:
         obj.select_set(True)
@@ -138,3 +140,6 @@ log(f"portals kept: {n_portals}")
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 log(f"EXPORT {OUT}")
 log(str(bpy.ops.export_mesh.wmo(filepath=OUT, export_method="FULL", export_selected=False)))
+# WBS WotLK always sets UseLiquidTypeDBCId; dry MAG + fog after the write.
+patch = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patch-wmo-no-liquid.py")
+log(str(subprocess.check_call(["/usr/bin/python3", patch, "--root", OUT])))

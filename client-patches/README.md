@@ -70,6 +70,7 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 | `scripts/extract-wmo-family.py` | dev machine | Dump a vanilla WMO root+groups from `common-2.MPQ` for WBS import |
 | `scripts/write-wmo-only-wdt.py` | dev machine | Ragefire-style WDT from an exported WMO root (MODF at origin, ±200 pad) |
 | `scripts/inspect-wmo-group.py` | dev machine | Print MOPY/MOGP/MONR/MOBA on a WMO group after WBS export |
+| `scripts/patch-wmo-no-liquid.py` | dev machine | After WBS export: MAG none, drop DBC lava, neutralize crypt fog |
 | `scripts/compose-drowned-belfry-wbs.py` | Blender 3.4.1 | Compose MD_Crypt-only kitbash (run inside Blender; do not overlay Ruinedkeep) |
 | `scripts/gen-drowned-belfry-mesh.py` | dev machine | Belfry Python **hull** only — not the art path (`reference-blender-wmo.md`) |
 | `scripts/publish-to-vps.sh` / `.ps1` | dev machine | Upload bundle + publish on VPS |

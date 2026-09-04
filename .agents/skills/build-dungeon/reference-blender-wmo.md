@@ -104,8 +104,11 @@ cathedral, Cata Fargodeep, or another server's instance MPQ.
    portal-less hulls only.
 7. Leave vanilla Indoor/Outdoor when portals stay. If you did strip portals, move playable
    rooms into the WBS **Indoor** collection (MOGP `0x2000`) or they rain/sky. Then Quick
-   collision (`scene.wow_quick_collision`) so MOPY is `0x20`. `liquid_type` **15**. No MLIQ.
-   MOHD flag `0x2`.
+   collision (`scene.wow_quick_collision`) so MOPY is `0x20`. WBS enum `liquid_type`
+   **"0" (No liquid)** — **"15" is Green Lava**, not AC MAG-none. WotLK export always
+   sets MOHD `UseLiquidTypeDBCId` (`0x4`), so MAG 15 fills the WMO with lava (swim +
+   orange fog). After export run `patch-wmo-no-liquid.py`: MAG 15 with `0x4` cleared
+   (`0x2` UnifiedRender), no MLIQ, MFOG underwater start negative.
 8. At least one MOLT on the root and MOLR on interior groups (or HAS_LIGHTS unset — unlit interior
    groups can look black / be skipped). Match a working group if unsure: Waxworks `_000` MOGP
    `0x2a05`.
@@ -165,7 +168,7 @@ Compare a group against Waxworks `_000` if the room is visible and the player fa
 | Thick or two-sided floors | Same |
 | MOBA per material | Lighting / batch bugs |
 | Indoor collection (MOGP `0x2000`) + a light (MOLT/MOLR) | Outdoor light / rain / black; vanilla crypt imports Outdoor |
-| `liquid_type` 15, no MLIQ, MOHD `0x2` | Indoor swim |
+| MAG 15 **without** UseLiquidTypeDBCId (`0x4`); WBS "0" not "15" | Indoor swim / orange lava fog |
 | MODF AABB padded all axes | BIH miss past the mouth |
 | worldserver: no `WorldModelStore: could not load` | Server has no `.vmo` |
 
