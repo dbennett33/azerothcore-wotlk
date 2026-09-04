@@ -271,7 +271,8 @@ enum MapIDs : uint32
     MAP_TRIAL_OF_THE_CHAMPION                = 650,
     MAP_PIT_OF_SARON                         = 658,
     MAP_HALLS_OF_REFLECTION                  = 668,
-    MAP_THE_RUBY_SANCTUM                     = 724
+    MAP_THE_RUBY_SANCTUM                     = 724,
+    MAP_DROWNED_BELFRY                       = 900
 };
 
 #endif

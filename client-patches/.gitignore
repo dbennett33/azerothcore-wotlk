@@ -20,6 +20,7 @@ sources/server/mmaps/
 
 # Local WoW client paths used during extraction
 .wow-client-path
+extract-client/
 
 # Editor / OS noise
 .DS_Store

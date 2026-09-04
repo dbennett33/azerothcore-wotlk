@@ -1,27 +1,36 @@
 {
-  "version": "1.0.1",
-  "released": "2026-09-03T20:52:25Z",
+  "version": "1.1.0",
+  "released": "2026-09-04T12:05:07Z",
   "blizzard_build": 12340,
-  "client_cache_version": 2,
+  "client_cache_version": 3,
   "changelog": [
-    "Waxworks map 44 client mesh (patch-4.MPQ)",
-    "Server overlay: vmaps/044* + Waxworks.wmo.vmo and mmaps/044*"
+    "The Drowned Belfry map 900 (patch-4.MPQ + patch-enUS-4.MPQ)",
+    "Server overlay: vmaps/900* + Drownedbelfry.wmo.vmo and mmaps/900*"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "18250961951b72c8c918d97a5765fd48a018f7d51c7e1ce6639f88f39fc50cb1",
-        "size": 566953,
+        "sha256": "3a6b04a23d3c45d550ad6b2c9e62a4c0ff7ddb195d34da5884f9c4854beea520",
+        "size": 1369272,
         "install_path": "Data/patch-4.MPQ"
+      },
+      {
+        "file": "patch-enUS-4.MPQ",
+        "sha256": "e59fede5d2cfb998f2a0c61ddcc1daaea0b8bc7d03d97f9af6b89b54b7750631",
+        "size": 550687,
+        "install_path": "Data/enUS/patch-enUS-4.MPQ"
       }
     ]
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "afb0ff229ae8397b63a45ba5f53286bbf632480914351757cc11e41405f76f8c",
-    "size": 212923,
-    "components": ["vmaps", "mmaps"]
+    "sha256": "8de242885c225789e4d86361b68a4a84dcf3a2c20035d681038fa733a0d9e64c",
+    "size": 261391,
+    "components": [
+      "vmaps",
+      "mmaps"
+    ]
   }
 }

@@ -54,6 +54,9 @@ under `src/server/scripts/EasternKingdoms/Waxworks/`, SQL in
 Dungeon #2 is **Stormwind Vault** on unused map **35** (`StormwindPrison.wmo`, unused Trade/Old Town
 canal swirl). Same script/SQL layout, no new MPQ. That was the last leftover real instance.
 
+Dungeon #3 is **The Drowned Belfry** on a new `Map.dbc` id **900** (`Directory` `DrownedBelfry`),
+walk-through veil on the Darkshire graveyard road. That is the path every later 5-man follows.
+
 What went right and is reusable verbatim for the next dungeon:
 
 - Script and SQL layout (header enum as id source of truth, DELETE+INSERT blocks, `9000000+` ids).
@@ -78,8 +81,9 @@ Dungeon #3 and later follow `build-dungeon/reference-new-map.md`. Map-id policy 
 `systems/dungeons.md` § Map ids. Compared with Waxworks/Vault the extra work is:
 
 1. **Ids**: pick a 3-digit unused map id (e.g. `900`), a `Directory` name, an unused `AreaTable`
-   id and `AreaBit`, a `MapDifficulty` id (`90000MM`), and the next `9000400–9000599` block from the
-   registry in `systems/dungeons.md` (`dungeon_access_template` **124**).
+   id and `AreaBit`, a `MapDifficulty` id (`90000MM`), and the next template block from the
+   registry in `systems/dungeons.md` (The Drowned Belfry used `9000400–9000599` / access **124**;
+   dungeon #4 starts at `9000600–9000799` / access **125**).
 2. **Client DBCs** in `Data/enUS/patch-enUS-4.MPQ`: `Map.dbc`, `MapDifficulty.dbc`, `AreaTable.dbc`
    rows (WDBX Editor on Windows; WDBX under Wine or a scripted writer on Linux).
 3. **Client world files** in `Data/patch-4.MPQ` (rebuilt whole, existing custom files included):
@@ -175,7 +179,12 @@ publishing and deployment from any shell; the VPS (Debian 12) runs the servers a
 extractors. Exact commands for both operating systems are in
 `.agents/skills/build-client-patch/reference-windows-linux.md`.
 
-## 8. Known gaps to fix before dungeon #3 (tracked in `systems/dungeons.md`)
+## 8. Known gaps after dungeon #3 (tracked in `systems/dungeons.md`)
 
-- Waxworks portal scripts are not table-driven.
-- No `LFGDungeons` / `WorldMapArea` rows for Waxworks (Dungeon Finder and map UI); optional.
+Dungeon #3 is **The Drowned Belfry** (map **900**, Directory `DrownedBelfry`, Darkshire GY-road veil).
+Maps 44, 35, and 900 are taken. Remaining gaps:
+
+- Portal / enter-grace scripts are still per-dungeon (Waxworks, Vault, Belfry). Prefer a shared
+  table-driven portal before dungeon #4.
+- No `LFGDungeons` / `WorldMapArea` rows for custom 5-mans (Dungeon Finder and map UI); optional.
+

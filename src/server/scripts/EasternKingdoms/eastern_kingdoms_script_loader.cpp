@@ -121,6 +121,12 @@ void AddSC_stormwind_vault_portal();
 void AddSC_boss_turnkey_garrow();
 void AddSC_boss_sister_cinder();
 void AddSC_boss_warden_blackiron();
+void AddSC_instance_drowned_belfry();        //The Drowned Belfry
+void AddSC_drowned_belfry_portal();
+void AddSC_drowned_belfry_player();
+void AddSC_boss_captain_whelm();
+void AddSC_boss_sister_brine();
+void AddSC_boss_toll_the_bellkeeper();
 void AddSC_instance_uldaman();               //Uldaman
 void AddSC_instance_waxworks();              //The Waxworks
 void AddSC_boss_king_wick();
@@ -282,6 +288,12 @@ void AddEasternKingdomsScripts()
     AddSC_boss_turnkey_garrow();
     AddSC_boss_sister_cinder();
     AddSC_boss_warden_blackiron();
+    AddSC_instance_drowned_belfry();        //The Drowned Belfry
+    AddSC_drowned_belfry_portal();
+    AddSC_drowned_belfry_player();
+    AddSC_boss_captain_whelm();
+    AddSC_boss_sister_brine();
+    AddSC_boss_toll_the_bellkeeper();
     AddSC_instance_uldaman();               //Uldaman
     AddSC_instance_waxworks();              //The Waxworks
     AddSC_boss_king_wick();

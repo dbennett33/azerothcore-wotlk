@@ -17,7 +17,7 @@ from `.claude/skills/`), and one-screen `README.md` files next to the scripts th
 | Branches | `dev` → test realm (auto build + deploy on push). `Playerbot` → live (build on push, **manual** `deploy-vps` target `live`). Flow `dev → PR → Playerbot`; `branch-protection.yml` rejects any other PR source. |
 | Host | User `acore`. Live prefix `/home/acore/server` (realm 1, port 8085), test `/home/acore/server-test` (realm 2, port 8086), one authserver on 3724. systemd user units `auth`, `world`, `world-test`. Patch store `/home/acore/client-patches/`. |
 | CI | `vps-build` compiles on the Debian build VM when online, else on the VPS; `deploy-vps` promotes staging, applies SQL, overlays client-patch server data, restarts. Runner labels `acore-build-vm` / `acore-vps`. |
-| Custom content | Regular trees, not `Custom/` or `modules/`: `src/server/scripts/EasternKingdoms/{Waxworks,StormwindVault}/`, `data/sql/updates/pending_db_world/`, ids `9000000+` (registry in `.agents/docs/systems/dungeons.md`). |
+| Custom content | Regular trees, not `Custom/` or `modules/`: `src/server/scripts/EasternKingdoms/{Waxworks,StormwindVault,DrownedBelfry}/`, `data/sql/updates/pending_db_world/`, ids `9000000+` (registry in `.agents/docs/systems/dungeons.md`). |
 | Client patches | Custom world files in `Data/patch-4.MPQ`, DBCs in `Data/enUS/patch-enUS-4.MPQ` (MPQ v2, never past `patch-5`). Server gets the same change as `data/` files or `*_dbc` SQL. Only `client-patches/manifest.json` is in git. |
 | Tooling split | Mesh/DBC/MPQ/extraction/visual checks on a Windows dev box; publish and deploy from any shell; the VPS has no extractors. |
 | Agents | `AGENTS.md` § "This fork" is loaded automatically by Cursor, Claude Code (`CLAUDE.md`), Copilot and Codex and routes here. Skills live in `.agents/skills/`. |
@@ -65,6 +65,7 @@ Shipped content:
 |---|---|
 | The Waxworks (map 44, 5-man, Elwynn entrance) | C++ `src/server/scripts/EasternKingdoms/Waxworks/`; SQL `data/sql/updates/pending_db_world/rev_1788471101263218298.sql`; client `Data/patch-4.MPQ` v1.0.1 per `client-patches/manifest.json` |
 | Stormwind Vault (map 35, 5-man, Stormwind canal swirl) | C++ `src/server/scripts/EasternKingdoms/StormwindVault/`; SQL `data/sql/updates/pending_db_world/rev_1788517208810518529.sql`; uses the unused vanilla `StormwindPrison` WMO (no new MPQ) |
+| The Drowned Belfry (map 900, 5-man, Darkshire GY road) | C++ `src/server/scripts/EasternKingdoms/DrownedBelfry/`; SQL `data/sql/updates/pending_db_world/rev_1788521934180453083.sql`; new `Map.dbc` Directory `DrownedBelfry` |
 | Custom id blocks (`9000000+`) | Registry table in [`../.agents/docs/systems/dungeons.md`](../.agents/docs/systems/dungeons.md) — reserve before writing SQL |
 
 ## Agent docs (`.agents/docs/systems/`, fork-specific)

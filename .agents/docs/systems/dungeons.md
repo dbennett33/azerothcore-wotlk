@@ -40,6 +40,7 @@ get a **new** `Map.dbc` id (client locale MPQ + `map_dbc` SQL). Procedure:
 |---|---|---|
 | **44** | Leftover Scarlet `Monastery.wdt` | Taken: The Waxworks (kitbashed WMO behind that Directory) |
 | **35** | Unused `StormwindPrison.wmo` | Taken: Stormwind Vault |
+| **900** | New `Directory` `DrownedBelfry` | Taken: The Drowned Belfry (dungeon #3) |
 | 13, 25, 29, 42, 169, 451, 573, 597, 605, 606 | Test / junk | `mmaps_generator` `skipJunkMaps` — never a 5-man |
 | 37 | Unused battleground | Do not use |
 | 582+ | Transports | Do not use |
@@ -78,7 +79,8 @@ One block of **200** template ids and **500** spawn guids per dungeon. Reserve t
 |---|---|---|---|---|---|---|
 | The Waxworks (map 44) | `9000000–9000199` (used: creatures 1–50, GOs 1–32, items 50–79, quests 0/1/3, gossip/npc_text 0–11) | `9000001–9000211` | `9000044` | `9000044–9000052` | `122` | `9000101` |
 | Stormwind Vault (map 35) | `9000200–9000399` (used: creatures 200, 202–213; GOs 201, 215–228; items 230–235, 237–244, 250–259; quest 260; gossip/npc_text 200) | `9000500–9000999` (used: 500–540) | `9000035` | `9000060–9000061` | `123` | `9000102` |
-| next dungeon | `9000400–9000599` | `9001000–9001499` | `90000MM` (MM = new map id mod 100, or next free) | `9000070+` | `124` | `9000103` |
+| The Drowned Belfry (map 900) | `9000400–9000599` (used: creatures 400–409; GOs 410–424; items 430–443, 450–459; quest 460; gossip/npc_text 400) | `9001000–9001499` (used: 1000–1060) | `9000900` | `9000070–9000071` | `124` | `9000103` |
+| next dungeon | `9000600–9000799` | `9001500–9001999` | `90000MM` (MM = new map id mod 100, or next free) | `9000080+` | `125` | `9000104` |
 
 Items and creatures share the numeric space by convention only (different tables); keep them in the
 dungeon's block anyway so a grep for the block finds everything.
@@ -87,9 +89,8 @@ dungeon's block anyway so a grep for the block finds everything.
 
 Working and reusable as-is: script layout, SQL layout, walk-through entrance pattern, the bundle →
 publish → `deploy-vps` overlay path, the scout walk, `build-bundle` install paths, `extract-server-data.sh`.
-Maps 44 and 35 are taken. Blocking dungeon #3 until done:
+Maps 44, 35, and 900 are taken. Blocking dungeon #4 until done:
 
-1. A new `Map.dbc` id (the only hosting choice left for a real instance). Follow
-   `reference-new-map.md` end to end. Do not look for another leftover map id.
-2. Entrance/portal C++ is per-dungeon (`waxworks_portal.cpp`, `stormwind_vault_portal.cpp`). Do not
-   add a second `PlayerScript` that fights Waxworks for the same hooks; generalise before dungeon #3.
+1. A new `Map.dbc` id (every dungeon after Vault). Follow `reference-new-map.md` end to end.
+2. Entrance/portal C++ is still per-dungeon. Prefer a shared table-driven portal before adding more
+   `PlayerScript`s that share the same hooks.
