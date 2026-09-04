@@ -10,7 +10,7 @@ Versioned MPQ patches for players and matching server data overlays (maps, vmaps
 | MPQ files, server data tarballs | **No** | **Yes — canonical store** |
 | `sources/` on your dev machine | Local staging only (gitignored binaries) | — |
 
-**All patch binaries live on the VPS.** Git tracks only the manifest so you know what was released. Back up `/home/acore/client-patches/` offsite regularly (see `apps/deploy/debian12/RECOVERY.md`).
+**All patch binaries live on the VPS.** Git tracks only the manifest so you know what was released. Back up `/home/acore/client-patches/` offsite regularly (see [`docs/recovery.md`](../docs/recovery.md)).
 
 ## Quick links
 

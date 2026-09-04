@@ -7,15 +7,17 @@ Source of truth for this repo's agent skills and docs:
 - `plans/` — per-task planning docs, gitignored
 
 Conventions live in `AGENTS.md` and `docs/`. Agent-specific files point there instead of restating
-them, so there is one copy to keep current.
+them, so there is one copy to keep current. The repo-root `/docs/README.md` indexes every
+fork-specific doc and skill (human docs, `systems/*`, and `skills/*`).
 
 ## Hooking up your agent
 
 - **Claude Code** — reads `CLAUDE.md`, which imports `AGENTS.md`. Skills are exposed by a relative
   symlink: `.claude/skills/<name> -> ../../.agents/skills/<name>`.
-- **Cursor** — reads `AGENTS.md` natively. Path-scoped pointer rules in `.cursor/rules/*.mdc`
-  (`globs:` frontmatter) name the doc and skill to read for client-data and dungeon work; they
-  restate nothing.
+- **Cursor** — reads `AGENTS.md` natively. `.cursor/rules/fork-context.mdc` (`alwaysApply`) points
+  at `AGENTS.md` § "This fork" and `/docs/README.md`; the other `.cursor/rules/*.mdc` are
+  path-scoped (`globs:`) pointers to the doc and skill for that area. They restate nothing.
+- **Gemini CLI** — reads `GEMINI.md`, which imports `AGENTS.md`.
 - **GitHub Copilot** — reads `AGENTS.md` natively. Code review also reads
   `.github/copilot-instructions.md`; custom agent profiles live in `.github/agents/`.
 - **Any other agent** — point it at `AGENTS.md` through its own entry file (`GEMINI.md`,
@@ -23,7 +25,10 @@ them, so there is one copy to keep current.
   telling it to read `AGENTS.md` first.
 
 To add a skill: create it here, then symlink it from each agent's skills dir. Docs need no
-symlinks — AGENTS.md references them by path.
+symlinks — AGENTS.md references them by path. `python3 apps/codestyle/codestyle-docs.py` (run by
+`.github/workflows/docs-check.yml` on PRs) fails when a skill or doc is missing from
+`/docs/README.md`, has no AGENTS.md routing, lacks its `.claude/skills` symlink, or has a broken
+link.
 
 On Windows, symlinks need `git config core.symlinks true` plus Developer Mode or an elevated shell;
 without them git checks the links out as plain text files.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time Debian 12 host prep for AzerothCore deploy (sections 1–2 + linger).
 # Run as root on a fresh VPS. MySQL, client data, configs, and the GitHub runner
-# still require the manual steps in bootstrap.md.
+# still require the manual steps in docs/vps-bootstrap.md.
 
 set -euo pipefail
 
@@ -65,7 +65,7 @@ cat <<EOF
 
 Bootstrap script finished.
 
-Next (see apps/deploy/debian12/bootstrap.md):
+Next (see docs/vps-bootstrap.md):
   1. Create MySQL databases and user (section 3)
   2. Copy client data into ${ACORE_PREFIX}/data (section 4)
   3. After first deploy, edit ${ACORE_PREFIX}/etc/*.conf (section 5)

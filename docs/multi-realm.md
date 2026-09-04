@@ -22,7 +22,7 @@ manual deploy-vps (target=live)  → promote staging → server + restart auth +
 
 `vps-build` checks out your **mod-playerbots** fork (`master` on `Playerbot`, `dev` on `dev`).
 Override with repo variable `MOD_PLAYERBOTS_REPO` if the module lives under another owner.
-Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see `.github/BRANCHING.md`).
+Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see [`branching.md`](branching.md)).
 
 Builds use isolated cmake trees: `/home/acore/build/live` and `/home/acore/build/test`.
 
@@ -96,7 +96,7 @@ bash /home/acore/deploy/setup-systemd-units.sh
 
 Realmlist at login shows **Live** and **Test** (same host IP, ports 8085 / 8086). ChromieCraft: set realmlist to server IP; pick realm at character screen.
 
-When a custom client patch is required, players run `update-client.sh` or `update-client.ps1` — see [`docs/client-patches.md`](../../../docs/client-patches.md).
+When a custom client patch is required, players run `update-client.sh` or `update-client.ps1` — see [`docs/client-patches.md`](client-patches.md).
 
 ## Deploy / restart
 

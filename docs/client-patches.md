@@ -256,5 +256,5 @@ Key fields:
 ## Related server docs
 
 - [`apps/deploy/README.md`](../apps/deploy/README.md) — server binary deploy
-- [`apps/deploy/debian12/bootstrap.md`](../apps/deploy/debian12/bootstrap.md) — VPS setup
-- [`apps/deploy/debian12/MULTI-REALM.md`](../apps/deploy/debian12/MULTI-REALM.md) — live vs test realms
+- [`vps-bootstrap.md`](vps-bootstrap.md) — VPS setup
+- [`multi-realm.md`](multi-realm.md) — live vs test realms

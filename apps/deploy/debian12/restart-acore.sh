@@ -77,7 +77,7 @@ stop_all() {
 
 start_live() {
   if ! unit_exists "$AUTH_UNIT" || ! unit_exists "$WORLD_UNIT"; then
-    echo "live units missing; skip start (see apps/deploy/debian12/bootstrap.md)"
+    echo "live units missing; skip start (see docs/vps-bootstrap.md)"
     return 0
   fi
   start_one "$AUTH_UNIT"

@@ -104,4 +104,4 @@ fi
 
 echo "Test prefix ready at ${TEST_PREFIX} (RealmID=2, port 8086)."
 echo "Test data is separate from live. Re-copy from live: FORCE_DATA_SYNC=1 $0"
-echo "Create test MySQL DBs if needed (see MULTI-REALM.md), then deploy-vps with target=test."
+echo "Create test MySQL DBs if needed (see docs/multi-realm.md), then deploy-vps with target=test."
