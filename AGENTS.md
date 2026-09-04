@@ -29,7 +29,8 @@ Read the matching doc(s) BEFORE starting the task:
   then skill `.agents/skills/edit-talents/`
 - Overworld terrain (ADT/WDT, Noggit, doodads, water, area ids) → `.agents/docs/systems/terrain.md`,
   then skill `.agents/skills/edit-terrain/`
-- Human overview of all of the above → `docs/custom-content.md`
+- Human overview of all of the above → `docs/custom-content.md`; index of every fork-specific doc and skill
+  → `docs/README.md`
   - Dungeon / custom instance / cave mesh / 5-man overlay → `.agents/docs/systems/dungeons.md`
     and `.agents/skills/build-dungeon/SKILL.md`
   - `.go` / teleport / SOAP player move / placing spawns by xyz → `.agents/docs/systems/coordinates.md`

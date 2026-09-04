@@ -7,7 +7,8 @@ Source of truth for this repo's agent skills and docs:
 - `plans/` — per-task planning docs, gitignored
 
 Conventions live in `AGENTS.md` and `docs/`. Agent-specific files point there instead of restating
-them, so there is one copy to keep current.
+them, so there is one copy to keep current. The repo-root `/docs/README.md` indexes every
+fork-specific doc and skill (human docs, `systems/*`, and `skills/*`).
 
 ## Hooking up your agent
 
