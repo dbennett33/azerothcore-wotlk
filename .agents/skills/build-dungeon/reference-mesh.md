@@ -23,7 +23,8 @@ MODF at origin. Dumped from this client's `common-2.MPQ`.
 | Deadmines | 36 | `DeadminesInstance` (ADT tiles) | `AZ_Deadmines/AZ_Deadmines_A.wmo` (+ `_B` `_C` `_D`) — **not** `KL_Deadmines` |
 | Ragefire | 389 | `OrgrimmarInstance` | `KL_OrgrimmarLavaDungeon/LavaDungeon.wmo` |
 | Scarlet Monastery | 189 | `MonasteryInstances` | monastery instance WMOs |
-| Unused map 44 | 44 | `Monastery` | leftover `Monestary/Scarlet_Monestary_Interior.wmo` — **wrong dungeon** |
+| Unused map 44 | 44 | `Monastery` | leftover `Monestary/Scarlet_Monestary_Interior.wmo` — **Waxworks** (replaced WDT) |
+| Unused map 35 | 35 | `StormwindPrison` | unused `StormwindPrison.wmo` — **Stormwind Vault** |
 
 ## File pipeline
 
@@ -112,7 +113,8 @@ at `Waxworks.wmo`, extractors emit `vmaps/044.vmtree` + `vmaps/Waxworks.wmo.vmo`
 (+ `mmaps/044*`), realm `data/` has that **`.vmo`**, and Wow is restarted.
 No `maps/044*.map` (WMO-only). No `map_dbc` row if Directory stays `Monastery`.
 
-Do not use leftover maps 13/25/35/37/42/169/451 as a 5-man cave.
+Do not use leftover maps 13/25/29/37/42/169/451 as a 5-man cave. Map **35** is taken by
+Stormwind Vault. Dungeon #3+ is a **new `Map.dbc` id** (path 3 below), not more scrap.
 
 ## Ranked build paths
 
@@ -152,11 +154,12 @@ every piece with `.go xyz` inside the AABB.
 Place **offset or below** Fargodeep, not on Goldtooth. Keep Wickham as the
 teleporter. Do not edit Elwynn ADT.
 
-### 3 — New Map.dbc id (900+)
+### 3 — New Map.dbc id (900+) — required for dungeon #3+
 
-Same as (1) plus a clean Directory `Waxworks`. Client patched `Map.dbc` +
-`MapDifficulty.dbc` **in the locale MPQ**, and a matching `map_dbc` INSERT.
-Extractor only emits maps it sees in **client** Map.dbc.
+Same as (1) plus a **new** map id and a clean `Directory` (not `Monastery`, not
+`StormwindPrison`). Client patched `Map.dbc` + `MapDifficulty.dbc` **in the locale
+MPQ**, and a matching `map_dbc` INSERT. Extractor only emits maps it sees in
+**client** Map.dbc. Full steps: [reference-new-map.md](reference-new-map.md).
 
 ## Custom instance — minimum files
 

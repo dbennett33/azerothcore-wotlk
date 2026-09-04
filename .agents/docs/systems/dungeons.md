@@ -22,17 +22,40 @@ Short rules:
   heal in combat (non-raid cannot-reach regen).
 - Custom content: `pending_db_world` SQL + `EasternKingdoms/<Dungeon>/` scripts,
   ids `9000000+`, clone appearance only. Not a module.
+- Dungeon #3+: **new `Map.dbc` id**. Maps 44 and 35 are taken. Do not hunt leftover
+  Blizzard instance ids (see Map ids below).
 
 Mesh / extract / DBC details: `.agents/skills/build-dungeon/reference-mesh.md`.
 Content bar (rooms, loot, shrines): `.agents/skills/build-dungeon/reference-content.md`.
 Visual walk (screenshots, scout client, not SOAP-only): `.agents/skills/walk-instance/SKILL.md`.
-Second and later dungeons (new `Map.dbc` id): `.agents/skills/build-dungeon/reference-new-map.md`.
+Dungeon #3+ (new `Map.dbc` id): `.agents/skills/build-dungeon/reference-new-map.md`.
+
+## Map ids
+
+Do **not** hunt leftover Blizzard instance maps. Create our own. Dungeon #3 and later
+get a **new** `Map.dbc` id (client locale MPQ + `map_dbc` SQL). Procedure:
+`.agents/skills/build-dungeon/reference-new-map.md`.
+
+| Id | What the client has | Status |
+|---|---|---|
+| **44** | Leftover Scarlet `Monastery.wdt` | Taken: The Waxworks (kitbashed WMO behind that Directory) |
+| **35** | Unused `StormwindPrison.wmo` | Taken: Stormwind Vault |
+| 13, 25, 29, 42, 169, 451, 573, 597, 605, 606 | Test / junk | `mmaps_generator` `skipJunkMaps` — never a 5-man |
+| 37 | Unused battleground | Do not use |
+| 582+ | Transports | Do not use |
+
+Pick a 3-digit id unused in `Map.dbc` (Blizzard max is 724), keep it `< 1000` so `{:03}`
+file names stay 3 digits. Example: **900**. Own `Directory`. Phase overlays and type-14
+cave GOs stay on map 0/1 and do not consume a map id.
+
+Waxworks (44) and Vault (35) were one-off reuses of unused vanilla entries. That path is
+**closed**, even if another unused instance WMO still exists in the client.
 
 ## What The Waxworks did, and which parts repeat
 
-| Piece | Waxworks | Repeatable for dungeon #2? |
+| Piece | Waxworks | Repeatable? |
 |---|---|---|
-| Map id | Reused unused **44** (`Monastery`), no `map_dbc` row, no client `Map.dbc` edit | **Partial.** Map **35** (Stormwind Vault / `StormwindPrison`) is a real unused 5-man with client geometry and canal portal — not junk, not in `skipJunkMaps`. Taken by dungeon #2. Every other unused instance-type id is junk/test (13, 25, 29, 42, 169, 451, …). Dungeon #3+ = **new `Map.dbc` row**. |
+| Map id | Reused unused **44** (`Monastery`), no `map_dbc` row, no client `Map.dbc` edit | **No.** Map **35** was the last unused real 5-man (Stormwind Vault). Dungeon #3+ = **new `Map.dbc` row**. Do not hunt scrap. |
 | Geometry | Kitbashed `Waxworks.wmo` behind the existing `World/Maps/Monastery/Monastery.wdt` path, packed into `Data/patch-4.MPQ` | Pattern yes, files no. New map = new `World/Maps/<Dir>/<Dir>.wdt` + `World/wmo/Dungeon/<Dir>/…`, added to the **same** `patch-4.MPQ`. |
 | Server mesh | `vmaps/044.vmtree`, `vmaps/Waxworks.wmo.vmo`, `mmaps/044*` in the bundle | Yes, same pipeline (`reference-mesh.md`, `build-client-patch` skill). |
 | Difficulty gate | `mapdifficulty_dbc` id `9000044` (server overlay only) | Yes; allocate the next `90000MM` id. New map also needs the **client** `MapDifficulty.dbc` row or the client shows no difficulty and may refuse the portal UI. |
@@ -64,9 +87,9 @@ dungeon's block anyway so a grep for the block finds everything.
 
 Working and reusable as-is: script layout, SQL layout, walk-through entrance pattern, the bundle →
 publish → `deploy-vps` overlay path, the scout walk, `build-bundle` install paths, `extract-server-data.sh`.
-Map 35 is taken (Stormwind Vault, unused canal swirl). Blocking dungeon #3 until done:
+Maps 44 and 35 are taken. Blocking dungeon #3 until done:
 
-1. A new `Map.dbc` id requires the **DBC-in-locale-MPQ** step the Waxworks skipped. Follow
-   `reference-new-map.md` end to end; do not look for another "free" map id (35 and 44 are both taken).
+1. A new `Map.dbc` id (the only hosting choice left for a real instance). Follow
+   `reference-new-map.md` end to end. Do not look for another leftover map id.
 2. Entrance/portal C++ is per-dungeon (`waxworks_portal.cpp`, `stormwind_vault_portal.cpp`). Do not
    add a second `PlayerScript` that fights Waxworks for the same hooks; generalise before dungeon #3.
