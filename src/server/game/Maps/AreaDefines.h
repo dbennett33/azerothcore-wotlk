@@ -189,6 +189,7 @@ enum MapIDs : uint32
     MAP_ALTERAC_VALLEY                       = 30,
     MAP_SHADOWFANG_KEEP                      = 33,
     MAP_STORMWIND_STOCKADE                   = 34,
+    MAP_STORMWIND_VAULT                      = 35,
     MAP_DEADMINES                            = 36,
     MAP_WAILING_CAVERNS                      = 43,
     MAP_RAZORFEN_KRAUL                       = 47,

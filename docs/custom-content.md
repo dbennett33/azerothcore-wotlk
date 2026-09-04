@@ -170,7 +170,7 @@ publishing and deployment from any shell; the VPS (Debian 12) runs the servers a
 extractors. Exact commands for both operating systems are in
 `.agents/skills/build-client-patch/reference-windows-linux.md`.
 
-## 8. Known gaps to fix before dungeon #2 (tracked in `systems/dungeons.md`)
+## 8. Known gaps to fix before dungeon #3 (tracked in `systems/dungeons.md`)
 
 - Waxworks portal scripts are not table-driven.
 - No `LFGDungeons` / `WorldMapArea` rows for Waxworks (Dungeon Finder and map UI); optional.
