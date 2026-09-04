@@ -9,6 +9,19 @@ Human prose lives in this directory. Two kinds of files stay where their tooling
 are only linked from here: agent docs and skills under `.agents/` (routed by `AGENTS.md`, symlinked
 from `.claude/skills/`), and one-screen `README.md` files next to the scripts they describe.
 
+## The fork in one screen
+
+| | |
+|---|---|
+| What | Private AzerothCore 3.3.5a fork: one live realm and one test realm on a Debian 12 VPS, mod-playerbots compiled in, mod-individual-progression pinned to tier 13 (WotLK phase 1), custom client patches, custom 5-man The Waxworks. |
+| Branches | `dev` → test realm (auto build + deploy on push). `Playerbot` → live (build on push, **manual** `deploy-vps` target `live`). Flow `dev → PR → Playerbot`; `branch-protection.yml` rejects any other PR source. |
+| Host | User `acore`. Live prefix `/home/acore/server` (realm 1, port 8085), test `/home/acore/server-test` (realm 2, port 8086), one authserver on 3724. systemd user units `auth`, `world`, `world-test`. Patch store `/home/acore/client-patches/`. |
+| CI | `vps-build` compiles on the Debian build VM when online, else on the VPS; `deploy-vps` promotes staging, applies SQL, overlays client-patch server data, restarts. Runner labels `acore-build-vm` / `acore-vps`. |
+| Custom content | Regular trees, not `Custom/` or `modules/`: `src/server/scripts/EasternKingdoms/Waxworks/`, `data/sql/updates/pending_db_world/`, ids `9000000+` (registry in `.agents/docs/systems/dungeons.md`). |
+| Client patches | Custom world files in `Data/patch-4.MPQ`, DBCs in `Data/enUS/patch-enUS-4.MPQ` (MPQ v2, never past `patch-5`). Server gets the same change as `data/` files or `*_dbc` SQL. Only `client-patches/manifest.json` is in git. |
+| Tooling split | Mesh/DBC/MPQ/extraction/visual checks on a Windows dev box; publish and deploy from any shell; the VPS has no extractors. |
+| Agents | `AGENTS.md` § "This fork" is loaded automatically by Cursor, Claude Code (`CLAUDE.md`), Copilot and Codex and routes here. Skills live in `.agents/skills/`. |
+
 ## Start here
 
 | Read this | When |
@@ -83,11 +96,13 @@ Step-by-step procedures with checklists. Each `SKILL.md` names the docs to read 
 
 | File | Role |
 |---|---|
-| `AGENTS.md` | Repo-wide agent rules and the "mandatory reading per task" router (upstream file; fork bullets for client data, dungeons, talents, terrain, and this index). |
+| `AGENTS.md` | Loaded automatically by Cursor, Codex and Copilot. § "This fork" gives the context above and the hard rules; "Mandatory reading per task" routes fork tasks to the docs and skills on this page. |
 | `CLAUDE.md` | Imports `AGENTS.md` for Claude Code. |
 | `.claude/skills/*` | Relative symlinks to `.agents/skills/*` (needs `git config core.symlinks true` on Windows). |
-| `.cursor/rules/*.mdc` | Path-scoped Cursor rules pointing at the docs and skills above; they restate nothing. |
-| `.agents/README.md`, `.agents/docs/README.md` | How skills/docs are organised and how to hook up another agent (upstream files). |
+| `.cursor/rules/fork-context.mdc` | Always-on Cursor rule: read `AGENTS.md` § "This fork" and this index; branch safety. |
+| `.cursor/rules/{client-content,dungeons,deploy-ci}.mdc` | Path-scoped Cursor rules that name the doc and skill for files under `client-patches/`, `src/tools/`, DataStores, `pending_db_world/`, instance scripts, `apps/deploy/`, `.github/workflows/`, `docs/`. |
+| `.github/copilot-instructions.md`, `.github/agents/pr-reviewer.md` | Copilot code review: review against `AGENTS.md` routing and this index. |
+| `.agents/README.md`, `.agents/docs/README.md` | How skills/docs are organised and how to hook up another agent (upstream files; any new agent gets an entry file that points at `AGENTS.md`). |
 
 ## Where things are **not**
 
