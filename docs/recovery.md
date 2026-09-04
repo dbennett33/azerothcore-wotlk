@@ -8,7 +8,7 @@ If the VPS is lost, you can rebuild from **git + one offsite backup** + client d
 |------|----------|
 | Build & deploy pipelines | `.github/workflows/vps-build.yml`, `deploy-vps.yml` |
 | WotLK tier-13 gameplay settings (re-applied every deploy) | `configure-realm.sh` |
-| Bootstrap / units / restart | `bootstrap.md`, `setup-systemd-units.sh`, `restart-acore.sh` |
+| Bootstrap / units / restart | `docs/vps-bootstrap.md`, `setup-systemd-units.sh`, `restart-acore.sh` |
 | Backup & restore scripts | `backup-acore.sh`, `restore-acore.sh` |
 
 After deploy, **WotLK tier-13 settings** (expansion 2, cap 80, IP tier 13 start/limit, DK enabled,
@@ -22,7 +22,8 @@ you do not need to remember every knob.
 | **MySQL** (characters, bots, progress) | Medium | `backup-acore.sh` |
 | **Live `etc/`** (DB passwords in DSN, any custom edits) | Small | `backup-acore.sh` |
 | **run-engine service configs** | Tiny | `backup-acore.sh` |
-| **Client data** (`data/maps`, `vmaps`, `mmaps`, base `dbc`) | Large | Re-download once per [bootstrap §4](bootstrap.md); optional `INCLUDE_DATA_DBC=1` for patched `dbc/` |
+| **Client data** (`data/maps`, `vmaps`, `mmaps`, base `dbc`) | Large | Re-download once per [bootstrap §4](vps-bootstrap.md); optional `INCLUDE_DATA_DBC=1` for patched `dbc/` |
+| **Client patch releases** (`/home/acore/client-patches/releases/`) | Large | `backup-client-patches.sh` — MPQs and server data bundles are **not** in git |
 | **GitHub Actions runner** | — | Re-register runner on new VPS |
 | **Binaries** | — | Rebuild via `vps-build` or restore from staging |
 
@@ -40,6 +41,9 @@ bash /home/acore/deploy/backup-acore.sh
 
 # Optional: include server DBC overrides (Map.dbc, Spell.dbc, …)
 INCLUDE_DATA_DBC=1 bash /home/acore/deploy/backup-acore.sh
+
+# Client patch bundles (MPQs + server-data tarballs on VPS)
+bash /home/acore/deploy/backup-client-patches.sh
 ```
 
 Output: `/home/acore/backups/acore-backup-<timestamp>.tar.gz` — **copy off the server** (rsync, S3, etc.).
@@ -48,7 +52,7 @@ Suggested schedule: daily or before each `deploy-vps`.
 
 ## Restore on a fresh VPS
 
-1. Follow [bootstrap.md](bootstrap.md) §1–4 (user, packages, MySQL empty DBs, **client data**).
+1. Follow [vps-bootstrap.md](vps-bootstrap.md) §1–4 (user, packages, MySQL empty DBs, **client data**).
 2. Copy `.acore-backup.env` and your latest `acore-backup-*.tar.gz` to the new host.
 3. Register GitHub Actions self-hosted runner (§7).
 4. Push/merge to `Playerbot` and wait for **vps-build** (or restore `server-staging/bin` from backup if you kept one).

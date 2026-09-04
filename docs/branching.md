@@ -57,7 +57,7 @@ Checked out by `apps/deploy/debian12/clone-extra-modules.sh`:
 | `mod-dungeon-clear` | kadeshar/mod-dungeon-clear | Playerbots tank AI for dungeon clears. Needs a **bot tank** in the group. In-dungeon: `.dc on` / party chat `dc on`. Optional client addon: [mod-dungeon-clear-addon](https://github.com/kadeshar/mod-dungeon-clear-addon) |
 | `mod-skip-dk-starting-area` | azerothcore/mod-skip-dk-starting-area | New DKs skip Ebon Hold (level 58 in Stormwind/Orgrimmar). Lich King also offers an optional skip. |
 
-World SQL for the NPC modules is applied on worldserver start from `SourceDirectory/modules/` (synced on deploy).
+World SQL for those modules is applied on worldserver start from that realm's `SourceDirectory/modules/` (synced on `deploy-vps`). `sync-sql-sources.sh` also clones **mod-playerbots** (`dev` on test, `master` on live) and **mod-individual-progression** there — worldserver shuts down if `modules/mod-playerbots` is missing while `Playerbots.Updates.EnableDatabases = 1`. Core `pending_db_*` comes from the staged commit's `data/sql`, not a shared stale clone.
 
 ## Deploy player warning (optional)
 

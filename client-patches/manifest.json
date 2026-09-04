@@ -1,0 +1,35 @@
+{
+  "version": "1.1.6",
+  "released": "2026-09-04T20:39:56Z",
+  "blizzard_build": 12340,
+  "client_cache_version": 4,
+  "changelog": [
+    "Drowned Belfry is dry: no green lava fill, crypt fog pulled back"
+  ],
+  "client": {
+    "locale": "enUS",
+    "patches": [
+      {
+        "file": "patch-4.MPQ",
+        "sha256": "a9de2a231ba71f7edbe6406092f2b57da02e1a6567fee697961f1c0c23c12542",
+        "size": 2340089,
+        "install_path": "Data/patch-4.MPQ"
+      },
+      {
+        "file": "patch-enUS-4.MPQ",
+        "sha256": "e59fede5d2cfb998f2a0c61ddcc1daaea0b8bc7d03d97f9af6b89b54b7750631",
+        "size": 550687,
+        "install_path": "Data/enUS/patch-enUS-4.MPQ"
+      }
+    ]
+  },
+  "server": {
+    "archive": "server-data.tar.gz",
+    "sha256": "32a2848e252927400bfced33df1d51b18881ba31627dbba6b20fa38075cd1b61",
+    "size": 708584,
+    "components": [
+      "vmaps",
+      "mmaps"
+    ]
+  }
+}

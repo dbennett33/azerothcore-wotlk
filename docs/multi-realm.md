@@ -22,7 +22,7 @@ manual deploy-vps (target=live)  → promote staging → server + restart auth +
 
 `vps-build` checks out your **mod-playerbots** fork (`master` on `Playerbot`, `dev` on `dev`).
 Override with repo variable `MOD_PLAYERBOTS_REPO` if the module lives under another owner.
-Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see `.github/BRANCHING.md`).
+Module-only changes: push to `mod-playerbots` triggers `vps-build` via `ACORE_WORKFLOW_PAT` (see [`branching.md`](branching.md)).
 
 Builds use isolated cmake trees: `/home/acore/build/live` and `/home/acore/build/test`.
 
@@ -58,11 +58,15 @@ First start of each worldserver applies SQL updates to its DBs automatically.
 
 ## Host layout
 
-```text
+```
 /home/acore/server/           live bin, etc, logs, data (auth + world live)
 /home/acore/server-test/      test bin, etc, logs, data (world only)
+/home/acore/src/azerothcore-wotlk/       live SourceDirectory (SQL for acore_world)
+/home/acore/src/azerothcore-wotlk-test/  test SourceDirectory (SQL for acore_world_test)
 /home/acore/build/live|test/  persistent cmake build dirs
 ```
+
+`deploy-vps` rsyncs `data/sql` from the **staged build SHA** into that realm's SourceDirectory, then clones `mod-playerbots` (`dev` on test, `master` on live) and `mod-individual-progression` under `SourceDirectory/modules/` so worldserver can apply those updaters. Client-patch overlays use the same commit's `client-patches/manifest.json` (not “whatever is `current` on the VPS”).
 
 `init-test-prefix.sh` creates **separate** `server-test/data/` (not a symlink). On first run it
 `rsync`s from live so test starts with the same maps/dbc/vmaps; after that each prefix owns its
@@ -91,6 +95,8 @@ bash /home/acore/deploy/setup-systemd-units.sh
 ## Client
 
 Realmlist at login shows **Live** and **Test** (same host IP, ports 8085 / 8086). ChromieCraft: set realmlist to server IP; pick realm at character screen.
+
+When a custom client patch is required, players run `update-client.sh` or `update-client.ps1` — see [`docs/client-patches.md`](client-patches.md).
 
 ## Deploy / restart
 

@@ -116,7 +116,26 @@ void AddSC_boss_eredar_twins();
 void AddSC_boss_muru();
 void AddSC_boss_kiljaeden();
 void AddSC_instance_the_stockade();          //The Stockade
+void AddSC_instance_stormwind_vault();       //Stormwind Vault
+void AddSC_stormwind_vault_portal();
+void AddSC_boss_turnkey_garrow();
+void AddSC_boss_sister_cinder();
+void AddSC_boss_warden_blackiron();
+void AddSC_instance_drowned_belfry();        //The Drowned Belfry
+void AddSC_drowned_belfry_portal();
+void AddSC_drowned_belfry_player();
+void AddSC_boss_captain_whelm();
+void AddSC_boss_sister_brine();
+void AddSC_boss_toll_the_bellkeeper();
 void AddSC_instance_uldaman();               //Uldaman
+void AddSC_instance_waxworks();              //The Waxworks
+void AddSC_boss_king_wick();
+void AddSC_boss_chef_snarlroast();
+void AddSC_boss_foreman_voss();
+void AddSC_boss_princess();
+void AddSC_npc_sergeant_wickham();
+void AddSC_waxworks_player();
+void AddSC_waxworks_portal();
 void AddSC_boss_akilzon();                   //Zul'Aman
 void AddSC_boss_halazzi();
 void AddSC_boss_hex_lord_malacrass();
@@ -264,7 +283,26 @@ void AddEasternKingdomsScripts()
     AddSC_boss_muru();
     AddSC_boss_kiljaeden();
     AddSC_instance_the_stockade();          //The Stockade
+    AddSC_instance_stormwind_vault();       //Stormwind Vault
+    AddSC_stormwind_vault_portal();
+    AddSC_boss_turnkey_garrow();
+    AddSC_boss_sister_cinder();
+    AddSC_boss_warden_blackiron();
+    AddSC_instance_drowned_belfry();        //The Drowned Belfry
+    AddSC_drowned_belfry_portal();
+    AddSC_drowned_belfry_player();
+    AddSC_boss_captain_whelm();
+    AddSC_boss_sister_brine();
+    AddSC_boss_toll_the_bellkeeper();
     AddSC_instance_uldaman();               //Uldaman
+    AddSC_instance_waxworks();              //The Waxworks
+    AddSC_boss_king_wick();
+    AddSC_boss_chef_snarlroast();
+    AddSC_boss_foreman_voss();
+    AddSC_boss_princess();
+    AddSC_npc_sergeant_wickham();
+    AddSC_waxworks_player();
+    AddSC_waxworks_portal();
     AddSC_boss_akilzon();                   //Zul'Aman
     AddSC_boss_halazzi();
     AddSC_boss_hex_lord_malacrass();

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time Debian 12 host prep for AzerothCore deploy (sections 1–2 + linger).
 # Run as root on a fresh VPS. MySQL, client data, configs, and the GitHub runner
-# still require the manual steps in bootstrap.md.
+# still require the manual steps in docs/vps-bootstrap.md.
 
 set -euo pipefail
 
@@ -30,8 +30,17 @@ echo "==> user and directories"
 if ! id "$ACORE_USER" >/dev/null 2>&1; then
   adduser --disabled-password --gecos "" "$ACORE_USER"
 fi
-mkdir -p "${ACORE_PREFIX}/{bin,etc,data,logs}" "${ACORE_HOME}/server-staging"
-chown -R "${ACORE_USER}:${ACORE_USER}" "${ACORE_PREFIX}" "${ACORE_HOME}/server-staging"
+mkdir -p "${ACORE_PREFIX}/{bin,etc,data,logs}" "${ACORE_HOME}/server-staging" \
+  "${ACORE_HOME}/client-patches/releases"
+chown -R "${ACORE_USER}:${ACORE_USER}" "${ACORE_PREFIX}" "${ACORE_HOME}/server-staging" \
+  "${ACORE_HOME}/client-patches"
+chmod 750 "$ACORE_HOME"
+chmod -R g+rwX "${ACORE_HOME}/client-patches"
+find "${ACORE_HOME}/client-patches" -type d -exec chmod g+s {} +
+# SSH login is debian; let it browse acore's home and write the patch store.
+if id debian >/dev/null 2>&1; then
+  usermod -aG "$ACORE_USER" debian
+fi
 
 echo "==> build packages"
 apt-get update -y
@@ -56,7 +65,7 @@ cat <<EOF
 
 Bootstrap script finished.
 
-Next (see apps/deploy/debian12/bootstrap.md):
+Next (see docs/vps-bootstrap.md):
   1. Create MySQL databases and user (section 3)
   2. Copy client data into ${ACORE_PREFIX}/data (section 4)
   3. After first deploy, edit ${ACORE_PREFIX}/etc/*.conf (section 5)

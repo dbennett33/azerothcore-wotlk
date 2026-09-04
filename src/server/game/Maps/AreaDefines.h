@@ -189,6 +189,7 @@ enum MapIDs : uint32
     MAP_ALTERAC_VALLEY                       = 30,
     MAP_SHADOWFANG_KEEP                      = 33,
     MAP_STORMWIND_STOCKADE                   = 34,
+    MAP_STORMWIND_VAULT                      = 35,
     MAP_DEADMINES                            = 36,
     MAP_WAILING_CAVERNS                      = 43,
     MAP_RAZORFEN_KRAUL                       = 47,
@@ -270,7 +271,8 @@ enum MapIDs : uint32
     MAP_TRIAL_OF_THE_CHAMPION                = 650,
     MAP_PIT_OF_SARON                         = 658,
     MAP_HALLS_OF_REFLECTION                  = 668,
-    MAP_THE_RUBY_SANCTUM                     = 724
+    MAP_THE_RUBY_SANCTUM                     = 724,
+    MAP_DROWNED_BELFRY                       = 900
 };
 
 #endif

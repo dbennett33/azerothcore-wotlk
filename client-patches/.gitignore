@@ -1,0 +1,27 @@
+# Built release artifacts (publish to VPS; do not commit binaries)
+bundles/*
+!bundles/.gitkeep
+output/
+
+# Local dev-machine staging only — canonical binaries live on the VPS
+# (/home/acore/client-patches). Never commit MPQs or extracted server data.
+sources/client/mpq/*
+!sources/client/mpq/.gitkeep
+
+sources/client/loose/*
+!sources/client/loose/.gitkeep
+
+sources/server/dbc/*
+!sources/server/dbc/.gitkeep
+
+sources/server/maps/
+sources/server/vmaps/
+sources/server/mmaps/
+
+# Local WoW client paths used during extraction
+.wow-client-path
+extract-client/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
