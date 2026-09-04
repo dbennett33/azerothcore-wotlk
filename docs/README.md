@@ -97,12 +97,13 @@ Step-by-step procedures with checklists. Each `SKILL.md` names the docs to read 
 | File | Role |
 |---|---|
 | `AGENTS.md` | Loaded automatically by Cursor, Codex and Copilot. § "This fork" gives the context above and the hard rules; "Mandatory reading per task" routes fork tasks to the docs and skills on this page. |
-| `CLAUDE.md` | Imports `AGENTS.md` for Claude Code. |
+| `CLAUDE.md`, `GEMINI.md` | Import `AGENTS.md` for Claude Code and Gemini CLI. |
 | `.claude/skills/*` | Relative symlinks to `.agents/skills/*` (needs `git config core.symlinks true` on Windows). |
 | `.cursor/rules/fork-context.mdc` | Always-on Cursor rule: read `AGENTS.md` § "This fork" and this index; branch safety. |
 | `.cursor/rules/{client-content,dungeons,deploy-ci}.mdc` | Path-scoped Cursor rules that name the doc and skill for files under `client-patches/`, `src/tools/`, DataStores, `pending_db_world/`, instance scripts, `apps/deploy/`, `.github/workflows/`, `docs/`. |
 | `.github/copilot-instructions.md`, `.github/agents/pr-reviewer.md` | Copilot code review: review against `AGENTS.md` routing and this index. |
 | `.agents/README.md`, `.agents/docs/README.md` | How skills/docs are organised and how to hook up another agent (upstream files; any new agent gets an entry file that points at `AGENTS.md`). |
+| [`apps/codestyle/codestyle-docs.py`](../apps/codestyle/codestyle-docs.py), `.github/workflows/docs-check.yml` | CI guard for all of the above: fails a PR when a doc or skill is missing from this index, a system doc or skill has no `AGENTS.md` routing, a `.claude/skills` symlink is missing or a plain file, a Cursor rule can never load, `AGENTS.md` lost its "This fork" section, or a relative link is broken. Run locally with `python3 apps/codestyle/codestyle-docs.py`. |
 
 ## Where things are **not**
 
@@ -121,3 +122,4 @@ Step-by-step procedures with checklists. Each `SKILL.md` names the docs to read 
   and a row here.
 - Procedure → `.agents/skills/<name>/SKILL.md`, symlink from `.claude/skills/`, row here.
 - Directory `README.md` files stay one screen long and link back to the full doc in `docs/`.
+- Run `python3 apps/codestyle/codestyle-docs.py` before pushing; `docs-check` runs it on the PR.
