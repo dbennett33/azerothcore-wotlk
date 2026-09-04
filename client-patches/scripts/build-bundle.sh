@@ -118,6 +118,13 @@ def sha256_file(path: str) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
+def install_path(filename: str) -> str:
+    lower = filename.lower()
+    loc = locale.lower()
+    if f"patch-{loc}" in lower or f"locale-{loc}" in lower:
+        return f"Data/{locale}/{filename}"
+    return f"Data/{filename}"
+
 entries = []
 for src in paths:
     base = os.path.basename(src)
@@ -125,7 +132,7 @@ for src in paths:
         "file": base,
         "sha256": sha256_file(src),
         "size": os.path.getsize(src),
-        "install_path": f"Data/{locale}/{base}",
+        "install_path": install_path(base),
     })
 print(json.dumps(entries))
 PY
@@ -182,10 +189,10 @@ Built bundle ${VERSION}:
   manifest copied to ${CLIENT_PATCHES_ROOT}/manifest.json
 
 Next steps:
-  1. Commit manifest.json with the matching C++/SQL (not bundle binaries).
-  2. Publish binaries to the VPS store (does not apply to any realm):
+  1. Publish binaries to the VPS store (does not apply to any realm):
        VPS_HOST=debian@your.vps client-patches/scripts/publish-to-vps.sh ${OUT_DIR}
-  3. Push \`dev\` (Test) or merge to \`Playerbot\` (Live). deploy-vps applies the overlay.
-  4. Players update locally after that realm has the version:
-       client-patches/scripts/update-client.sh
+  2. Commit client-patches/manifest.json with the matching C++/SQL (not bundle binaries).
+  3. Push \`dev\` → vps-build auto-deploys Test. Merge to \`Playerbot\`, then Actions → deploy-vps → live.
+  4. After that realm has the version, players update:
+       client-patches/scripts/update-client.sh --from-vps debian@your.vps --target test   # or --target live
 EOF

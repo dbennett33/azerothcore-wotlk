@@ -23,7 +23,8 @@ Versioned MPQ patches for players and matching server data overlays (maps, vmaps
 
 ```bash
 # 1. Stage on your dev machine (not committed to git)
-#    sources/client/mpq/patch-A.MPQ
+#    sources/client/mpq/patch-4.MPQ
+#    sources/client/mpq/patch-enUS-4.MPQ   # only if DBCs changed
 #    sources/server/{dbc,maps,vmaps,mmaps}/
 
 # 2. Build a release bundle locally
@@ -40,10 +41,10 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 
 # 5. Push the branch that owns the realm
 #    git push origin dev         → vps-build auto-deploys Test (SQL + overlay)
-#    merge to Playerbot          → vps-build; then deploy-vps live
-# 6. Players update after that realm has the version:
-#    client-patches/scripts/update-client.sh
-#    Windows: .\client-patches\scripts\update-client.ps1 -WowDir C:\Games\ChromieCraft -FromVps debian@your.vps
+#    merge to Playerbot          → vps-build; then Actions → deploy-vps → live
+# 6. Players update the version that realm deployed:
+#    client-patches/scripts/update-client.sh --from-vps debian@your.vps --target test
+#    Windows: .\client-patches\scripts\update-client.ps1 -WowDir C:\Games\ChromieCraft -FromVps debian@your.vps -Target test
 ```
 
 ## VPS storage layout
@@ -54,7 +55,9 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
     manifest.json
     client/*.MPQ
     server/server-data.tar.gz
-  current -> releases/<version>
+  current -> releases/<version>          # latest published (not necessarily deployed)
+  current-test -> releases/<version>     # last overlay applied to Test
+  current-live -> releases/<version>     # last overlay applied to Live
 ```
 
 ## Scripts
@@ -62,7 +65,7 @@ git commit -m "chore(ClientPatches): release 1.0.0 manifest"
 | Script | Where | Purpose |
 |--------|-------|---------|
 | `scripts/build-bundle.sh` / `.ps1` | dev machine | Build bundle from local `sources/` staging |
-| `scripts/update-client.sh` / `.ps1` | player PC | Install client MPQs from VPS |
+| `scripts/update-client.sh` / `.ps1` | player PC | Install client MPQs from VPS (`--target test` / `--target live`) |
 | `scripts/extract-server-data.sh` | dev machine | Run AC extractors into `sources/server/` (Linux) |
 | `scripts/publish-to-vps.sh` / `.ps1` | dev machine | Upload bundle + publish on VPS |
 | `apps/deploy/debian12/client-patches/apply-server-data.sh` | VPS | Overlay server data + bump cache version (**called by deploy-vps**) |

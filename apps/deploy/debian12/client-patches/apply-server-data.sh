@@ -34,11 +34,64 @@ Environment:
 
 Options:
   --from-manifest PATH   Use version from a git client-patches/manifest.json
-                         Placeholder 0.0.0 / empty server archive: no-op
+                         Placeholder 0.0.0: no-op. Git checksums must match the store.
   --preflight            Check the VPS store has that release; do not apply
   --force                Re-apply even if etc/.client-patch-version already matches
   --dry-run              Show actions without applying changes
 EOF
+}
+
+realm_current_link() {
+  case "$ACORE_PREFIX" in
+    */server-test)
+      printf '%s/current-test' "$PATCHES_ROOT"
+      ;;
+    */server)
+      printf '%s/current-live' "$PATCHES_ROOT"
+      ;;
+    *)
+      printf ''
+      ;;
+  esac
+}
+
+manifest_identity() {
+  jq -c '{
+    version,
+    client_cache_version,
+    locale: .client.locale,
+    patches: [.client.patches[] | {file, sha256, size, install_path}] | sort_by(.file),
+    server: {archive: .server.archive, sha256: .server.sha256, size: .server.size, components: .server.components}
+  }' "$1"
+}
+
+assert_git_matches_store() {
+  local git_manifest="$1"
+  local store_manifest="$2"
+  local git_id store_id
+  git_id="$(manifest_identity "$git_manifest")"
+  store_id="$(manifest_identity "$store_manifest")"
+  if [[ "$git_id" != "$store_id" ]]; then
+    echo "Git manifest does not match VPS store release ${VERSION}." >&2
+    echo "Publish the bundle that matches this commit, or commit the store's manifest.json." >&2
+    echo "  git:   ${git_id}" >&2
+    echo "  store: ${store_id}" >&2
+    exit 1
+  fi
+}
+
+point_realm_current() {
+  local link
+  link="$(realm_current_link)"
+  if [[ -z "$link" ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "would point ${link} -> releases/${VERSION}"
+    return 0
+  fi
+  ln -sfn "releases/${VERSION}" "$link"
+  echo "Realm client pointer: ${link} -> releases/${VERSION}"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -84,9 +137,8 @@ if [[ -n "$FROM_MANIFEST" ]]; then
     exit 1
   fi
   VERSION="$(jq -r '.version' "$FROM_MANIFEST")"
-  git_size="$(jq -r '.server.size // 0' "$FROM_MANIFEST")"
-  if [[ "$VERSION" == "0.0.0" || "$git_size" == "0" ]]; then
-    echo "Git manifest ${FROM_MANIFEST} has no server patch (version=${VERSION} size=${git_size}); skipping."
+  if [[ "$VERSION" == "0.0.0" ]]; then
+    echo "Git manifest ${FROM_MANIFEST} is placeholder 0.0.0; skipping client-patch apply."
     exit 0
   fi
 fi
@@ -111,13 +163,23 @@ if [[ ! -f "$MANIFEST" ]]; then
   exit 1
 fi
 
+if [[ -n "$FROM_MANIFEST" ]]; then
+  assert_git_matches_store "$FROM_MANIFEST" "$MANIFEST"
+fi
+
 if [[ "$PREFLIGHT" -eq 1 ]]; then
-  echo "Client patch ${VERSION} is in the VPS store (${RELEASE_DIR})"
+  if [[ -n "$FROM_MANIFEST" ]]; then
+    echo "Client patch ${VERSION} is in the VPS store (${RELEASE_DIR}) and matches git."
+  else
+    echo "Client patch ${VERSION} is in the VPS store (${RELEASE_DIR})"
+  fi
   exit 0
 fi
 
+# Keep realm current-* in sync even when the overlay is already applied.
 if [[ "$FORCE" -eq 0 && -f "$STATE_FILE" && "$(cat "$STATE_FILE")" == "$VERSION" ]]; then
   echo "Prefix ${ACORE_PREFIX} already has client patch ${VERSION}; skipping overlay."
+  point_realm_current
   exit 0
 fi
 
@@ -177,3 +239,5 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   } >>"${ACORE_PREFIX}/etc/.client-patch-applied.log"
   echo "Recorded applied version in ${STATE_FILE}"
 fi
+
+point_realm_current

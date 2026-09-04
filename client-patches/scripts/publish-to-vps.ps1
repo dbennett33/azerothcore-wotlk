@@ -63,4 +63,5 @@ Invoke-Native -FilePath $ssh -ArgumentList @(
 Write-Host 'Done. Bundle is in the VPS store only — Live and Test are unchanged.'
 Write-Host 'Commit client-patches/manifest.json with the matching C++/SQL, then:'
 Write-Host '  git push origin dev        # vps-build → deploy-vps applies overlay to Test'
-Write-Host '  merge to Playerbot         # then deploy-vps live applies overlay to Live'
+Write-Host '  merge to Playerbot         # then Actions → deploy-vps → live'
+Write-Host 'Players: update-client.ps1 -FromVps debian@host -Target test   # or -Target live'

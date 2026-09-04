@@ -44,10 +44,10 @@ Task progress:
 - [ ] Archive(s) packed as MPQ v2, listed back, installed into the dev client, Wow restarted
 - [ ] Server data extracted from the patched client; only changed maps/tiles kept
 - [ ] DBC server copy decided: `*_dbc` SQL overlay (small) or `sources/server/dbc/` (large)
-- [ ] Bundle built; install_path fixed for Data/ archives; manifest copied to client-patches/
-- [ ] Bundle published to the VPS store (debian@ SSH)
+- [ ] Bundle built; install_path is Data/ for patch-4 and Data/enUS/ for patch-enUS-4; manifest copied
+- [ ] Bundle published to the VPS store (debian@ SSH) **before** the git push that deploys
 - [ ] manifest.json committed with the SQL/C++; pushed to dev; test realm verified
-- [ ] Players told to run update-client before login
+- [ ] Players told to run update-client --target test (or --target live) before login
 ```
 
 ### 1. Classify
@@ -85,9 +85,17 @@ Install a copy into the dev client (`<client>/Data/patch-4.MPQ`, `<client>/Data/
 
 ### 4. Extract server data
 
-Build the tools once from this repo (`-DTOOLS_BUILD=all`, or `maps-only`). Then, in a **slim copy**
-of the client `Data/` (Blizzard base + locale archives + your patches; other maps' WDTs absent so
-they are skipped):
+Build the tools once from this repo (`-DTOOLS_BUILD=all`, or `maps-only`). Then:
+
+```bash
+WOW_CLIENT=<client> AC_TOOLS_BIN=<tools-bin> \
+  client-patches/scripts/extract-server-data.sh --map 44
+```
+
+That script invokes the four binaries from `AC_TOOLS_BIN` with `-i`/`-o`/`-d` (it does **not**
+`cd` into the WoW dir and run `./map_extractor`). Or run them by hand in a **slim copy** of the
+client `Data/` (Blizzard base + locale archives + your patches; other maps' WDTs absent so they
+are skipped):
 
 ```
 map_extractor  -i <client> -o <out> -e 3        # maps (1) + dbc (2); skip cameras
@@ -105,9 +113,8 @@ Keep only:
 - edited DBCs: the files from `<out>/dbc/` you edited — or skip them and write `*_dbc` SQL rows.
 
 Move them into `client-patches/sources/server/{maps,vmaps,mmaps,dbc}/` (gitignored). WMO-only
-instance maps produce **no** `.map` files; do not invent them. `extract-server-data.sh` currently
-calls `./map_extractor` from the WoW dir and fails unless the binaries are copied there — run the
-four tools by hand as above.
+instance maps produce **no** `.map` files; do not invent them. `extract-server-data.sh --map <id>`
+covers the four tools; a full-client extract without `--map` will skip mmaps unless `--all-mmaps`.
 
 ### 5. Bundle
 
@@ -116,12 +123,9 @@ client-patches/scripts/build-bundle.sh 1.1.0 --changelog "…"        # Linux / 
 .\client-patches\scripts\build-bundle.ps1 1.1.0 -Changelog '…'     # Windows PowerShell
 ```
 
-Both scripts write `install_path = Data/<locale>/<file>`. For `patch-4.MPQ` (a **base** archive)
-edit `client-patches/bundles/<version>/manifest.json` → `"install_path": "Data/patch-4.MPQ"`, then
-copy that manifest over `client-patches/manifest.json` (validate-manifest checks checksums, not
-paths; `update-client.*` installs to whatever `install_path` says). Locale archives keep the
-default. Semver: patch bump for data-only fixes, minor for a new map/tree, major when players must
-reinstall.
+`patch-4.MPQ` is written with `install_path = Data/patch-4.MPQ`; `patch-enUS-4.MPQ` with
+`Data/enUS/patch-enUS-4.MPQ`. `validate-manifest.sh` rejects the old `Data/enUS/patch-4.MPQ` footgun.
+Semver: patch bump for data-only fixes, minor for a new map/tree, major when players must reinstall.
 
 ### 6. Publish, commit, deploy
 
@@ -132,12 +136,13 @@ git commit && git push -u origin dev        # vps-build → deploy-vps test appl
 ```
 
 Publishing only fills `/home/acore/client-patches/releases/<version>/` (and `current`). Nothing
-reaches a realm until `deploy-vps` runs for a commit whose manifest names that version; a version
-missing from the store fails the deploy on purpose. Live = merge `dev → Playerbot`, then Actions →
+reaches a realm until `deploy-vps` runs for a commit whose manifest names that version and matches
+the store checksums; a missing or mismatched version fails the deploy on purpose. That apply points
+`current-test` or `current-live` at the release. Live = merge `dev → Playerbot`, then Actions →
 `deploy-vps` target `live`. `deploy-client-patches` is the emergency override only.
 
-Players: `update-client.sh` / `update-client.ps1` (`-FromVps debian@<vps>` or `PATCHES_BASE_URL`),
-Wow closed, before logging in.
+Players: `update-client.sh` / `update-client.ps1` (`-FromVps debian@<vps> -Target test` or
+`-Target live`; or `PATCHES_BASE_URL`), Wow closed, before logging in.
 
 ### 7. Verify
 
@@ -161,7 +166,8 @@ older release (state file differs). Files added by the newer release stay on dis
 
 ## Pitfalls seen on this fork
 
-- Manifest `install_path` left as `Data/enUS/patch-4.MPQ` → client never loads the world files.
+- Manifest `install_path` left as `Data/enUS/patch-4.MPQ` → client never loads the world files
+  (`validate-manifest.sh` now rejects this).
 - `Buildings/` not wiped → 0-vertex `.vmo` poisons `dir_bin`; assemble looks fine, players fall.
 - Full-client vmap extract killed midway, then assembled → 31 MB continent `dir_bin`, hours lost.
 - `Map.dbc` row only in `Data/patch-4` → client happy, vmap extractor never sees the map.

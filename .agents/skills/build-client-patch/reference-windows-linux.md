@@ -13,10 +13,10 @@ ones recorded in the Waxworks work (2026-08/09) and may have moved; verify befor
 | Pack MPQ | Ladik's MPQEditor (`/console` script or GUI) *(this machine: `C:/dev/tools/mpqeditor/x64/MPQEditor.exe`)* | `smpq -M 2 -c` (StormLib CLI; Debian: `apt install smpq`, or PPA `pali/smpq`) | Must be MPQ v1/v2. Extractors (`deps/libmpq`) and the 3.3.5a client reject v3/v4. |
 | Edit DBC | WDBX Editor (.NET) *(this machine: `C:/dev/tools/wdbxeditor/`)* | WDBX under Wine/Mono; or SQL: server `*_dbc` overlay + export to DBC with a Python writer | Column order must match `DBCfmt.h`. |
 | Extract server data | `map_extractor.exe` etc. from a Windows build of this repo (`-DTOOLS_BUILD=all`) | Same tools built on Linux | Identical output format. Tools are **not** on the VPS. |
-| Bundle | `client-patches/scripts/build-bundle.ps1` | `client-patches/scripts/build-bundle.sh` (needs `python3`, `jq`, `tar`) | Same manifest. Both write locale `install_path` (fix for `Data/` archives). |
-| Extract helper | none (`extract-server-data.sh` is bash-only) | `extract-server-data.sh` (currently expects the tools inside the WoW dir) | Run the four tools by hand on either OS. |
-| Publish to VPS | `publish-to-vps.ps1` (`ssh.exe`/`scp.exe` from OpenSSH Client optional feature) | `publish-to-vps.sh` (`ssh`, `rsync`) | Log in as `debian@`; the helper `sudo -u acore`s. |
-| Player update | `update-client.ps1 -WowDir … -FromVps debian@… \| -PatchesUrl …` | `update-client.sh --wow-dir … --from-vps … \| --patches-url …` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` if blocked. |
+| Bundle | `client-patches/scripts/build-bundle.ps1` | `client-patches/scripts/build-bundle.sh` (needs `python3`, `jq`, `tar`) | Same manifest. World MPQs → `Data/<file>`; locale MPQs → `Data/<locale>/<file>`. |
+| Extract helper | none (`extract-server-data.sh` is bash-only) | `extract-server-data.sh` (`AC_TOOLS_BIN`, `--map ID`) | Invokes tools with `-i`/`-o`/`-d`; does not `cd` into the WoW dir. |
+| Publish to VPS | `publish-to-vps.ps1` (`ssh.exe`/`scp.exe` from OpenSSH Client optional feature) | `publish-to-vps.sh` (`ssh`, `rsync`) | Log in as `debian@`; the helper `sudo -u acore`s. Publish **before** the git push that deploys. |
+| Player update | `update-client.ps1 -WowDir … -FromVps debian@… -Target test \| -PatchesUrl …` | `update-client.sh --wow-dir … --from-vps … --target test \| --patches-url …` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` if blocked. `-Target live` for Live. |
 | Scout client / screenshots | `walk-instance` scripts (PowerShell + SendKeys, `C:\dev\wow-335\scout\`) | Not available (Wine client possible, scripts are Windows-only) | Visual verification is a Windows task on this fork. |
 | SOAP GM commands | `scout-soap.ps1` → `http://127.0.0.1:7878/` | `curl` with the same XML body | SOAP is localhost-only on the VPS; tunnel with `ssh -L 7878:127.0.0.1:7878`. |
 

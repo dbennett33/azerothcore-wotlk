@@ -118,9 +118,6 @@ disk, full stop.
 - One `Data/patch-4.MPQ` carries **all** custom world files for this realm; each release rebuilds
   and re-publishes the whole archive (the manifest's sha256 changes). Do not split future dungeons
   into `patch-5`, `-6`, …: `map_extractor` stops at `-5` and players would need N installs.
-- `build-bundle.sh` / `.ps1` write `install_path = Data/<locale>/<file>`. The shipped manifest was
-  hand-edited to `Data/patch-4.MPQ` because world archives belong in `Data/`, not the locale dir.
-  Until the scripts grow a base-vs-locale switch, edit `bundles/<v>/manifest.json` **and** copy it
-  to `client-patches/manifest.json` after building. `update-client.*` honours `install_path`.
+- `build-bundle.sh` / `.ps1` set `install_path` from the filename: `patch-4.MPQ` → `Data/patch-4.MPQ`, `patch-enUS-4.MPQ` → `Data/enUS/patch-enUS-4.MPQ`. `validate-manifest.sh` rejects a locale path on a world archive. `update-client.*` honours `install_path`.
 - Extractors are **not** built on the VPS (`-DTOOLS_BUILD=none`). Extraction happens on a dev
   machine with the packed client; see the skill for Windows vs Linux specifics.
