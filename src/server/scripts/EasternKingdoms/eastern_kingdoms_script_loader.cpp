@@ -118,6 +118,9 @@ void AddSC_boss_kiljaeden();
 void AddSC_instance_the_stockade();          //The Stockade
 void AddSC_instance_stormwind_vault();       //Stormwind Vault
 void AddSC_stormwind_vault_portal();
+void AddSC_boss_turnkey_garrow();
+void AddSC_boss_sister_cinder();
+void AddSC_boss_warden_blackiron();
 void AddSC_instance_uldaman();               //Uldaman
 void AddSC_instance_waxworks();              //The Waxworks
 void AddSC_boss_king_wick();
@@ -276,6 +279,9 @@ void AddEasternKingdomsScripts()
     AddSC_instance_the_stockade();          //The Stockade
     AddSC_instance_stormwind_vault();       //Stormwind Vault
     AddSC_stormwind_vault_portal();
+    AddSC_boss_turnkey_garrow();
+    AddSC_boss_sister_cinder();
+    AddSC_boss_warden_blackiron();
     AddSC_instance_uldaman();               //Uldaman
     AddSC_instance_waxworks();              //The Waxworks
     AddSC_boss_king_wick();

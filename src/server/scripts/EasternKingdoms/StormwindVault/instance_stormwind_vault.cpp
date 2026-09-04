@@ -16,8 +16,10 @@
  */
 
 #include "stormwind_vault.h"
+#include "Creature.h"
 #include "InstanceMapScript.h"
 #include "InstanceScript.h"
+#include "UnitDefines.h"
 
 class instance_stormwind_vault : public InstanceMapScript
 {
@@ -32,6 +34,17 @@ public:
     struct instance_stormwind_vault_InstanceMapScript : public InstanceScript
     {
         instance_stormwind_vault_InstanceMapScript(Map* map) : InstanceScript(map) { }
+
+        // Map 35 is a leftover vanilla WMO. Navmesh on unused instances is unreliable;
+        // failed chase then regenerates HP in combat on every non-raid.
+        void OnCreatureCreate(Creature* creature) override
+        {
+            InstanceScript::OnCreatureCreate(creature);
+            if (!creature || !StormwindVaultIsPathingCombatNpc(creature->GetEntry()))
+                return;
+
+            creature->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
+        }
     };
 };
 

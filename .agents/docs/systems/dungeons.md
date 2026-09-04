@@ -54,7 +54,7 @@ One block of **200** template ids and **500** spawn guids per dungeon. Reserve t
 | Dungeon | creature/GO/item/quest/gossip templates | `creature` / `gameobject` guids | `mapdifficulty_dbc` | `game_tele` | `dungeon_access_template` | `reference_loot_template` |
 |---|---|---|---|---|---|---|
 | The Waxworks (map 44) | `9000000–9000199` (used: creatures 1–50, GOs 1–32, items 50–79, quests 0/1/3, gossip/npc_text 0–11) | `9000001–9000211` | `9000044` | `9000044–9000052` | `122` | `9000101` |
-| Stormwind Vault (map 35) | `9000200–9000399` (used: creature 200, GO 201, gossip/npc_text 200) | `9000500–9000999` (used: 500–501) | `9000035` | `9000060–9000061` | `123` | `9000102` (unused) |
+| Stormwind Vault (map 35) | `9000200–9000399` (used: creatures 200, 202–213; GOs 201, 215–228; items 230–235, 237–244, 250–259; quest 260; gossip/npc_text 200) | `9000500–9000999` (used: 500–540) | `9000035` | `9000060–9000061` | `123` | `9000102` |
 | next dungeon | `9000400–9000599` | `9001000–9001499` | `90000MM` (MM = new map id mod 100, or next free) | `9000070+` | `124` | `9000103` |
 
 Items and creatures share the numeric space by convention only (different tables); keep them in the
