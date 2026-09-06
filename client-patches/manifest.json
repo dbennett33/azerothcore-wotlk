@@ -1,19 +1,30 @@
 {
-  "version": "0.0.0",
-  "released": "2026-01-01T00:00:00Z",
+  "version": "1.1.7",
+  "released": "2026-09-06T19:03:31Z",
   "blizzard_build": 12340,
-  "client_cache_version": 0,
-  "changelog": [
-    "Placeholder manifest. Run build-bundle.sh after adding sources to produce a real release."
-  ],
+  "client_cache_version": 4,
+  "changelog": ["Waxworks per-room WMO wall/floor/ceiling materials (Goldmine + Deadmines BLPs)"],
   "client": {
     "locale": "enUS",
-    "patches": []
+    "patches": [
+      {
+        "file": "patch-4.MPQ",
+        "sha256": "292e404bc5a8c450442b6798de3425da74113f1a5774b419139c6d631b7c177b",
+        "size": 1243951,
+        "install_path": "Data/patch-4.MPQ"
+      },
+      {
+        "file": "patch-enUS-4.MPQ",
+        "sha256": "e59fede5d2cfb998f2a0c61ddcc1daaea0b8bc7d03d97f9af6b89b54b7750631",
+        "size": 550687,
+        "install_path": "Data/enUS/patch-enUS-4.MPQ"
+      }
+    ]
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "",
-    "size": 0,
-    "components": []
+    "sha256": "1db321fad3317141232d6574636c201720fcd4ea19e241b30d721fe8d773a0b2",
+    "size": 703784,
+    "components": ["dbc", "vmaps", "mmaps"]
   }
 }

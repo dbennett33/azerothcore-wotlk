@@ -137,10 +137,9 @@ Write-Host "Built bundle ${Version}:"
 Write-Host "  $outDir"
 Write-Host "  manifest copied to $existingManifest"
 Write-Host ""
-Write-Host 'Next steps:'
-Write-Host '  1. Commit manifest.json (not bundle binaries under bundles/).'
-Write-Host '  2. Publish binaries to the VPS:'
-Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 '$outDir'"
-Write-Host '  3. Deploy server data: GitHub Actions -> deploy-client-patches'
-Write-Host '  4. Players update locally:'
-Write-Host '       .\client-patches\scripts\update-client.ps1 -WowDir <WoW> -FromVps acore@your.vps'
+Write-Host "Next steps:"
+Write-Host "  1. Publish binaries to the VPS store (does not apply to any realm):"
+Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 $outDir"
+Write-Host "  2. Commit client-patches/manifest.json with the matching C++/SQL (not bundle binaries)."
+Write-Host "  3. Push dev then vps-build deploys Test. Merge to Playerbot, then Actions deploy-vps live."
+Write-Host "  4. After that realm has the version, players run update-client.ps1."
