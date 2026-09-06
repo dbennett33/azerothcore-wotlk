@@ -8,8 +8,14 @@ mkdir -p "$dest"
 clone_or_update() {
   local repo="$1" dir="$2" branch="${3:-master}"
   local path="${dest}/${dir}"
-  if [[ ! -d "${path}/.git" ]]; then
-    # SourceDirectory copies may be rsynced without .git; clone needs an empty dest.
+  local origin=""
+  if [[ -d "${path}/.git" ]]; then
+    origin="$(git -C "$path" remote get-url origin 2>/dev/null || true)"
+  fi
+  # Fresh clone when missing, rsynced without .git, or origin is a different repo
+  # (e.g. dbennett33 Classic fork → azerothcore). Fetching the old remote would
+  # ignore the URL in this script.
+  if [[ ! -d "${path}/.git" || "${origin%.git}" != "${repo%.git}" ]]; then
     rm -rf "$path"
     git clone --depth 1 --branch "$branch" "$repo" "$path"
   else
@@ -19,7 +25,7 @@ clone_or_update() {
   fi
 }
 
-clone_or_update https://github.com/dbennett33/mod-npc-enchanter.git mod-npc-enchanter
+clone_or_update https://github.com/azerothcore/mod-npc-enchanter.git mod-npc-enchanter
 clone_or_update https://github.com/azerothcore/mod-npc-services.git mod-npc-services
 clone_or_update https://github.com/kadeshar/mod-dungeon-clear.git mod-dungeon-clear
 clone_or_update https://github.com/azerothcore/mod-skip-dk-starting-area.git mod-skip-dk-starting-area

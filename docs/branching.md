@@ -52,7 +52,7 @@ Checked out by `apps/deploy/debian12/clone-extra-modules.sh`:
 
 | Module | Repo | Notes |
 |--------|------|--------|
-| `mod-npc-enchanter` | azerothcore/mod-npc-enchanter | Template only; spawn with `.npc add 601015` |
+| `mod-npc-enchanter` | azerothcore/mod-npc-enchanter | Upstream WotLK menu (not dbennett33 Classic/60). Template only; spawn with `.npc add 601015` |
 | `mod-npc-services` | azerothcore/mod-npc-services | Template only; spawn with `.npc add 55002` |
 | `mod-dungeon-clear` | kadeshar/mod-dungeon-clear | Playerbots tank AI for dungeon clears. Needs a **bot tank** in the group. In-dungeon: `.dc on` / party chat `dc on`. Optional client addon: [mod-dungeon-clear-addon](https://github.com/kadeshar/mod-dungeon-clear-addon) |
 | `mod-skip-dk-starting-area` | azerothcore/mod-skip-dk-starting-area | New DKs skip Ebon Hold (level 58 in Stormwind/Orgrimmar). Lich King also offers an optional skip. |
