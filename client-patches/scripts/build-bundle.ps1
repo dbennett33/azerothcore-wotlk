@@ -81,7 +81,7 @@ foreach ($mpq in $clientMpqs) {
         file          = $mpq.Name
         sha256        = Get-FileSha256Hex $dest
         size          = [int64]$mpq.Length
-        install_path  = "Data/$Locale/$($mpq.Name)"
+        install_path  = Get-MpqInstallPath -FileName $mpq.Name -Locale $Locale
     }
 }
 
@@ -137,9 +137,10 @@ Write-Host "Built bundle ${Version}:"
 Write-Host "  $outDir"
 Write-Host "  manifest copied to $existingManifest"
 Write-Host ""
-Write-Host "Next steps:"
-Write-Host "  1. Publish binaries to the VPS store (does not apply to any realm):"
-Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 $outDir"
-Write-Host "  2. Commit client-patches/manifest.json with the matching C++/SQL (not bundle binaries)."
-Write-Host "  3. Push dev then vps-build deploys Test. Merge to Playerbot, then Actions deploy-vps live."
-Write-Host "  4. After that realm has the version, players run update-client.ps1."
+Write-Host 'Next steps:'
+Write-Host '  1. Publish binaries to the VPS store (does not apply to any realm):'
+Write-Host "       .\client-patches\scripts\publish-to-vps.ps1 '$outDir'"
+Write-Host '  2. Commit client-patches/manifest.json with the matching C++/SQL (not bundle binaries).'
+Write-Host '  3. Push dev -> vps-build auto-deploys Test. Merge to Playerbot, then Actions -> deploy-vps -> live.'
+Write-Host '  4. After that realm has the version, players update:'
+Write-Host '       .\client-patches\scripts\update-client.ps1 -WowDir <WoW> -FromVps debian@your.vps -Target test'

@@ -74,6 +74,25 @@ bundle_dir_for_version() {
   printf '%s/bundles/%s' "$CLIENT_PATCHES_ROOT" "$version"
 }
 
+# World archives (patch-4.MPQ, patch-5.MPQ) belong in Data/. Locale archives
+# (patch-enUS-4.MPQ, locale-enUS.MPQ) belong in Data/<locale>/.
+mpq_install_path() {
+  local filename="$1"
+  local locale="${2:-enUS}"
+  local lower
+  lower="$(printf '%s' "$filename" | tr '[:upper:]' '[:lower:]')"
+  local loc
+  loc="$(printf '%s' "$locale" | tr '[:upper:]' '[:lower:]')"
+  case "$lower" in
+    *"patch-${loc}"*|*"locale-${loc}"*)
+      printf 'Data/%s/%s' "$locale" "$filename"
+      ;;
+    *)
+      printf 'Data/%s' "$filename"
+      ;;
+  esac
+}
+
 default_locale() {
   json_get "${CLIENT_PATCHES_ROOT}/manifest.json" "client.locale"
 }

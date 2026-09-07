@@ -20,6 +20,15 @@ sources/server/mmaps/
 
 # Local WoW client paths used during extraction
 .wow-client-path
+extract-client/
+
+# Scratch MPQ extract/pack dumps (never commit)
+_extract*/
+_pull-*/
+_list-*.txt
+_pack-*.txt
+_extract-*.txt
+
 
 # Editor / OS noise
 .DS_Store
