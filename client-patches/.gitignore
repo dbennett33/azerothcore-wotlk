@@ -29,7 +29,6 @@ _list-*.txt
 _pack-*.txt
 _extract-*.txt
 
-
 # Editor / OS noise
 .DS_Store
 Thumbs.db

@@ -3,7 +3,7 @@
 #
 # Usage:
 #   WOW_DIR=/path/to/WoW PATCHES_BASE_URL=https://example.com/client-patches/current ./update-client.sh
-#   ./update-client.sh --wow-dir /path/to/WoW --from-vps acore@your.vps
+#   ./update-client.sh --wow-dir /path/to/WoW --from-vps debian@your.vps
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,6 +14,7 @@ PATCHES_BASE_URL="${PATCHES_BASE_URL:-}"
 WOW_DIR="${WOW_DIR:-}"
 FROM_VPS="${FROM_VPS:-}"
 VERSION="${VERSION:-}"
+TARGET="${TARGET:-}"
 DRY_RUN=0
 LOCALE=""
 
@@ -24,8 +25,9 @@ Usage: update-client.sh [options]
 Options:
   --wow-dir PATH          WoW install root (contains Data/)
   --patches-url URL       Base URL to a release directory (must contain manifest.json)
-  --from-vps USER@HOST    Fetch from /home/acore/client-patches/current on the VPS via scp
-  --version VERSION       Release version (with --from-vps; default: current symlink target)
+  --from-vps USER@HOST    Fetch from the VPS via scp
+  --target test|live      Use current-test / current-live (the version that realm deployed)
+  --version VERSION       Release version (with --from-vps; default: current, or --target)
   --locale LOCALE         Override locale from manifest
   --dry-run               Show actions without writing files
   -h, --help              Show help
@@ -49,6 +51,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --from-vps)
       FROM_VPS="$2"
+      shift 2
+      ;;
+    --target)
+      TARGET="$2"
       shift 2
       ;;
     --version)
@@ -83,6 +89,11 @@ if [[ -z "$WOW_DIR" ]]; then
   exit 1
 fi
 
+if [[ -n "$TARGET" && -z "$FROM_VPS" ]]; then
+  echo "--target requires --from-vps. For HTTP, point --patches-url at current-test or current-live." >&2
+  exit 1
+fi
+
 if [[ ! -d "${WOW_DIR}/Data" ]]; then
   echo "WoW Data/ directory not found under ${WOW_DIR}" >&2
   exit 1
@@ -96,10 +107,26 @@ MANIFEST_LOCAL="${WORKDIR}/manifest.json"
 if [[ -n "$FROM_VPS" ]]; then
   require_cmd scp
   remote_base="/home/acore/client-patches"
+  if [[ -n "$VERSION" && -n "$TARGET" ]]; then
+    echo "Use --version or --target, not both" >&2
+    exit 1
+  fi
   if [[ -n "$VERSION" ]]; then
     remote_release="${remote_base}/releases/${VERSION}"
+  elif [[ -n "$TARGET" ]]; then
+    case "$TARGET" in
+      test|live)
+        remote_release="${remote_base}/current-${TARGET}"
+        ;;
+      *)
+        echo "--target must be test or live" >&2
+        exit 1
+        ;;
+    esac
   else
     remote_release="${remote_base}/current"
+    echo "note: fetching latest published release (current)."
+    echo "      Testers: --target test. Live players: --target live."
   fi
   scp -q "${FROM_VPS}:${remote_release}/manifest.json" "$MANIFEST_LOCAL"
   mkdir -p "${WORKDIR}/client"
@@ -122,7 +149,14 @@ else
   exit 1
 fi
 
-"${SCRIPT_DIR}/validate-manifest.sh" "$MANIFEST_LOCAL" "${WORKDIR}"
+# Schema + install_path only. Do not pass WORKDIR as a bundle: players never
+# download server-data.tar.gz, and validate-manifest would then fail.
+"${SCRIPT_DIR}/validate-manifest.sh" "$MANIFEST_LOCAL"
+while IFS=$'\t' read -r file sha; do
+  [[ -z "$file" || "$file" == "null" ]] && continue
+  verify_sha256 "${WORKDIR}/client/${file}" "$sha"
+  echo "client patch checksum ok: ${file}"
+done < <(jq -r '.client.patches[] | [.file, .sha256] | @tsv' "$MANIFEST_LOCAL")
 
 manifest_locale="$(jq -r '.client.locale' "$MANIFEST_LOCAL")"
 LOCALE="${LOCALE:-$manifest_locale}"
@@ -149,6 +183,12 @@ install_one() {
 
 while IFS=$'\t' read -r file install_path; do
   [[ -z "$file" || "$file" == "null" ]] && continue
+  if [[ "$LOCALE" != "$manifest_locale" ]]; then
+    prefix="Data/${manifest_locale}/"
+    if [[ "$install_path" == "${prefix}"* ]]; then
+      install_path="Data/${LOCALE}/${install_path#"${prefix}"}"
+    fi
+  fi
   install_one "${WORKDIR}/client/${file}" "$install_path"
 done < <(jq -r '.client.patches[] | [.file, .install_path] | @tsv' "$MANIFEST_LOCAL")
 

@@ -22,14 +22,18 @@ timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 dest="${BACKUP_ROOT}/client-patches-${timestamp}.tar.gz"
 
 mkdir -p "$BACKUP_ROOT"
-tar czf "$dest" -C "$PATCHES_ROOT" releases current 2>/dev/null || tar czf "$dest" -C "$PATCHES_ROOT" releases
+tar czf "$dest" -C "$PATCHES_ROOT" releases current current-test current-live 2>/dev/null \
+  || tar czf "$dest" -C "$PATCHES_ROOT" releases current 2>/dev/null \
+  || tar czf "$dest" -C "$PATCHES_ROOT" releases
 
 {
   echo "timestamp=${timestamp}"
   echo "patches_root=${PATCHES_ROOT}"
-  if [[ -L "${PATCHES_ROOT}/current" ]]; then
-    echo "current=$(readlink -f "${PATCHES_ROOT}/current")"
-  fi
+  for link in current current-test current-live; do
+    if [[ -L "${PATCHES_ROOT}/${link}" ]]; then
+      echo "${link}=$(readlink -f "${PATCHES_ROOT}/${link}")"
+    fi
+  done
 } >"${BACKUP_ROOT}/client-patches-${timestamp}.manifest.txt"
 
 echo "Created ${dest}"

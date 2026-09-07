@@ -1,0 +1,192 @@
+# Custom content: editing the 3.3.5a world and client
+
+This is the human overview of how this fork changes what the WoW 3.3.5a client shows and what the
+AzerothCore worldserver enforces: new dungeons, talent trees, overworld terrain, and the MPQ / server
+data pipeline that ships them. It answers "can we build another dungeon after Stormwind Vault?"
+(yes — with a **new `Map.dbc` id**; leftover vanilla instance maps are closed) and points to the
+agent-readable procedures that do the work.
+
+Agent entry points (read these when doing the work, they are the source of truth):
+
+| Task | Model doc | Procedure (skill) |
+|---|---|---|
+| Anything touching MPQs, DBCs, `data/` | `.agents/docs/systems/client-data.md` | `.agents/skills/build-client-patch/` |
+| New dungeon / instance | `.agents/docs/systems/dungeons.md` | `.agents/skills/build-dungeon/` (+ `reference-new-map.md` for dungeon #3+; `reference-blender-wmo.md` for Blender/WBS kitbash) |
+| Talent trees | `.agents/docs/systems/talents.md` | `.agents/skills/edit-talents/` |
+| Overworld ADT edits | `.agents/docs/systems/terrain.md` | `.agents/skills/edit-terrain/` |
+| Coordinates, tiles, teleports | `.agents/docs/systems/coordinates.md` | `.agents/skills/wow-coordinates/` |
+| Visual check of an instance | — | `.agents/skills/walk-instance/` |
+| Release mechanics (bundle, VPS, CI) | `docs/client-patches.md` | `client-patches/README.md` |
+
+## 1. The one idea everything rests on
+
+WoW 3.3.5a is two programs reading two copies of the same data.
+
+- The **client** reads MPQ archives from `Data/` and `Data/enUS/`. It renders geometry from
+  `World\...` files, and validates UI-level rules (which talents exist, which maps exist, zone
+  names) from `DBFilesClient\*.dbc`.
+- The **worldserver** never opens an MPQ. It reads `data/dbc`, `data/maps`, `data/vmaps`,
+  `data/mmaps`, all produced by the extractors in `src/tools/` **from a client that already has the
+  custom MPQs installed**, plus the world database, which can override DBC rows through the `*_dbc`
+  tables.
+
+So every change falls into one of three buckets:
+
+| Bucket | Examples | Ships as |
+|---|---|---|
+| Server only | creatures, quests, loot, SmartAI, C++ scripts, spawns, phases, `game_tele` | SQL in `data/sql/updates/pending_db_world/` + C++; `ClientCacheVersion` bump if existing templates changed |
+| Client and server, same DBC bytes | talents, spells, `Map.dbc`, `AreaTable.dbc`, `MapDifficulty.dbc` | DBC in `Data/enUS/patch-enUS-4.MPQ` **and** matching `*_dbc` SQL (or `data/dbc` in the server bundle) |
+| Client geometry plus server derivatives | WDT/ADT/WMO/M2, textures | files in `Data/patch-4.MPQ` **and** re-extracted `maps/vmaps/mmaps` in the server bundle |
+
+If a change exists on only one side the player sees a bug: black screen or disconnect (client lacks
+a map), `CANNOT_ENTER_NO_ENTRY` (server lacks it), talents that refuse to learn (DBC mismatch),
+floating or falling (client geometry without server vmaps).
+
+## 2. Case study: The Waxworks (commit `055d930bd`)
+
+What was built: a 5-man WMO-only instance kitbashed in Blender, hosted on map id **44** (the unused
+`Monastery` entry Blizzard left in `Map.dbc`), with a walk-through portal from Elwynn, 50 creature
+templates, 32 gameobjects, 30 items, three quests, 211 spawns, C++ bosses and an instance script
+under `src/server/scripts/EasternKingdoms/Waxworks/`, SQL in
+`data/sql/updates/pending_db_world/rev_1788471101263218298.sql`, and one shipped client archive
+`Data/patch-4.MPQ` (manifest version `1.0.1`, `client_cache_version` 2).
+
+Dungeon #2 is **Stormwind Vault** on unused map **35** (`StormwindPrison.wmo`, unused Trade/Old Town
+canal swirl). Same script/SQL layout, no new MPQ. That was the last leftover real instance.
+
+Dungeon #3 is **The Drowned Belfry** on a new `Map.dbc` id **900** (`Directory` `DrownedBelfry`),
+walk-through veil on the Darkshire graveyard road. That is the path every later 5-man follows.
+Its rooms are a Python box hull (`gen-drowned-belfry-mesh.py`), not a Blender kitbash — replace
+via `reference-blender-wmo.md` before calling the art finished.
+
+What went right and is reusable verbatim for the next dungeon:
+
+- Script and SQL layout (header enum as id source of truth, DELETE+INSERT blocks, `9000000+` ids).
+- Walk-through entrance pattern (portal GameObject + `PlayerScript` teleport, no `AreaTrigger.dbc`).
+- Bundle → publish to VPS → `deploy-vps` overlays `server-data.tar.gz` onto `<prefix>/data/`.
+- `mapdifficulty_dbc` SQL overlay instead of redistributing `data/dbc/MapDifficulty.dbc`.
+- The scout walk (`walk-instance`) for visual verification.
+
+What was a shortcut that does **not** repeat:
+
+- Reusing map 44 (Waxworks) and map 35 (Stormwind Vault) avoided editing `Map.dbc` on the client.
+  Those are the only unused *real* instance ids. The remaining gaps (13, 25, 29, 42, 169, 451, …)
+  are test maps that `mmaps_generator` skips as junk. Going forward we **create our own maps** —
+  a new `Map.dbc` row in the client locale patch and in `map_dbc`. Do not hunt leftover scrap.
+- The portal and player scripts hard-code map ids and positions per dungeon.
+- Planning notes for the mesh (`.agents/plans/`) are gitignored; the durable knowledge has been
+  folded into `build-dungeon/reference-mesh.md`, `reference-blender-wmo.md`, and `systems/dungeons.md`.
+
+## 3. Can we build more dungeons? Yes — new `Map.dbc` ids, not leftover scrap
+
+Dungeon #3 and later follow `build-dungeon/reference-new-map.md`. Map-id policy lives in
+`systems/dungeons.md` § Map ids. Compared with Waxworks/Vault the extra work is:
+
+1. **Ids**: pick a 3-digit unused map id (e.g. `900`), a `Directory` name, an unused `AreaTable`
+   id and `AreaBit`, a `MapDifficulty` id (`90000MM`), and the next template block from the
+   registry in `systems/dungeons.md` (The Drowned Belfry used `9000400–9000599` / access **124**;
+   dungeon #4 starts at `9000600–9000799` / access **125**).
+2. **Client DBCs** in `Data/enUS/patch-enUS-4.MPQ`: `Map.dbc`, `MapDifficulty.dbc`, `AreaTable.dbc`
+   rows (WDBX Editor on Windows; WDBX under Wine or a scripted writer on Linux).
+3. **Client world files** in `Data/patch-4.MPQ` (rebuilt whole, existing custom files included):
+   `World/Maps/<Dir>/<Dir>.wdt` plus the WMO and any new textures/M2s. Author the WMO with
+   Blender 3.4.1 + WBS (`reference-blender-wmo.md`); the Python box generator is hull-only.
+4. **Server mirrors**: `map_dbc`, `mapdifficulty_dbc`, `areatable_dbc`, `instance_template`,
+   `dungeon_access_template`, `graveyard_zone` SQL.
+5. **Extraction** with the patched client: `vmaps/<id>.vmtree`, `.wmo.vmo`, `mmaps/<id>*`. The
+   `Map.dbc` row must be in the **locale** archive or `vmap4_extractor` never sees the map.
+6. **C++**: a new `InstanceMapScript(name, <id>)` and either a copy of the portal scripts or a
+   shared table-driven one (do not add a third `PlayerScript` that fights Waxworks/Vault for the
+   same hooks).
+
+Everything else (content density, loot, pulls, lighting, the walk) is the existing skill.
+
+## 4. Talents
+
+Talent trees are the pure "same DBC on both sides" case. `Talent.dbc` (tree layout),
+`TalentTab.dbc` (tabs), and `Spell.dbc` (what a rank does) must be identical in the client's
+`patch-enUS-4.MPQ` and in the server's `data/dbc` or `talent_dbc` / `talenttab_dbc` / `spell_dbc`
+overlays. The server computes points (`level − 9`, `Rate.Talent`, `OnPlayerCalculateTalentsPoints`)
+and stores learned **rank spell ids** in `acore_characters.character_talent`.
+
+Hard limits (`MAX_TALENT_RANK = 5` ranks per talent, `MAX_TALENT_TABS = 3` tabs per class, rows
+0–10 and columns 0–3 in the client frame, 5 points per tier gate, `level − 9` points) are shared by
+client and server. Anything within them is a data change; beyond them means patching `Wow.exe` and
+the core together, which this fork does not do. Moving or removing ranks requires
+`AT_LOGIN_RESET_TALENTS` for the affected class. Details: `systems/talents.md`, procedure:
+`edit-talents`.
+
+## 5. Overworld terrain
+
+Continents are grids of 64×64 ADT tiles (`Azeroth_<gx>_<gy>.adt`). Editing them is a Noggit job
+on Windows (or Wine). The rules that matter:
+
+- Ship only the tiles you meant to change; Noggit resaves neighbours.
+- Re-extract `maps`, `vmaps`, `mmaps` **for those tiles only** and overlay them; never overlay a
+  whole continent extraction.
+- ADT water and area ids are global: phases cannot hide them.
+- New area ids need `AreaTable.dbc` on the client, `areatable_dbc` on the server, and a
+  `graveyard_zone` link, or ghosts fall back to the faction graveyard with a log error.
+
+Details: `systems/terrain.md`, procedure: `edit-terrain`.
+
+## 6. Building and shipping: MPQs, extractors, bundles
+
+Archive facts that bite:
+
+- The client loads `Data/common*`, `expansion`, `lichking`, then locale archives, then
+  `Data/enUS/patch-enUS-N`, then `Data/patch-N` (N = 2..9, then A..Z). Later wins.
+- Blizzard ships `patch`, `-2`, `-3`. Custom content is `patch-4` (world files) and
+  `patch-enUS-4` (DBCs). Never go past `patch-5`: `map_extractor` stops there, and it reads DBCs
+  from **locale archives only**.
+- Archives must be MPQ **v2**. `smpq` defaults to v4 (pass `-M 2`); MPQEditor must be set to the
+  WotLK compatibility mode. v4 archives are silently ignored by the extractors.
+- One `patch-4.MPQ` carries every custom world file. Each release rebuilds it whole.
+
+Pipeline per release (`build-client-patch` skill, §1–§7):
+
+1. Stage loose files under `client-patches/sources/client/loose/` with exact internal paths.
+2. Pack `patch-4.MPQ` and `patch-enUS-4.MPQ`; install into a dev client; check in game.
+3. Extract with that client: `map_extractor`, `vmap4_extractor`, `vmap4_assembler`,
+   `mmaps_generator <map>`; keep only the new/changed files under `sources/server/`.
+4. `build-bundle` → `bundles/<version>/` with `manifest.json` (sha256, `Data/` vs `Data/enUS/`
+   install paths, `client_cache_version`).
+5. `publish-to-vps` → `/home/acore/client-patches/releases/<version>/` (and `current`).
+6. Commit `client-patches/manifest.json` + SQL + C++; push `dev`; `vps-build` auto-deploys Test.
+   Live is merge to `Playerbot` then Actions → `deploy-vps` → `live`. Overlay + `ClientCacheVersion`
+   + `current-test` / `current-live` happen in `apply-server-data.sh`.
+7. Players run `update-client.sh/.ps1 --target test` (or `--target live`); verify on Test with a
+   patched and an unpatched client.
+
+Git tracks the manifest only. Binaries live on the VPS; back them up offsite
+(`backup-client-patches.sh`), or a lost VPS loses the map work.
+
+## 7. Windows vs Linux
+
+| Task | Linux (this fork) | Windows (other contributor) |
+|---|---|---|
+| Terrain (Noggit) | Unsupported / Wine | Native |
+| WMO kitbash | Blender **3.4.1** tarball + WBS (`reference-blender-wmo.md`). Not distro 4.x. No M2 export. | Same versions; they pick the install path |
+| Browse / dump MPQs | wow.export Linux portable; `extract-wmo-family.py` | wow.export Legacy / MPQEditor |
+| Pack MPQ | `/home/dan/dev/tools/pack-mpq` (v2, `disk=archivepath`) | MPQEditor, MPQ v2 |
+| Edit DBC | SQL overlay + scripted writer | WDBX |
+| Extractors | `build-tools/src/tools/` (`-DTOOLS_BUILD=all`) | Same flags, their build dir |
+| Bundle / publish / update | `*.sh` | `*.ps1` |
+| In-game proof | Proton client `/home/dan/dev/wow-3.3.5/` | Their scout / `walk-instance` scripts |
+| SOAP | `curl` | `scout-soap.ps1` |
+
+This fork's authored process is Linux (`pack-mpq`, AC extractors, playable client
+`/home/dan/dev/wow-3.3.5/`). Mesh authoring: Blender 3.4.1 + WBS (`reference-blender-wmo.md`).
+A contributor also kitbashes on Windows — same versions, they pick MPQEditor/WDBX/Noggit. The VPS
+has no extractors. Linux commands: `.agents/skills/build-client-patch/reference-windows-linux.md`.
+
+## 8. Known gaps after dungeon #3 (tracked in `systems/dungeons.md`)
+
+Dungeon #3 is **The Drowned Belfry** (map **900**, Directory `DrownedBelfry`, Darkshire GY-road veil).
+Maps 44, 35, and 900 are taken. Remaining gaps:
+
+- Portal / enter-grace scripts are still per-dungeon (Waxworks, Vault, Belfry). Prefer a shared
+  table-driven portal before dungeon #4.
+- Linux Blender 3.4.1 + WBS are installed; Belfry rooms are still the Python hull.
+- No `LFGDungeons` / `WorldMapArea` rows for custom 5-mans (Dungeon Finder and map UI); optional.
+

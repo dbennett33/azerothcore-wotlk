@@ -7,26 +7,107 @@ ACORE_HOME="${ACORE_HOME:-/home/${ACORE_USER}}"
 PATCHES_ROOT="${PATCHES_ROOT:-${ACORE_HOME}/client-patches}"
 ACORE_PREFIX="${ACORE_PREFIX:-${ACORE_HOME}/server}"
 DRY_RUN=0
+PREFLIGHT=0
+FORCE=0
+FROM_MANIFEST=""
+VERSION=""
+
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Missing required command: ${cmd}" >&2
+    exit 1
+  fi
+}
 
 usage() {
   cat <<'EOF'
 Usage: apply-server-data.sh [version] [options]
 
 Arguments:
-  version     Release version (default: current symlink target)
+  version     Release version (default: current symlink — emergency only)
 
 Environment:
   ACORE_PREFIX   Server prefix containing data/ and etc/ (default: /home/acore/server)
   PATCHES_ROOT   VPS patch store (default: /home/acore/client-patches)
+  REPO_ROOT      Checkout with client-patches/scripts/validate-manifest.sh
 
 Options:
-  --dry-run      Show actions without applying changes
+  --from-manifest PATH   Use version from a git client-patches/manifest.json
+                         Placeholder 0.0.0: no-op. Git checksums must match the store.
+  --preflight            Check the VPS store has that release; do not apply
+  --force                Re-apply even if etc/.client-patch-version already matches
+  --dry-run              Show actions without applying changes
 EOF
 }
 
-VERSION=""
+realm_current_link() {
+  case "$ACORE_PREFIX" in
+    */server-test)
+      printf '%s/current-test' "$PATCHES_ROOT"
+      ;;
+    */server)
+      printf '%s/current-live' "$PATCHES_ROOT"
+      ;;
+    *)
+      printf ''
+      ;;
+  esac
+}
+
+manifest_identity() {
+  jq -c '{
+    version,
+    client_cache_version,
+    locale: .client.locale,
+    patches: [.client.patches[] | {file, sha256, size, install_path}] | sort_by(.file),
+    server: {archive: .server.archive, sha256: .server.sha256, size: .server.size, components: .server.components}
+  }' "$1"
+}
+
+assert_git_matches_store() {
+  local git_manifest="$1"
+  local store_manifest="$2"
+  local git_id store_id
+  git_id="$(manifest_identity "$git_manifest")"
+  store_id="$(manifest_identity "$store_manifest")"
+  if [[ "$git_id" != "$store_id" ]]; then
+    echo "Git manifest does not match VPS store release ${VERSION}." >&2
+    echo "Publish the bundle that matches this commit, or commit the store's manifest.json." >&2
+    echo "  git:   ${git_id}" >&2
+    echo "  store: ${store_id}" >&2
+    exit 1
+  fi
+}
+
+point_realm_current() {
+  local link
+  link="$(realm_current_link)"
+  if [[ -z "$link" ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "would point ${link} -> releases/${VERSION}"
+    return 0
+  fi
+  ln -sfn "releases/${VERSION}" "$link"
+  echo "Realm client pointer: ${link} -> releases/${VERSION}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --from-manifest)
+      FROM_MANIFEST="${2:?--from-manifest requires a path}"
+      shift 2
+      ;;
+    --preflight)
+      PREFLIGHT=1
+      shift
+      ;;
+    --force)
+      FORCE=1
+      shift
+      ;;
     --dry-run)
       DRY_RUN=1
       shift
@@ -47,6 +128,21 @@ if [[ "$(id -un)" != "$ACORE_USER" ]]; then
   exit 1
 fi
 
+require_cmd python3
+require_cmd jq
+
+if [[ -n "$FROM_MANIFEST" ]]; then
+  if [[ ! -f "$FROM_MANIFEST" ]]; then
+    echo "Git manifest not found: ${FROM_MANIFEST}" >&2
+    exit 1
+  fi
+  VERSION="$(jq -r '.version' "$FROM_MANIFEST")"
+  if [[ "$VERSION" == "0.0.0" ]]; then
+    echo "Git manifest ${FROM_MANIFEST} is placeholder 0.0.0; skipping client-patch apply."
+    exit 0
+  fi
+fi
+
 if [[ -z "$VERSION" ]]; then
   if [[ -L "${PATCHES_ROOT}/current" ]]; then
     VERSION="$(basename "$(readlink -f "${PATCHES_ROOT}/current")")"
@@ -62,12 +158,31 @@ DATA_DIR="${ACORE_PREFIX}/data"
 STATE_FILE="${ACORE_PREFIX}/etc/.client-patch-version"
 
 if [[ ! -f "$MANIFEST" ]]; then
-  echo "Manifest not found: ${MANIFEST}" >&2
+  echo "Release ${VERSION} is not in the VPS store (${RELEASE_DIR})." >&2
+  echo "Publish the bundle with publish-to-vps.sh, then redeploy this branch." >&2
   exit 1
 fi
 
-require_cmd python3
-require_cmd jq
+if [[ -n "$FROM_MANIFEST" ]]; then
+  assert_git_matches_store "$FROM_MANIFEST" "$MANIFEST"
+fi
+
+if [[ "$PREFLIGHT" -eq 1 ]]; then
+  if [[ -n "$FROM_MANIFEST" ]]; then
+    echo "Client patch ${VERSION} is in the VPS store (${RELEASE_DIR}) and matches git."
+  else
+    echo "Client patch ${VERSION} is in the VPS store (${RELEASE_DIR})"
+  fi
+  exit 0
+fi
+
+# Keep realm current-* in sync even when the overlay is already applied.
+if [[ "$FORCE" -eq 0 && -f "$STATE_FILE" && "$(cat "$STATE_FILE")" == "$VERSION" ]]; then
+  echo "Prefix ${ACORE_PREFIX} already has client patch ${VERSION}; skipping overlay."
+  point_realm_current
+  exit 0
+fi
+
 require_cmd tar
 
 REPO_VALIDATE="${REPO_ROOT:-/home/acore/src/azerothcore-wotlk}/client-patches/scripts/validate-manifest.sh"
@@ -115,6 +230,7 @@ if [[ -f "$WS_CONF" && "$cache_version" != "0" ]]; then
 fi
 
 if [[ "$DRY_RUN" -eq 0 ]]; then
+  mkdir -p "$(dirname "$STATE_FILE")"
   echo "$VERSION" >"$STATE_FILE"
   {
     echo "version=${VERSION}"
@@ -123,3 +239,5 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   } >>"${ACORE_PREFIX}/etc/.client-patch-applied.log"
   echo "Recorded applied version in ${STATE_FILE}"
 fi
+
+point_realm_current

@@ -1,0 +1,54 @@
+-- Move Drowned Belfry spawns onto the connected crypt+keep kitbash.
+-- Original INSERT already applied on test; this UPDATE is what running realms need.
+
+UPDATE `creature` SET `position_x`=-18, `position_y`=3, `position_z`=0.2 WHERE `guid`=9001003;
+UPDATE `creature` SET `position_x`=-18, `position_y`=-3, `position_z`=0.2 WHERE `guid`=9001004;
+UPDATE `creature` SET `position_x`=-40, `position_y`=4, `position_z`=0.9 WHERE `guid`=9001005;
+UPDATE `creature` SET `position_x`=-40, `position_y`=-4, `position_z`=0.9 WHERE `guid`=9001006;
+UPDATE `creature` SET `position_x`=-36, `position_y`=0, `position_z`=0.9 WHERE `guid`=9001007;
+UPDATE `creature` SET `position_x`=-44, `position_y`=0, `position_z`=0.9 WHERE `guid`=9001008;
+UPDATE `creature` SET `position_x`=-46, `position_y`=-18, `position_z`=-22 WHERE `guid`=9001009;
+UPDATE `creature` SET `position_x`=-44, `position_y`=-22, `position_z`=-22 WHERE `guid`=9001010;
+UPDATE `creature` SET `position_x`=-48, `position_y`=-22, `position_z`=-22 WHERE `guid`=9001011;
+UPDATE `creature` SET `position_x`=-30, `position_y`=14, `position_z`=-12.8 WHERE `guid`=9001012;
+UPDATE `creature` SET `position_x`=-34, `position_y`=14, `position_z`=-12.8 WHERE `guid`=9001013;
+UPDATE `creature` SET `position_x`=-32, `position_y`=15, `position_z`=-12.8 WHERE `guid`=9001014;
+UPDATE `creature` SET `position_x`=-31, `position_y`=15, `position_z`=-30.5 WHERE `guid`=9001015;
+UPDATE `creature` SET `position_x`=-52, `position_y`=4, `position_z`=1.6 WHERE `guid`=9001016;
+UPDATE `creature` SET `position_x`=-52, `position_y`=-4, `position_z`=1.6 WHERE `guid`=9001017;
+UPDATE `creature` SET `position_x`=-64, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001018;
+UPDATE `creature` SET `position_x`=-60, `position_y`=6, `position_z`=-0.5 WHERE `guid`=9001019;
+UPDATE `creature` SET `position_x`=-60, `position_y`=-6, `position_z`=-0.5 WHERE `guid`=9001020;
+UPDATE `creature` SET `position_x`=-58, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001021;
+UPDATE `creature` SET `position_x`=-66, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001022;
+UPDATE `creature` SET `position_x`=-32, `position_y`=2, `position_z`=0.9 WHERE `guid`=9001023;
+UPDATE `creature` SET `position_x`=-46, `position_y`=0, `position_z`=-21.5 WHERE `guid`=9001024;
+
+UPDATE `gameobject` SET `position_x`=-40, `position_y`=0, `position_z`=0.9 WHERE `guid`=9001012;
+UPDATE `gameobject` SET `position_x`=-38, `position_y`=3, `position_z`=0.9 WHERE `guid`=9001013;
+UPDATE `gameobject` SET `position_x`=-42, `position_y`=3, `position_z`=0.9 WHERE `guid`=9001014;
+UPDATE `gameobject` SET `position_x`=-38, `position_y`=-3, `position_z`=0.9 WHERE `guid`=9001015;
+UPDATE `gameobject` SET `position_x`=-42, `position_y`=-3, `position_z`=0.9 WHERE `guid`=9001016;
+UPDATE `gameobject` SET `position_x`=-40, `position_y`=6, `position_z`=0.9 WHERE `guid`=9001017;
+UPDATE `gameobject` SET `position_x`=-46, `position_y`=-16, `position_z`=-22 WHERE `guid`=9001018;
+UPDATE `gameobject` SET `position_x`=-44, `position_y`=-20, `position_z`=-22 WHERE `guid`=9001019;
+UPDATE `gameobject` SET `position_x`=-48, `position_y`=-20, `position_z`=-22 WHERE `guid`=9001020;
+UPDATE `gameobject` SET `position_x`=-46, `position_y`=-22, `position_z`=-22 WHERE `guid`=9001021;
+UPDATE `gameobject` SET `position_x`=-30, `position_y`=14, `position_z`=-12.8 WHERE `guid`=9001022;
+UPDATE `gameobject` SET `position_x`=-34, `position_y`=14, `position_z`=-12.8 WHERE `guid`=9001023;
+UPDATE `gameobject` SET `position_x`=-32, `position_y`=18, `position_z`=-12.8 WHERE `guid`=9001024;
+UPDATE `gameobject` SET `position_x`=-28, `position_y`=18, `position_z`=-30.5 WHERE `guid`=9001025;
+UPDATE `gameobject` SET `position_x`=-64, `position_y`=4, `position_z`=-0.5 WHERE `guid`=9001026;
+UPDATE `gameobject` SET `position_x`=-64, `position_y`=-4, `position_z`=-0.5 WHERE `guid`=9001027;
+UPDATE `gameobject` SET `position_x`=-62, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001028;
+UPDATE `gameobject` SET `position_x`=-66, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001029;
+UPDATE `gameobject` SET `position_x`=-65, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001030;
+UPDATE `gameobject` SET `position_x`=-66, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001031;
+UPDATE `gameobject` SET `position_x`=-66, `position_y`=5, `position_z`=-0.5 WHERE `guid`=9001032;
+UPDATE `gameobject` SET `position_x`=-66, `position_y`=-5, `position_z`=-0.5 WHERE `guid`=9001033;
+UPDATE `gameobject` SET `position_x`=-63, `position_y`=0, `position_z`=-0.5 WHERE `guid`=9001034;
+UPDATE `gameobject` SET `position_x`=-65, `position_y`=4, `position_z`=-0.5 WHERE `guid`=9001035;
+UPDATE `gameobject` SET `position_x`=-65, `position_y`=-3, `position_z`=-0.5 WHERE `guid`=9001036;
+UPDATE `gameobject` SET `position_x`=-60, `position_y`=4, `position_z`=-0.5 WHERE `guid`=9001037;
+UPDATE `gameobject` SET `position_x`=-60, `position_y`=-4, `position_z`=-0.5 WHERE `guid`=9001038;
+UPDATE `gameobject` SET `position_x`=-54, `position_y`=0, `position_z`=1.6 WHERE `guid`=9001039;

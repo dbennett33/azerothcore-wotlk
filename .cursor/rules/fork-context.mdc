@@ -1,0 +1,9 @@
+---
+description: This is a private AzerothCore fork (live/test VPS, playerbots, client patches, custom dungeon); index of its docs
+alwaysApply: true
+---
+
+Read `AGENTS.md` § "This fork" before starting. Every fork-specific doc and skill is indexed in
+`docs/README.md`; open it whenever a task touches deploy, CI, branches, client patches, custom
+content, or agent docs, and read the doc it names for that task. `dev` is the test realm,
+`Playerbot` is live; never push to `Playerbot`, deploy live, or merge unless asked.

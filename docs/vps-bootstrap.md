@@ -1,7 +1,7 @@
 # Debian 12 VPS bootstrap (AzerothCore)
 
 One-time setup. Do **not** put MySQL install or package setup in GitHub Actions.
-The deploy workflow ([`.github/workflows/deploy-vps.yml`](../../../.github/workflows/deploy-vps.yml))
+The deploy workflow ([`.github/workflows/deploy-vps.yml`](../.github/workflows/deploy-vps.yml))
 only builds, swaps `bin/`, and restarts systemd user units.
 
 **Self-hosted runner security:** `vps-build` runs on **push to `Playerbot` or `dev`** (not on
@@ -16,7 +16,7 @@ Paths used below (keep in sync with the workflows):
 - Client data: separate `server/data` and `server-test/data` (test copies from live on first init)
 - systemd user units: `auth.service`, `world.service`, `world-test.service`
 
-For live + test on one VPS (shared auth, separate world DBs), see [`MULTI-REALM.md`](MULTI-REALM.md).
+For live + test on one VPS (shared auth, separate world DBs), see [`multi-realm.md`](multi-realm.md).
 
 You need roughly **8 GB RAM** (plus swap) to compile on this machine.
 
@@ -35,11 +35,14 @@ attention if `dpkg` reports configuration errors — see section 3.
 sudo adduser --disabled-password --gecos "" acore
 sudo mkdir -p /home/acore/server/{bin,etc,data,logs} /home/acore/server-staging
 sudo chown -R acore:acore /home/acore/server /home/acore/server-staging
+# SSH login is debian, not acore. Let debian browse /home/acore (secrets stay 600).
+sudo usermod -aG acore debian
+sudo chmod 750 /home/acore
 ```
 
 ## 2. Build and runtime packages
 
-Same set as [`apps/installer/includes/os_configs/debian.sh`](../../installer/includes/os_configs/debian.sh),
+Same set as [`apps/installer/includes/os_configs/debian.sh`](../apps/installer/includes/os_configs/debian.sh),
 plus `rsync` for deploys.
 
 ```bash
@@ -87,10 +90,13 @@ Copy maps, dbc, vmaps, and mmaps into `/home/acore/server/data`. Do **not** down
 sudo chown -R acore:acore /home/acore/server/data
 mkdir -p /home/acore/client-patches/releases
 sudo chown -R acore:acore /home/acore/client-patches
+# debian (SSH login) needs group write so publish-to-vps can rsync here.
+sudo chmod -R g+rwX /home/acore/client-patches
+sudo find /home/acore/client-patches -type d -exec chmod g+s {} +
 ```
 
 Custom MPQ patches and matching server data overlays are managed separately — see
-[`docs/client-patches.md`](../../../docs/client-patches.md).
+[`docs/client-patches.md`](client-patches.md).
 
 ## 5. Config files (once, never overwritten by deploy)
 
@@ -202,12 +208,12 @@ After deploy, `configure-realm.sh` sets:
 - `Expansion = 2`, `MaxPlayerLevel = 80`, `MinDualSpecLevel = 40`
 - `mod-individual-progression`: server-wide **tier 13** (WotLK phase 1 — Naxx 80, Eye of Eternity, Obsidian Sanctum)
 - Death Knight enabled; dual spec at 40; RDF available; new DKs skip Ebon Hold (`mod-skip-dk-starting-area`)
-- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
-- Test playerbots: 50 bots, same level distribution
+- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1; chat autogear capped at rare (blue)
+- Test playerbots: 50 bots, same level distribution; chat autogear allowed to epic
 
 **Client:** use a clean 3.3.5a client (ChromieCraft). When custom patches are released, players run
 `update-client.sh` (Linux/macOS/WSL) or `update-client.ps1` (Windows) — see
-[`docs/client-patches.md`](../../../docs/client-patches.md).
+[`docs/client-patches.md`](client-patches.md).
 
 **Migrating from vanilla progression** (one-time, before first WotLK deploy of each realm):
 
@@ -233,7 +239,7 @@ bash /home/acore/deploy/backup-acore.sh
 # copy /home/acore/backups/acore-backup-*.tar.gz off the server
 ```
 
-Full restore procedure: [`RECOVERY.md`](RECOVERY.md).
+Full restore procedure: [`recovery.md`](recovery.md).
 
 `deploy-vps` installs `backup-acore.sh` and `restore-acore.sh` to `/home/acore/deploy/` alongside
 the other helpers.

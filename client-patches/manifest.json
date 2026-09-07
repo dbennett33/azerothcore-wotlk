@@ -3,7 +3,11 @@
   "released": "2026-09-07T12:43:34Z",
   "blizzard_build": 12340,
   "client_cache_version": 5,
-  "changelog": ["Waxworks Tallow Cathedral: enlarged North Shrine hall, colonnade, dais, custom wax_floor/pool/drip BLPs", "Candelabrus custom model Creature\\WaxCandle (spine-bound crown, EmoteDance 69) plus DBC 60000", "Map 44 vmaps/mmaps rebuilt for the new hall (Waxworks.wmo.vmo + 044 tiles)"],
+  "changelog": [
+    "Waxworks Tallow Cathedral: enlarged North Shrine hall, colonnade, dais, custom wax_floor/pool/drip BLPs",
+    "Candelabrus custom model Creature\\WaxCandle (spine-bound crown, EmoteDance 69) plus DBC 60000",
+    "Map 44 vmaps/mmaps rebuilt for the new hall (Waxworks.wmo.vmo + 044 tiles)"
+  ],
   "client": {
     "locale": "enUS",
     "patches": [

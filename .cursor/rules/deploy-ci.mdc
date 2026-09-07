@@ -1,0 +1,12 @@
+---
+description: Deploy scripts, VPS runbooks and CI workflows of this fork; routes to the docs/ runbooks
+globs: apps/deploy/**,.github/workflows/**,.github/actions/**,docs/**
+alwaysApply: false
+---
+
+Before editing, read `docs/branching.md` (branch roles, CI triggers, protection) and the runbook
+for the area: `docs/vps-bootstrap.md` (host setup, paths, units), `docs/multi-realm.md` (live vs
+test), `docs/build-runners.md` (runner labels, `pick-runner`), `docs/recovery.md` (backups).
+`apps/deploy/README.md` tables every script. Paths, ports, unit names and runner labels in the
+workflows must stay in sync with those docs; update both in the same change. New fork docs go in
+`docs/` with a row in `docs/README.md`.
