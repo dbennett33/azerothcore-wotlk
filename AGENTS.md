@@ -26,9 +26,9 @@ Facts that change how you work here:
   `Map.dbc` id** on both sides — do not hunt leftover Blizzard instance ids
   (`.agents/docs/systems/dungeons.md` § Map ids,
   `.agents/skills/build-dungeon/reference-new-map.md`).
-- Fork skills in `.agents/skills/`: `build-client-patch`, `build-dungeon`, `edit-talents`,
-  `edit-terrain`, `walk-instance`, `wow-coordinates`. They are symlinked into `.claude/skills/` and
-  pointed to by `.cursor/rules/`.
+- Fork skills in `.agents/skills/`: `build-client-patch`, `build-creature-model`, `build-dungeon`,
+  `edit-talents`, `edit-terrain`, `walk-instance`, `wow-coordinates`. They are symlinked into
+  `.claude/skills/` and pointed to by `.cursor/rules/`.
 
 ## Agent rules
 
@@ -70,6 +70,8 @@ Fork-specific tasks (index: `docs/README.md`; human overview: `docs/custom-conte
 - `.go` / teleport / SOAP player move / placing spawns by xyz → `.agents/docs/systems/coordinates.md`
   and `.agents/skills/wow-coordinates/SKILL.md`
 - Visual instance walk / Wow.exe screenshot / scout client → `.agents/skills/walk-instance/SKILL.md`
+- New creature mesh (M2 splice, BLP, CreatureDisplayInfo) → `docs/custom-npc-skills/`, then skill
+  `.agents/skills/build-creature-model/`
 - Adding a doc or skill → `docs/README.md` "Adding a doc" (index row + routing bullet here)
 
 ## Repository layout
