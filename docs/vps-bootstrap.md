@@ -176,8 +176,12 @@ self-hosted runner is unsafe if untrusted workflows can execute.
 
 1. GitHub → repo **Settings** → **Actions** → **Runners** → **New self-hosted runner** → Linux x64.
 2. As `acore`, download and configure in e.g. `/home/acore/actions-runner`.
-3. Labels: `self-hosted`, `linux`, `acore-vps`, and **`acore-build`** (shared compile pool with local PC).
+3. Labels: `self-hosted`, `linux`, **`acore-vps`** only (do not add `acore-build`; that label is
+   for the build VM).
 4. Install the runner as a user service: `./svc.sh install` then `./svc.sh start` (still as `acore`).
+
+If later jobs sit **queued** on `acore-vps`, the service has stopped. Restart it with the same
+`./svc.sh start` as `acore`.
 
 Confirm `XDG_RUNTIME_DIR` is `/run/user/<acore-uid>` so `systemctl --user` works in jobs.
 
