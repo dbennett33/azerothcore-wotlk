@@ -15,17 +15,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AllSpellScript.h"
 #include "Player.h"
 #include "PlayerScript.h"
 #include "SharedDefines.h"
-#include "Spell.h"
 #include "SpellDefines.h"
-#include "SpellInfo.h"
 #include "WhisperTricks.h"
 #include "WorldSession.h"
-#include <mutex>
-#include <unordered_set>
 
 enum WhisperTricksSpells
 {
@@ -34,73 +29,10 @@ enum WhisperTricksSpells
 
 namespace
 {
-    std::mutex sTricksWhisperMutex;
-    std::unordered_set<ObjectGuid> sHoldTankTricks;
-    std::unordered_set<ObjectGuid> sWhisperCastsInFlight;
-
     void TellRequester(Player* rogue, Player* requester, std::string_view text)
     {
         rogue->Whisper(text, LANG_UNIVERSAL, requester);
     }
-
-    bool IsEligibleRogueBot(Player* requester, Player* rogue, bool requireSameGroup)
-    {
-        if (!requester || !rogue || requester == rogue)
-            return false;
-
-        WorldSession const* session = rogue->GetSession();
-        if (!session || !session->IsBot())
-            return false;
-
-        if (!rogue->IsClass(CLASS_ROGUE))
-            return false;
-
-        if (requireSameGroup && !requester->IsInSameRaidWith(rogue))
-            return false;
-
-        return true;
-    }
-
-    bool IsHoldingTankTricks(ObjectGuid const& guid)
-    {
-        std::lock_guard lock(sTricksWhisperMutex);
-        return sHoldTankTricks.find(guid) != sHoldTankTricks.end();
-    }
-
-    void SetHoldingTankTricks(ObjectGuid const& guid, bool hold)
-    {
-        std::lock_guard lock(sTricksWhisperMutex);
-        if (hold)
-            sHoldTankTricks.insert(guid);
-        else
-            sHoldTankTricks.erase(guid);
-    }
-
-    void ClearTricksWhisperState(ObjectGuid const& guid)
-    {
-        std::lock_guard lock(sTricksWhisperMutex);
-        sHoldTankTricks.erase(guid);
-        sWhisperCastsInFlight.erase(guid);
-    }
-
-    class WhisperTricksCastGuard
-    {
-    public:
-        explicit WhisperTricksCastGuard(ObjectGuid const& guid) : _guid(guid)
-        {
-            std::lock_guard lock(sTricksWhisperMutex);
-            sWhisperCastsInFlight.insert(_guid);
-        }
-
-        ~WhisperTricksCastGuard()
-        {
-            std::lock_guard lock(sTricksWhisperMutex);
-            sWhisperCastsInFlight.erase(_guid);
-        }
-
-    private:
-        ObjectGuid _guid;
-    };
 
     char const* TricksCastFailReason(SpellCastResult result)
     {
@@ -122,23 +54,17 @@ namespace
         }
     }
 
-    bool HandleTricksHoldToggle(Player* requester, Player* rogue, bool enable)
-    {
-        if (!IsEligibleRogueBot(requester, rogue, false))
-            return false;
-
-        SetHoldingTankTricks(rogue->GetGUID(), enable);
-        if (enable)
-            TellRequester(rogue, requester, "I'll hold Tricks of the Trade for your whisper.");
-        else
-            TellRequester(rogue, requester, "I'll put Tricks of the Trade back on the tank.");
-        return true;
-    }
-
     // Returns true when the whisper was a tricks request to an eligible rogue bot.
     bool HandleTricksWhisper(Player* requester, Player* rogue)
     {
-        if (!IsEligibleRogueBot(requester, rogue, true))
+        if (!requester || !rogue || requester == rogue)
+            return false;
+
+        WorldSession const* session = rogue->GetSession();
+        if (!session || !session->IsBot())
+            return false;
+
+        if (!rogue->IsClass(CLASS_ROGUE) || !requester->IsInSameRaidWith(rogue))
             return false;
 
         if (!rogue->IsAlive())
@@ -159,7 +85,6 @@ namespace
             return true;
         }
 
-        WhisperTricksCastGuard allowCast(rogue->GetGUID());
         rogue->CastStop();
         SpellCastResult const result = rogue->CastSpell(requester, SPELL_WHISPER_TRICKS_OF_THE_TRADE,
             TriggerCastFlags(TRIGGERED_IGNORE_GCD | TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_SET_FACING));
@@ -174,70 +99,21 @@ class WhisperTricksOfTheTradeScript : public PlayerScript
 {
 public:
     WhisperTricksOfTheTradeScript()
-        : PlayerScript("WhisperTricksOfTheTradeScript",
-            { PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_LOGOUT })
+        : PlayerScript("WhisperTricksOfTheTradeScript", { PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT })
     {
     }
 
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg, Player* receiver) override
     {
-        if (language == LANG_ADDON)
+        if (language == LANG_ADDON || !IsTricksOfTheTradeWhisper(msg))
             return true;
 
-        switch (ParseTricksWhisper(msg))
-        {
-            case TricksWhisperCommand::Cast:
-                return !HandleTricksWhisper(player, receiver);
-            case TricksWhisperCommand::EnableHold:
-                return !HandleTricksHoldToggle(player, receiver, true);
-            case TricksWhisperCommand::DisableHold:
-                return !HandleTricksHoldToggle(player, receiver, false);
-            default:
-                return true;
-        }
-    }
-
-    void OnPlayerLogout(Player* player) override
-    {
-        if (player)
-            ClearTricksWhisperState(player->GetGUID());
-    }
-};
-
-class WhisperTricksOfTheTradeSpellScript : public AllSpellScript
-{
-public:
-    WhisperTricksOfTheTradeSpellScript()
-        : AllSpellScript("WhisperTricksOfTheTradeSpellScript", { ALLSPELLHOOK_ON_SPELL_CHECK_CAST })
-    {
-    }
-
-    void OnSpellCheckCast(Spell* spell, bool /*strict*/, SpellCastResult& res) override
-    {
-        if (res != SPELL_CAST_OK || !spell)
-            return;
-
-        SpellInfo const* info = spell->GetSpellInfo();
-        if (!info || info->Id != SPELL_WHISPER_TRICKS_OF_THE_TRADE)
-            return;
-
-        Unit* caster = spell->GetCaster();
-        if (!caster || !caster->IsPlayer())
-            return;
-
-        ObjectGuid const guid = caster->GetGUID();
-        std::lock_guard lock(sTricksWhisperMutex);
-        if (sHoldTankTricks.find(guid) == sHoldTankTricks.end())
-            return;
-        if (sWhisperCastsInFlight.find(guid) != sWhisperCastsInFlight.end())
-            return;
-
-        res = SPELL_FAILED_DONT_REPORT;
+        // Swallow handled whispers so playerbots does not treat "tricks" as an unknown command.
+        return !HandleTricksWhisper(player, receiver);
     }
 };
 
 void AddSC_whisper_tricks()
 {
     new WhisperTricksOfTheTradeScript();
-    new WhisperTricksOfTheTradeSpellScript();
 }

@@ -57,6 +57,8 @@ Checked out by `apps/deploy/debian12/clone-extra-modules.sh`:
 | `mod-dungeon-clear` | kadeshar/mod-dungeon-clear | Playerbots tank AI for dungeon clears. Needs a **bot tank** in the group. In-dungeon: `.dc on` / party chat `dc on`. Optional client addon: [mod-dungeon-clear-addon](https://github.com/kadeshar/mod-dungeon-clear-addon) |
 | `mod-skip-dk-starting-area` | azerothcore/mod-skip-dk-starting-area | New DKs skip Ebon Hold (level 58 in Stormwind/Orgrimmar). Lich King also offers an optional skip. |
 
+`vps-build` then runs [`apps/deploy/debian12/apply-playerbots-patches.sh`](../apps/deploy/debian12/apply-playerbots-patches.sh) on the checked-out `mod-playerbots` tree. Overlays live in [`apps/deploy/debian12/patches/mod-playerbots/`](../apps/deploy/debian12/patches/mod-playerbots/) as a holding pen for playerbots-fork changes that cannot be pushed from this repo. Delete a patch once the same commit is on `dbennett33/mod-playerbots` (`dev` / `master`).
+
 World SQL for those modules is applied on worldserver start from that realm's `SourceDirectory/modules/` (synced on `deploy-vps`). `sync-sql-sources.sh` also clones **mod-playerbots** (`dev` on test, `master` on live) and **mod-individual-progression** there — worldserver shuts down if `modules/mod-playerbots` is missing while `Playerbots.Updates.EnableDatabases = 1`. Core `pending_db_*` comes from the staged commit's `data/sql`, not a shared stale clone.
 
 ## Deploy player warning (optional)

@@ -15,6 +15,7 @@
 | [`docs/build-runners.md`](../../docs/build-runners.md) | Self-hosted runner labels (build VM + VPS) |
 | [`../../docs/client-patches.md`](../../docs/client-patches.md) | MPQ + server data patch workflow |
 | [`debian12/client-patches/`](debian12/client-patches/) | VPS helpers to publish/apply client patch bundles |
+| [`debian12/apply-playerbots-patches.sh`](debian12/apply-playerbots-patches.sh) | After `vps-build` checks out `mod-playerbots`, apply overlays from [`debian12/patches/mod-playerbots/`](debian12/patches/mod-playerbots/) |
 | [`.github/workflows/vps-build.yml`](../../.github/workflows/vps-build.yml) | **Push to `Playerbot`** → compile to `server-staging`; **push to `dev`** → compile + auto `deploy-vps` test |
 | [`.github/workflows/deploy-vps.yml`](../../.github/workflows/deploy-vps.yml) | Promote staging: binaries + SQL `SourceDirectory` + client-patch overlay. **Manual** for live; auto from `vps-build` for test |
 | [`.github/workflows/deploy-client-patches.yml`](../../.github/workflows/deploy-client-patches.yml) | **Emergency only** → apply a store release without a code deploy |
