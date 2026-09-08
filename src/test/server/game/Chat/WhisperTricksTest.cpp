@@ -38,3 +38,16 @@ TEST(WhisperTricksTest, RejectsUnrelatedWhispers)
     EXPECT_FALSE(IsTricksOfTheTradeWhisper("cast tricks"));
     EXPECT_FALSE(IsTricksOfTheTradeWhisper("follow"));
 }
+
+TEST(WhisperTricksTest, ParsesHoldStrategyCommands)
+{
+    EXPECT_EQ(ParseTricksWhisper("tricks-whisper"), TricksWhisperCommand::EnableHold);
+    EXPECT_EQ(ParseTricksWhisper("Tricks Whisper"), TricksWhisperCommand::EnableHold);
+    EXPECT_EQ(ParseTricksWhisper("co +tricks-whisper"), TricksWhisperCommand::EnableHold);
+    EXPECT_EQ(ParseTricksWhisper("+tricks-whisper"), TricksWhisperCommand::EnableHold);
+    EXPECT_EQ(ParseTricksWhisper("co -tricks-whisper"), TricksWhisperCommand::DisableHold);
+    EXPECT_EQ(ParseTricksWhisper("-tricks-whisper"), TricksWhisperCommand::DisableHold);
+    EXPECT_EQ(ParseTricksWhisper("tricks-whisper off"), TricksWhisperCommand::DisableHold);
+    EXPECT_EQ(ParseTricksWhisper("tricks"), TricksWhisperCommand::Cast);
+    EXPECT_EQ(ParseTricksWhisper("follow"), TricksWhisperCommand::None);
+}

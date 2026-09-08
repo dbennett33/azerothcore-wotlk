@@ -22,6 +22,14 @@
 #include <string>
 #include <string_view>
 
+enum class TricksWhisperCommand
+{
+    None,
+    Cast,
+    EnableHold,
+    DisableHold
+};
+
 // Whisper aliases that request Tricks of the Trade from a grouped rogue bot.
 inline std::string NormalizeTricksWhisper(std::string_view text)
 {
@@ -47,10 +55,23 @@ inline std::string NormalizeTricksWhisper(std::string_view text)
     return out;
 }
 
-inline bool IsTricksOfTheTradeWhisper(std::string_view text)
+inline TricksWhisperCommand ParseTricksWhisper(std::string_view text)
 {
     std::string const normalized = NormalizeTricksWhisper(text);
-    return normalized == "tricks" || normalized == "tot" || normalized == "tricks of the trade";
+    if (normalized == "tricks" || normalized == "tot" || normalized == "tricks of the trade")
+        return TricksWhisperCommand::Cast;
+    if (normalized == "tricks-whisper" || normalized == "tricks whisper" ||
+        normalized == "co +tricks-whisper" || normalized == "+tricks-whisper")
+        return TricksWhisperCommand::EnableHold;
+    if (normalized == "co -tricks-whisper" || normalized == "-tricks-whisper" ||
+        normalized == "tricks-whisper off")
+        return TricksWhisperCommand::DisableHold;
+    return TricksWhisperCommand::None;
+}
+
+inline bool IsTricksOfTheTradeWhisper(std::string_view text)
+{
+    return ParseTricksWhisper(text) == TricksWhisperCommand::Cast;
 }
 
 #endif
