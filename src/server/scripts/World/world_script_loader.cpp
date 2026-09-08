@@ -30,6 +30,7 @@ void AddSC_achievement_scripts();
 void AddSC_chat_log(); // location: scripts\World\chat_log.cpp
 void AddSC_action_ip_logger(); // location: scripts\World\action_ip_logger.cpp
 void AddSC_player_scripts();
+void AddSC_whisper_tricks();
 void AddSC_npc_stave_of_ancients();
 void AddSC_server_mail();
 void AddSC_transport_zeppelins();
@@ -54,6 +55,7 @@ void AddWorldScripts()
     AddSC_chat_log(); // location: scripts\World\chat_log.cpp
     AddSC_action_ip_logger(); // location: scripts\World\action_ip_logger.cpp
     AddSC_player_scripts();
+    AddSC_whisper_tricks();
     AddSC_npc_stave_of_ancients();
     AddSC_server_mail();
     AddSC_transport_zeppelins();
