@@ -25,52 +25,20 @@ jobs:
     outputs:
       labels: ${{ steps.pick.outputs.labels }}
     steps:
+      - name: Checkout runner picker
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            apps/deploy/debian12/pick-github-runner.sh
+          sparse-checkout-cone-mode: false
+
       - name: Prefer build VM when online, else VPS
         id: pick
         env:
           GITHUB_TOKEN: ${{ github.token }}
           ACORE_WORKFLOW_PAT: ${{ secrets.ACORE_WORKFLOW_PAT }}
           VM_LABEL: ${{ vars.BUILD_VM_RUNNER_LABEL }}
-        run: |
-          set -euo pipefail
-          label="${VM_LABEL:-acore-build-vm}"
-          if [[ -n "${ACORE_WORKFLOW_PAT:-}" ]]; then
-            export GH_TOKEN="${ACORE_WORKFLOW_PAT}"
-          else
-            export GH_TOKEN="${GITHUB_TOKEN}"
-          fi
-
-          vm_online=false
-          listing=""
-          set +e
-          listing="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runners" \
-            --jq '.runners[] | [.name, .status, .busy, ([.labels[].name] | join(","))] | @tsv' 2>&1)"
-          api_status=$?
-          set -e
-
-          echo "Looking for online runner with label: ${label}"
-          echo "Runners:"
-          echo "${listing}"
-
-          if [[ $api_status -ne 0 ]]; then
-            echo "Runner list API failed (${listing})" >&2
-            echo "Add repo secret ACORE_WORKFLOW_PAT (repo scope) if GITHUB_TOKEN cannot list runners." >&2
-            echo "Falling back to VPS compile." >&2
-          elif awk -F '\t' -v want="$label" '
-              $2 == "online" && ("," $4 ",") ~ ("," want ",") { found=1 }
-              END { exit found ? 0 : 1 }
-            ' <<< "${listing}"; then
-            vm_online=true
-          fi
-
-          if [[ "$vm_online" == true ]]; then
-            echo "Build VM online (label ${label})"
-            echo 'labels=["self-hosted","linux","'"${label}"'"]' >> "$GITHUB_OUTPUT"
-          else
-            echo "No online runner with label ${label}; compiling on VPS (acore-vps)"
-            echo "Add label ${label} to the Debian VM runner in GitHub → Settings → Actions → Runners."
-            echo 'labels=["self-hosted","linux","acore-vps"]' >> "$GITHUB_OUTPUT"
-          fi
+        run: bash apps/deploy/debian12/pick-github-runner.sh
 
   build:
     needs: pick-runner
@@ -343,13 +311,37 @@ jobs:
             echo "staged_after_local_compile=true"
           } > "${ACORE_STAGING}/.build-info"
 
-  deploy-test:
+  require-vps-runner:
     needs: [build, vps-stage]
     if: |
       always() &&
       github.ref == 'refs/heads/dev' &&
       needs.build.result == 'success' &&
       (needs.vps-stage.result == 'success' || needs.vps-stage.result == 'skipped')
+    runs-on: ubuntu-latest
+    name: require-vps-runner
+    steps:
+      - name: Checkout runner picker
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            apps/deploy/debian12/pick-github-runner.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Require acore-vps online before queueing deploy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACORE_WORKFLOW_PAT: ${{ secrets.ACORE_WORKFLOW_PAT }}
+        run: bash apps/deploy/debian12/pick-github-runner.sh --require-vps
+
+  deploy-test:
+    needs: [build, vps-stage, require-vps-runner]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/dev' &&
+      needs.build.result == 'success' &&
+      (needs.vps-stage.result == 'success' || needs.vps-stage.result == 'skipped') &&
+      needs.require-vps-runner.result == 'success'
     uses: ./.github/workflows/deploy-vps.yml
     with:
       target: test

@@ -12,7 +12,7 @@
 | [`docs/recovery.md`](../../docs/recovery.md) | Disaster recovery checklist |
 | [`docs/multi-realm.md`](../../docs/multi-realm.md) | Live + test realms on one VPS |
 | [`docs/branching.md`](../../docs/branching.md) | Branch roles, CI triggers, branch protection |
-| [`docs/build-runners.md`](../../docs/build-runners.md) | Self-hosted runner labels (build VM + VPS) |
+| [`debian12/pick-github-runner.sh`](debian12/pick-github-runner.sh) | GitHub-hosted `pick-runner`: choose VM vs VPS, fail if the target is offline |
 | [`../../docs/client-patches.md`](../../docs/client-patches.md) | MPQ + server data patch workflow |
 | [`debian12/client-patches/`](debian12/client-patches/) | VPS helpers to publish/apply client patch bundles |
 | [`.github/workflows/vps-build.yml`](../../.github/workflows/vps-build.yml) | **Push to `Playerbot`** → compile to `server-staging`; **push to `dev`** → compile + auto `deploy-vps` test |
