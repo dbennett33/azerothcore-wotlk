@@ -208,8 +208,8 @@ After deploy, `configure-realm.sh` sets:
 - `Expansion = 2`, `MaxPlayerLevel = 80`, `MinDualSpecLevel = 40`
 - `mod-individual-progression`: server-wide **tier 13** (WotLK phase 1 — Naxx 80, Eye of Eternity, Obsidian Sanctum)
 - Death Knight enabled; dual spec at 40; RDF available; new DKs skip Ebon Hold (`mod-skip-dk-starting-area`)
-- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1
-- Test playerbots: 50 bots, same level distribution
+- Live playerbots: 1000 bots, ~10% at level 80, 90% starting at level 1; chat autogear capped at rare (blue)
+- Test playerbots: 50 bots, same level distribution; chat autogear allowed to epic
 
 **Client:** use a clean 3.3.5a client (ChromieCraft). When custom patches are released, players run
 `update-client.sh` (Linux/macOS/WSL) or `update-client.ps1` (Windows) — see

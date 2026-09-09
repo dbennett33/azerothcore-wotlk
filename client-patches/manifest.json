@@ -1,35 +1,34 @@
 {
-  "version": "1.1.6",
-  "released": "2026-09-04T20:39:56Z",
+  "version": "1.2.0",
+  "released": "2026-09-07T12:43:34Z",
   "blizzard_build": 12340,
-  "client_cache_version": 4,
+  "client_cache_version": 5,
   "changelog": [
-    "Drowned Belfry is dry: no green lava fill, crypt fog pulled back"
+    "Waxworks Tallow Cathedral: enlarged North Shrine hall, colonnade, dais, custom wax_floor/pool/drip BLPs",
+    "Candelabrus custom model Creature\\WaxCandle (spine-bound crown, EmoteDance 69) plus DBC 60000",
+    "Map 44 vmaps/mmaps rebuilt for the new hall (Waxworks.wmo.vmo + 044 tiles)"
   ],
   "client": {
     "locale": "enUS",
     "patches": [
       {
         "file": "patch-4.MPQ",
-        "sha256": "a9de2a231ba71f7edbe6406092f2b57da02e1a6567fee697961f1c0c23c12542",
-        "size": 2340089,
+        "sha256": "b1d76e9b40ddfa184a5d5356a315cfa17ae155a9a13444e1958396dbb1c167e7",
+        "size": 1814680,
         "install_path": "Data/patch-4.MPQ"
       },
       {
         "file": "patch-enUS-4.MPQ",
-        "sha256": "e59fede5d2cfb998f2a0c61ddcc1daaea0b8bc7d03d97f9af6b89b54b7750631",
-        "size": 550687,
+        "sha256": "99b94de9ed4dc28c336c6ae8ece5e0a918919ee050dbb06cabf0df41dc5af655",
+        "size": 546227,
         "install_path": "Data/enUS/patch-enUS-4.MPQ"
       }
     ]
   },
   "server": {
     "archive": "server-data.tar.gz",
-    "sha256": "32a2848e252927400bfced33df1d51b18881ba31627dbba6b20fa38075cd1b61",
-    "size": 708584,
-    "components": [
-      "vmaps",
-      "mmaps"
-    ]
+    "sha256": "11322157471d54c62fc29c5c0047fb4b2dfc0674c90a0d7824595567f7e5a174",
+    "size": 829688,
+    "components": ["vmaps", "mmaps"]
   }
 }

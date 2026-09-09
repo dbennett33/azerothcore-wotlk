@@ -256,6 +256,7 @@ function Test-DirHasFiles {
         return $false
     }
     $null -ne (Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ne '.gitkeep' } |
         Select-Object -First 1)
 }
 

@@ -130,8 +130,13 @@ if [[ -f "$PB_CONF" ]]; then
   set_kv "$PB_CONF" "AiPlayerbot.LimitEnchantExpansion" "0"
   set_kv "$PB_CONF" "AiPlayerbot.LimitGearExpansion" "0"
   set_kv "$PB_CONF" "AiPlayerbot.LimitTalentsExpansion" "0"
-  # 4 = epic. Chat autogear (alt/raid bots) may request purple; random-bot factory stays on RandomGearQualityLimit.
-  set_kv "$PB_CONF" "AiPlayerbot.AutoGearQualityLimit" "4"
+  # 3 = rare (blue), 4 = epic. Live stays blues; test allows purple chat autogear.
+  # Random-bot factory is RandomGearQualityLimit (unchanged, rare).
+  if [[ "$realm_id" == "2" ]]; then
+    set_kv "$PB_CONF" "AiPlayerbot.AutoGearQualityLimit" "4"
+  else
+    set_kv "$PB_CONF" "AiPlayerbot.AutoGearQualityLimit" "3"
+  fi
   # 0 = no item-level / mixed-gearscore cap (name is ScoreLimit, value is iLvl).
   set_kv "$PB_CONF" "AiPlayerbot.AutoGearScoreLimit" "0"
   set_kv "$PB_CONF" "AiPlayerbot.RandomGearScoreLimit" "0"
