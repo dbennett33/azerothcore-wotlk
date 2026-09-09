@@ -18,7 +18,6 @@
 #include "Player.h"
 #include "PlayerScript.h"
 #include "SharedDefines.h"
-#include "SpellDefines.h"
 #include "WhisperTricks.h"
 #include "WorldSession.h"
 
@@ -85,11 +84,21 @@ namespace
             return true;
         }
 
+        // 57934's dummy aura sits on the rogue. If explicit targeting drops the
+        // unit target, Spell::InitExplicitTargets falls back to GetTarget() —
+        // the mob or tank the bot is on — so the 15% buff (57933) never hits
+        // the whisperer. Playerbots SetSelection before every real ToT cast.
+        ObjectGuid const oldSel = rogue->GetTarget();
+        rogue->SetSelection(requester->GetGUID());
         rogue->CastStop();
-        SpellCastResult const result = rogue->CastSpell(requester, SPELL_WHISPER_TRICKS_OF_THE_TRADE,
-            TriggerCastFlags(TRIGGERED_IGNORE_GCD | TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_SET_FACING));
+        SpellCastResult const result = rogue->CastSpell(requester, SPELL_WHISPER_TRICKS_OF_THE_TRADE);
+        if (oldSel)
+            rogue->SetSelection(oldSel);
+
         if (result != SPELL_CAST_OK)
             TellRequester(rogue, requester, TricksCastFailReason(result));
+        else
+            TellRequester(rogue, requester, "Tricks of the Trade is on you.");
 
         return true;
     }
