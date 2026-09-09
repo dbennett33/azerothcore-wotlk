@@ -58,8 +58,6 @@ CMakeLists.txt.user
 *.bak
 *.patch
 *.diff
-# Fork overlays applied onto checked-out extra modules (vps-build).
-!apps/deploy/debian12/patches/**/*.patch
 *.REMOTE.*
 *.BACKUP.*
 *.BASE.*

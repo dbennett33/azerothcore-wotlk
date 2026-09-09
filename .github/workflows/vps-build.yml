@@ -187,9 +187,6 @@ jobs:
       - name: Checkout extra modules (enchanter, services, dungeon-clear)
         run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
 
-      - name: Apply fork playerbots overlays
-        run: bash apps/deploy/debian12/apply-playerbots-patches.sh "${GITHUB_WORKSPACE}/modules/mod-playerbots"
-
       - name: Ensure test prefix etc exists (dev builds on VPS)
         if: steps.runner.outputs.is_vps == 'true' && steps.paths.outputs.acore_prefix == '/home/acore/server-test'
         run: |
@@ -317,9 +314,6 @@ jobs:
 
       - name: Checkout extra modules (enchanter, services, dungeon-clear)
         run: bash apps/deploy/debian12/clone-extra-modules.sh "${GITHUB_WORKSPACE}/modules"
-
-      - name: Apply fork playerbots overlays
-        run: bash apps/deploy/debian12/apply-playerbots-patches.sh "${GITHUB_WORKSPACE}/modules/mod-playerbots"
 
       - name: Ensure test prefix etc exists
         if: steps.paths.outputs.acore_prefix == '/home/acore/server-test'
